@@ -772,7 +772,7 @@ Size: 328 B
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\common\header.jsp
-Size: 5.39 kB
+Size: 5.43 kB
 ================================================================================
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
@@ -803,22 +803,22 @@ Size: 5.39 kB
                     <c:if test="${role == 'student' || role == null}">
                         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
                             <a href="/student/dashboard" 
-                               class="${fn:contains(currentUrl, 'dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               class="${fn:contains(currentUrl, '/student/dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                Dashboard
                             </a>
                             
                             <a href="/student/assessment" 
-                               class="${fn:contains(currentUrl, 'assessment') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               class="${fn:contains(currentUrl, '/student/assessment') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                Assessment
                             </a>
                             
                             <a href="/student/library" 
-                               class="${fn:contains(currentUrl, 'library') || fn:contains(currentUrl, 'content') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               class="${fn:contains(currentUrl, '/student/library') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                Library
                             </a>
                             
                             <a href="/student/telehealth" 
-                               class="${fn:contains(currentUrl, 'telehealth') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               class="${fn:contains(currentUrl, '/student/telehealth') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                Telehealth
                             </a>
                         </div>
@@ -827,15 +827,15 @@ Size: 5.39 kB
                     <c:if test="${role == 'counselor'}">
                         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
                             <a href="/counselor/dashboard" 
-                               class="${fn:contains(currentUrl, 'dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               class="${fn:contains(currentUrl, '/counselor/dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                Dashboard
                             </a>
                             <a href="/counselor/schedule" 
-                               class="${fn:contains(currentUrl, 'schedule') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               class="${fn:contains(currentUrl, '/counselor/schedule') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                Schedule
                             </a>
                             <a href="/counselor/content" 
-                               class="${fn:contains(currentUrl, 'content') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               class="${fn:contains(currentUrl, '/counselor/content') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                Content
                             </a>
                         </div>
@@ -844,7 +844,7 @@ Size: 5.39 kB
                     <c:if test="${role == 'admin'}">
                         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
                             <a href="/admin/dashboard" 
-                               class="${fn:contains(currentUrl, 'dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               class="${fn:contains(currentUrl, '/admin/dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                Analytics
                             </a>
                         </div>

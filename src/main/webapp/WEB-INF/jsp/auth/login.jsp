@@ -1,57 +1,62 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<jsp:include page="../common/header.jsp" />
-
-<div class="min-h-[80vh] flex items-center justify-center px-4">
-    <div class="w-full max-w-md space-y-8 animate-fade-in bg-white p-8 rounded-2xl shadow-lg border border-border">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MindMate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center mb-6 text-blue-600">MindMate</h1>
+        <h2 class="text-2xl font-semibold text-center mb-6">Login</h2>
         
-        <div class="text-center space-y-2">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
-                <i data-lucide="log-in" class="w-6 h-6 text-primary"></i>
+        <form method="POST" action="/login" class="space-y-4">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="email" name="email" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       required>
             </div>
-            <h2 class="text-3xl font-bold tracking-tight text-foreground">Welcome back</h2>
-            <p class="text-sm text-muted-foreground">Enter your details to sign in to your account</p>
-        </div>
-
-        <form action="/login" method="POST" class="space-y-6">
-            <div class="space-y-2">
-                <label class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" for="email">Email</label>
-                <input class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" id="email" placeholder="m@example.com" type="email" name="username">
+            
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" id="password" name="password" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       required>
             </div>
-            <div class="space-y-2">
-                <label class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" for="password">Password</label>
-                <input class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" id="password" type="password" name="password">
-            </div>
-            <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-full" type="submit">
-                Sign In
+            
+            <button type="submit" 
+                    class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Login
             </button>
         </form>
-
-        <div class="relative">
-            <div class="absolute inset-0 flex items-center"><span class="w-full border-t"></span></div>
-            <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-muted-foreground">Demo Access</span></div>
+        
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600 mb-4">Don't have an account? 
+                <a href="/register" class="text-blue-600 hover:underline">Register here</a>
+            </p>
         </div>
         
-        <div class="grid grid-cols-3 gap-2">
-            <form action="/login" method="post">
-                <input type="hidden" name="role" value="student">
-                <button type="submit" class="w-full inline-flex items-center justify-center rounded-md text-xs font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9">
-                    Student
-                </button>
-            </form>
-            <form action="/login" method="post">
-                <input type="hidden" name="role" value="counselor">
-                <button type="submit" class="w-full inline-flex items-center justify-center rounded-md text-xs font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9">
-                    Counselor
-                </button>
-            </form>
-            <form action="/login" method="post">
-                <input type="hidden" name="role" value="admin">
-                <button type="submit" class="w-full inline-flex items-center justify-center rounded-md text-xs font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9">
-                    Admin
-                </button>
-            </form>
+        <div class="mt-8 pt-6 border-t border-gray-300">
+            <p class="text-sm text-gray-500 text-center mb-4">Demo Access (Bypass Login):</p>
+            <div class="space-y-2">
+                <a href="/student/dashboard" 
+                   class="block w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 text-center">
+                    Login as Student
+                </a>
+                <a href="/counselor/dashboard" 
+                   class="block w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 text-center">
+                    Login as Counselor
+                </a>
+                <a href="/admin/dashboard" 
+                   class="block w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 text-center">
+                    Login as Admin
+                </a>
+            </div>
         </div>
     </div>
-</div>
+</body>
+</html>
 
-<jsp:include page="../common/footer.jsp" />
