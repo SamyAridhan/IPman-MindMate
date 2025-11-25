@@ -49,13 +49,15 @@ Size: 3.05 kB
 
         <!-- JSTL for JSP -->
         <dependency>
-            <groupId>jakarta.servlet.jsp.jstl</groupId>
-            <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.web</groupId>
-            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
-        </dependency>
+    <groupId>jakarta.servlet.jsp.jstl</groupId>
+    <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+    <version>3.0.0</version>
+</dependency>
+<dependency>
+    <groupId>org.glassfish.web</groupId>
+    <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+    <version>3.0.1</version>
+</dependency>
 
         <!-- Spring Boot DevTools -->
         <dependency>
@@ -95,29 +97,59 @@ Size: 3.05 kB
 
 ================================================================================
 File: README.md
-Size: 5.51 kB
+Size: 6.8 kB
 ================================================================================
 
 # MindMate - Mental Health Platform
 
-University Project - Spring Boot JSP Web Application
+**University Project - Spring Boot JSP Web Application**
+
+---
+
+## 🚨 CRITICAL: How to Port Lovable Code (Read Before Coding)
+
+We are porting a React (Lovable) prototype into a JSP environment. You **cannot** simply copy-paste React code. Follow these 3 rules to ensure your pages work.
+
+### Rule 1: No React Logic allowed
+JSP is HTML-based. React logic will break the build.
+* **DELETE** all `import` statements at the top of the file.
+* **REMOVE** any `const`, `useState`, or `useEffect` hooks.
+* **CONVERT** navigation:
+    * ❌ React: `<button onClick={() => navigate('/student/assessment')}>`
+    * ✅ JSP: `<a href="/student/assessment" class="...">`
+
+### Rule 2: How to use Icons
+React components like `<Calendar />` do not work in JSP. We are using **Lucide Icons** via CDN (already configured in `header.jsp`).
+* **CONVERT** the tag:
+    * ❌ React: `<Calendar className="h-4 w-4" />`
+    * ✅ JSP: `<i data-lucide="calendar" class="h-4 w-4"></i>`
+* *Note: Use lowercase names (e.g., `BellRing` becomes `bell-ring`).*
+
+### Rule 3: Handling Images
+Images referenced in Lovable live on their server. For our app, they must be local.
+1.  **SAVE** the image from the prototype to: `src/main/resources/static/images/`
+2.  **UPDATE** the source path:
+    * ❌ React: `<img src="/lovable-uploads/hero.png" />`
+    * ✅ JSP: `<img src="/images/hero.png" />`
+
+---
 
 ## Overview
 
-MindMate is a mental health platform built with Spring Boot 3.3.5 and JSP views. This is a "Potemkin Village" (facade) implementation for Phase 2 demo, featuring working navigation and UI without full backend logic.
+MindMate is a mental health platform built with Spring Boot 3.3.5 and JSP views. This is a "Potemkin Village" (facade) implementation for the Phase 2 demo, featuring working navigation and UI without full backend logic.
 
 ## Technical Stack
 
-- **Framework:** Spring Boot 3.3.5
-- **Language:** Java 17
-- **Build Tool:** Maven
-- **View Engine:** JSP (JavaServer Pages)
-- **Styling:** Tailwind CSS (via CDN)
-- **Packaging:** WAR (Web Application Archive)
+-   **Framework:** Spring Boot 3.3.5
+-   **Language:** Java 17
+-   **Build Tool:** Maven
+-   **View Engine:** JSP (JavaServer Pages)
+-   **Styling:** Tailwind CSS (via CDN)
+-   **Packaging:** WAR (Web Application Archive)
 
 ## Project Structure
 
-```
+```text
 src/main/
 ├── java/com/mindmate/
 │   ├── MindMateApplication.java
@@ -128,8 +160,8 @@ src/main/
 │       └── AdminController.java
 └── webapp/WEB-INF/jsp/
     ├── common/
-    │   ├── header.jsp
-    │   └── footer.jsp
+    │   ├── header.jsp            <-- Includes Tailwind & Lucide CDN
+    │   └── footer.jsp            <-- Includes Icon Activation Script
     ├── auth/
     │   ├── login.jsp
     │   └── register.jsp
@@ -151,95 +183,103 @@ src/main/
     │   └── content-manager.jsp
     └── admin/
         └── dashboard.jsp
-```
+````
 
 ## Prerequisites
 
-- Java 17 or higher
-- Maven 3.6 or higher
-- IDE (IntelliJ IDEA, Eclipse, or VS Code recommended)
+  - Java 17 or higher
+  - Maven 3.6 or higher
+  - IDE (IntelliJ IDEA, Eclipse, or VS Code recommended)
 
 ## Setup Instructions
 
-### 1. Clone the Repository
+### 1\. Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd IPman-MindMate
 ```
 
-### 2. Build the Project
+### 2\. Build the Project
 
 ```bash
 mvn clean install
 ```
 
-### 3. Run the Application
+### 3\. Run the Application
 
-**Option A: Using Maven Spring Boot Plugin**
+**Option A: Using Maven Spring Boot Plugin (RECOMMENDED)**
+
 ```bash
 mvn spring-boot:run
 ```
 
 **Option B: Using Java**
+
 ```bash
 java -jar target/mindmate-1.0.0.war
 ```
 
 **Option C: Deploy as WAR**
-- Build the WAR file: `mvn clean package`
-- Deploy `target/mindmate-1.0.0.war` to your application server (Tomcat, etc.)
 
-### 4. Access the Application
+  - Build the WAR file: `mvn clean package`
+  - Deploy `target/mindmate-1.0.0.war` to your application server (Tomcat, etc.)
 
-- Open your browser and navigate to: `http://localhost:8080`
-- You will be redirected to the login page
+### 4\. Access the Application
+
+  - Open your browser and navigate to: `http://localhost:8080`
+  - You will be redirected to the login page
 
 ## Demo Access
 
 The login page includes three demo buttons to bypass authentication:
 
-- **Login as Student** → `/student/dashboard`
-- **Login as Counselor** → `/counselor/dashboard`
-- **Login as Admin** → `/admin/dashboard`
+  - **Login as Student** → `/student/dashboard`
+  - **Login as Counselor** → `/counselor/dashboard`
+  - **Login as Admin** → `/admin/dashboard`
 
 ## Available Routes
 
 ### Authentication
-- `GET /` → Redirects to `/login`
-- `GET /login` → Login page
-- `GET /register` → Registration page
-- `POST /login` → Mock login (redirects to student dashboard)
+
+  - `GET /` → Redirects to `/login`
+  - `GET /login` → Login page
+  - `GET /register` → Registration page
+  - `POST /login` → Mock login (redirects to student dashboard)
 
 ### Student Routes (`/student`)
-- `GET /student/dashboard` → Student dashboard
-- `GET /student/assessment` → Assessment list
-- `GET /student/assessment/take` → Take assessment
-- `GET /student/library` → Content library
-- `GET /student/forum` → Forum list (with dummy threads)
-- `GET /student/forum/thread` → Forum thread view
-- `GET /student/chatbot` → Chatbot interface
-- `GET /student/telehealth` → Book telehealth appointment
-- `GET /student/telehealth/my-appointments` → View appointments
+
+  - `GET /student/dashboard` → Student dashboard
+  - `GET /student/assessment` → Assessment list
+  - `GET /student/assessment/take` → Take assessment
+  - `GET /student/library` → Content library
+  - `GET /student/forum` → Forum list (with dummy threads)
+  - `GET /student/forum/thread` → Forum thread view
+  - `GET /student/chatbot` → Chatbot interface
+  - `GET /student/telehealth` → Book telehealth appointment
+  - `GET /student/telehealth/my-appointments` → View appointments
 
 ### Counselor Routes (`/counselor`)
-- `GET /counselor/dashboard` → Counselor dashboard
-- `GET /counselor/content` → Content manager
+
+  - `GET /counselor/dashboard` → Counselor dashboard
+  - `GET /counselor/content` → Content manager
+  - `GET /counselor/schedule` → Schedule manager
 
 ### Admin Routes (`/admin`)
-- `GET /admin/dashboard` → Admin dashboard
 
-## Development
+  - `GET /admin/dashboard` → Admin dashboard
+
+## Development Notes
 
 ### Hot Reload
 
-Spring Boot DevTools is included for automatic restart during development. Changes to Java files will trigger an automatic restart.
+Spring Boot DevTools is included. Changes to Java files will trigger an automatic server restart.
 
 ### JSP Development
 
-- JSP files are located in `src/main/webapp/WEB-INF/jsp/`
-- The view resolver is configured in `application.properties`
-- Tailwind CSS is loaded via CDN in `common/header.jsp`
+  - JSP files are located in `src/main/webapp/WEB-INF/jsp/`
+  - Tailwind CSS is loaded via CDN in `common/header.jsp`
+  - **Always** include `<jsp:include page="../common/header.jsp" />` at the top of new pages.
 
 ## Configuration
 
@@ -251,48 +291,47 @@ spring.mvc.view.suffix=.jsp
 server.port=8080
 ```
 
-## Notes
-
-- This is a facade implementation - backend services and repositories are not fully implemented
-- Controllers handle navigation and return view names
-- JSP views render without errors for demo purposes
-- Forum list includes dummy data passed via Model
-
 ## Generation Report
 
 ### Structure Verification
+
 ✅ All folders created as specified
 ✅ Complete directory structure matches requirements
 
 ### Controller Check
+
 ✅ **AuthController:** `/`, `/login`, `/register`, `POST /login`
-✅ **StudentController:** `/dashboard`, `/assessment`, `/assessment/take`, `/library`, `/forum`, `/forum/thread`, `/chatbot`, `/telehealth`, `/telehealth/my-appointments`
-✅ **CounselorController:** `/dashboard`, `/content`
-✅ **AdminController:** `/dashboard`
+✅ **StudentController:** All 9 student modules mapped.
+✅ **CounselorController:** Dashboard, Content Management, and Schedule mapped.
+✅ **AdminController:** Dashboard mapped.
 
 ### Next Steps Checklist
-- [x] Project structure created
-- [x] Dependencies configured in pom.xml
-- [x] Controllers implemented
-- [x] JSP views created
-- [ ] Run `mvn clean install` to build
-- [ ] Run `mvn spring-boot:run` to start server
-- [ ] Navigate to `http://localhost:8080` in browser
-- [ ] Test navigation using demo login buttons
+
+  - [x] Project structure created
+  - [x] Dependencies configured in pom.xml
+  - [x] Controllers implemented
+  - [x] JSP views created
+  - [ ] Run `mvn clean install` to build
+  - [ ] Run `mvn spring-boot:run` to start server
+  - [ ] Navigate to `http://localhost:8080` in browser
+  - [ ] Test navigation using demo login buttons
 
 ## License
 
 University Project - Internal Use Only
 
+```
+```
 
 ================================================================================
 File: src\main\java\com\mindmate\controller\AdminController.java
-Size: 398 B
+Size: 534 B
 ================================================================================
 
 package com.mindmate.controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model; // 1. Import Model
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -301,16 +340,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class AdminController {
 
     @GetMapping("/dashboard")
-    public String dashboard() {
+    public String dashboard(Model model) {
+        model.addAttribute("role", "admin"); // 2. Set Role to 'admin'
         return "admin/dashboard";
     }
 }
 
-
-
 ================================================================================
 File: src\main\java\com\mindmate\controller\AuthController.java
-Size: 741 B
+Size: 944 B
 ================================================================================
 
 package com.mindmate.controller;
@@ -328,32 +366,38 @@ public class AuthController {
     }
 
     @GetMapping("/login")
-    public String login() {
+    public String showLoginPage() {
         return "auth/login";
-    }
-
-    @GetMapping("/register")
-    public String register() {
-        return "auth/register";
     }
 
     @PostMapping("/login")
     public String processLogin() {
-        // Mock login logic - redirect to student dashboard for now
         return "redirect:/student/dashboard";
     }
+
+    @GetMapping("/register")
+    public String showRegisterPage() {
+        return "auth/register";
+    }
+
+    @GetMapping("/logout")
+    public String logout() {
+        // In a real app, we would invalidate the session here.
+        // For the demo, just redirecting to login is fine.
+        return "redirect:/login";
+    }
+    // -----------------------
 }
-
-
 
 ================================================================================
 File: src\main\java\com\mindmate\controller\CounselorController.java
-Size: 531 B
+Size: 1.19 kB
 ================================================================================
 
 package com.mindmate.controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model; // 1. Import Model
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -362,21 +406,34 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class CounselorController {
 
     @GetMapping("/dashboard")
-    public String dashboard() {
+    public String showDashboard(Model model) {
+        model.addAttribute("role", "counselor"); // 2. Set Role
         return "counselor/dashboard";
     }
 
+    @GetMapping("/schedule")
+    public String showSchedule(Model model) {
+        model.addAttribute("role", "counselor"); // 2. Set Role
+        return "counselor/schedule"; 
+    }
+
     @GetMapping("/content")
-    public String contentManager() {
+    public String manageContent(Model model) {
+        model.addAttribute("role", "counselor"); // 2. Set Role
         return "counselor/content-manager";
+    }
+
+    @GetMapping("/content/new")
+    public String showCreateContentForm() {
+        // Redirects don't need the model attribute because 
+        // the browser starts a new request to the target URL.
+        return "redirect:/counselor/content";
     }
 }
 
-
-
 ================================================================================
 File: src\main\java\com\mindmate\controller\StudentController.java
-Size: 1.9 kB
+Size: 3.36 kB
 ================================================================================
 
 package com.mindmate.controller;
@@ -384,6 +441,7 @@ package com.mindmate.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping; // Added this import
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.Arrays;
@@ -394,61 +452,92 @@ import java.util.List;
 public class StudentController {
 
     @GetMapping("/dashboard")
-    public String dashboard() {
+    public String dashboard(Model model) {
+        model.addAttribute("role", "student");
         return "student/dashboard";
     }
 
+    // --- Assessment Module ---
     @GetMapping("/assessment")
-    public String assessmentList() {
+    public String assessmentList(Model model) {
+        model.addAttribute("role", "student");
         return "student/assessment-list";
     }
 
     @GetMapping("/assessment/take")
-    public String assessmentQuestions() {
+    public String assessmentQuestions(Model model) {
+        model.addAttribute("role", "student");
         return "student/assessment-questions";
     }
 
+    // --- Content/Library Module ---
     @GetMapping("/library")
-    public String contentLibrary() {
+    public String contentLibrary(Model model) {
+        model.addAttribute("role", "student");
         return "student/content-library";
     }
 
+    // FIX 1: Handle "Read More" (Single Article View)
+    @GetMapping("/library/view")
+    public String viewContent(Model model) {
+        model.addAttribute("role", "student");
+        return "student/content-view"; 
+    }
+
+    // --- Forum Module ---
     @GetMapping("/forum")
     public String forumList(Model model) {
-        // Add dummy forum threads to the model
+        model.addAttribute("role", "student");
         List<String> forumThreads = Arrays.asList(
             "How to manage stress during exams?",
             "Coping with anxiety - sharing experiences",
             "Tips for better sleep",
-            "Building self-confidence",
-            "Dealing with peer pressure"
+            "Building self-confidence"
         );
         model.addAttribute("forumThreads", forumThreads);
         return "student/forum-list";
     }
 
     @GetMapping("/forum/thread")
-    public String forumThread() {
+    public String forumThread(Model model) {
+        model.addAttribute("role", "student");
         return "student/forum-thread";
     }
 
+    // --- Chatbot Module ---
     @GetMapping("/chatbot")
-    public String chatbot() {
+    public String chatbot(Model model) {
+        model.addAttribute("role", "student");
         return "student/chatbot";
     }
 
-    @GetMapping("/telehealth")
-    public String telehealthBook() {
+    // --- Telehealth Module ---
+    @GetMapping("/telehealth") // Matches the Header Link
+    public String telehealthBook(Model model) {
+        model.addAttribute("role", "student");
+        return "student/telehealth-book";
+    }
+    
+    @GetMapping("/telehealth/book") // Catch-all for cleaner URLs
+    public String telehealthBookAlt(Model model) {
+        model.addAttribute("role", "student");
         return "student/telehealth-book";
     }
 
+    // FIX 2: Handle "Confirm Booking" (Form Submit)
+    @PostMapping("/telehealth/book")
+    public String processBooking() {
+        // Logic to save appointment would go here
+        return "redirect:/student/telehealth/my-appointments";
+    }
+
+    // FIX 3: The "Success" Page (My Appointments)
     @GetMapping("/telehealth/my-appointments")
-    public String telehealthMyAppointments() {
+    public String telehealthMyAppointments(Model model) {
+        model.addAttribute("role", "student");
         return "student/telehealth-my-appointments";
     }
 }
-
-
 
 ================================================================================
 File: src\main\java\com\mindmate\MindMateApplication.java
@@ -665,57 +754,110 @@ Size: 2.79 kB
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\common\footer.jsp
-Size: 241 B
+Size: 328 B
 ================================================================================
 
-    </main>
-    <footer class="bg-gray-800 text-white mt-12 py-6">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2024 MindMate. All rights reserved.</p>
-        </div>
-    </footer>
+</main>
+<footer class="bg-white border-t border-gray-200 mt-12">
+    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <p class="text-center text-sm text-gray-500">&copy; 2025 MindMate Project. All rights reserved.</p>
+    </div>
+</footer>
+
+<script>
+    lucide.createIcons();
+</script>
 </body>
 </html>
 
-
-
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\common\header.jsp
-Size: 1.6 kB
+Size: 5.43 kB
 ================================================================================
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+
+<c:set var="currentUrl" value="${pageContext.request.requestURI}" />
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindMate - Mental Health Platform</title>
+    <title>MindMate</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-gray-50">
-    <nav class="bg-blue-600 text-white shadow-lg">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-8">
-                    <a href="/student/dashboard" class="text-xl font-bold">MindMate</a>
-                    <div class="hidden md:flex space-x-4">
-                        <a href="/student/dashboard" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
-                        <a href="/student/assessment" class="hover:bg-blue-700 px-3 py-2 rounded">Assessment</a>
-                        <a href="/student/library" class="hover:bg-blue-700 px-3 py-2 rounded">Content</a>
-                        <a href="/student/forum" class="hover:bg-blue-700 px-3 py-2 rounded">Forum</a>
-                        <a href="/student/telehealth" class="hover:bg-blue-700 px-3 py-2 rounded">Telehealth</a>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="shrink-0 flex items-center">
+                        <a href="${role == 'counselor' ? '/counselor/dashboard' : (role == 'admin' ? '/admin/dashboard' : '/student/dashboard')}" 
+                           class="text-2xl font-bold text-indigo-600">MindMate</a>
                     </div>
+    
+                    <c:if test="${role == 'student' || role == null}">
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a href="/student/dashboard" 
+                               class="${fn:contains(currentUrl, '/student/dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Dashboard
+                            </a>
+                            
+                            <a href="/student/assessment" 
+                               class="${fn:contains(currentUrl, '/student/assessment') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Assessment
+                            </a>
+                            
+                            <a href="/student/library" 
+                               class="${fn:contains(currentUrl, '/student/library') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Library
+                            </a>
+                            
+                            <a href="/student/telehealth" 
+                               class="${fn:contains(currentUrl, '/student/telehealth') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Telehealth
+                            </a>
+                        </div>
+                    </c:if>
+    
+                    <c:if test="${role == 'counselor'}">
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a href="/counselor/dashboard" 
+                               class="${fn:contains(currentUrl, '/counselor/dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Dashboard
+                            </a>
+                            <a href="/counselor/schedule" 
+                               class="${fn:contains(currentUrl, '/counselor/schedule') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Schedule
+                            </a>
+                            <a href="/counselor/content" 
+                               class="${fn:contains(currentUrl, '/counselor/content') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Content
+                            </a>
+                        </div>
+                    </c:if>
+    
+                    <c:if test="${role == 'admin'}">
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a href="/admin/dashboard" 
+                               class="${fn:contains(currentUrl, '/admin/dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Analytics
+                            </a>
+                        </div>
+                    </c:if>
                 </div>
-                <div>
-                    <a href="/login" class="hover:bg-blue-700 px-3 py-2 rounded">Logout</a>
+                
+                <div class="flex items-center">
+                    <a href="/logout" class="text-sm text-red-600 hover:text-red-800">Logout</a>
                 </div>
             </div>
         </div>
     </nav>
-    <main class="container mx-auto px-4 py-8">
-
-
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\counselor\content-manager.jsp
@@ -951,22 +1093,24 @@ Size: 1.54 kB
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\student\content-view.jsp
-Size: 569 B
+Size: 828 B
 ================================================================================
 
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <jsp:include page="../common/header.jsp" />
-<h1 class="text-3xl font-bold mb-6">Content View</h1>
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-2xl font-semibold mb-4">Article Title</h2>
-    <p class="text-gray-600 mb-4">Published on: January 1, 2024</p>
-    <div class="prose max-w-none">
-        <p class="text-gray-700 leading-relaxed">Article content will be displayed here...</p>
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Understanding Anxiety</h1>
+        <p class="text-gray-600 mb-4">By Dr. Smith • 5 min read</p>
+        <div class="prose max-w-none text-gray-500">
+            <p>[Placeholder Content] Anxiety is a normal reaction to stress...</p>
+            <p>(This is a demo article view. In the real app, this content would be pulled from the database based on the ID.)</p>
+        </div>
+        <div class="mt-6">
+            <a href="/student/library" class="text-indigo-600 hover:text-indigo-900">← Back to Library</a>
+        </div>
     </div>
 </div>
 <jsp:include page="../common/footer.jsp" />
-
-
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\student\dashboard.jsp
@@ -1129,50 +1273,52 @@ Size: 2.49 kB
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\student\telehealth-my-appointments.jsp
-Size: 1.88 kB
+Size: 2.07 kB
 ================================================================================
 
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <jsp:include page="../common/header.jsp" />
-<h1 class="text-3xl font-bold mb-6">My Appointments</h1>
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <div class="mb-4">
-        <a href="/student/telehealth" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block">
-            Book New Appointment
-        </a>
-    </div>
-    <h2 class="text-xl font-semibold mb-4">Upcoming Appointments</h2>
-    <div class="space-y-4">
-        <div class="border border-gray-200 rounded-md p-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-lg font-semibold">Dr. Jane Smith</h3>
-                    <p class="text-gray-600">January 15, 2024 at 10:00 AM</p>
-                    <p class="text-gray-500 text-sm mt-1">Reason: General consultation</p>
-                </div>
-                <div class="flex space-x-2">
-                    <button class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm">
-                        Join Session
-                    </button>
-                    <button class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm">
-                        Cancel
-                    </button>
-                </div>
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+        <div class="flex">
+            <div class="ml-3">
+                <p class="text-sm text-green-700">
+                    Success! Your appointment has been booked.
+                </p>
             </div>
         </div>
     </div>
-    <h2 class="text-xl font-semibold mb-4 mt-8">Past Appointments</h2>
-    <div class="space-y-4">
-        <div class="border border-gray-200 rounded-md p-4 bg-gray-50">
-            <h3 class="text-lg font-semibold">Dr. John Doe</h3>
-            <p class="text-gray-600">January 1, 2024 at 2:00 PM</p>
-            <p class="text-gray-500 text-sm mt-1">Completed</p>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">My Upcoming Appointments</h3>
+        </div>
+        <div class="border-t border-gray-200">
+            <ul class="divide-y divide-gray-200">
+                <li class="px-4 py-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-indigo-600 truncate">Session with Dr. Emily Chen</p>
+                        <div class="ml-2 flex-shrink-0 flex">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Confirmed</span>
+                        </div>
+                    </div>
+                    <div class="mt-2 sm:flex sm:justify-between">
+                        <div class="sm:flex">
+                            <p class="flex items-center text-sm text-gray-500">
+                                <i data-lucide="calendar" class="mr-1.5 h-5 w-5 text-gray-400"></i>
+                                Nov 28, 2025
+                            </p>
+                            <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                <i data-lucide="clock" class="mr-1.5 h-5 w-5 text-gray-400"></i>
+                                10:00 AM
+                            </p>
+                        </div>
+                    </div>
+                </li>
+            </ul>
         </div>
     </div>
 </div>
 <jsp:include page="../common/footer.jsp" />
-
-
 
 ================================================================================
 File: target\classes\application.properties
@@ -1419,57 +1565,107 @@ Size: 2.79 kB
 
 ================================================================================
 File: target\mindmate-1.0.0\WEB-INF\jsp\common\footer.jsp
-Size: 241 B
+Size: 328 B
 ================================================================================
 
-    </main>
-    <footer class="bg-gray-800 text-white mt-12 py-6">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2024 MindMate. All rights reserved.</p>
-        </div>
-    </footer>
+</main>
+<footer class="bg-white border-t border-gray-200 mt-12">
+    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <p class="text-center text-sm text-gray-500">&copy; 2025 MindMate Project. All rights reserved.</p>
+    </div>
+</footer>
+
+<script>
+    lucide.createIcons();
+</script>
 </body>
 </html>
 
-
-
 ================================================================================
 File: target\mindmate-1.0.0\WEB-INF\jsp\common\header.jsp
-Size: 1.6 kB
+Size: 5.34 kB
 ================================================================================
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+
+<c:set var="currentUrl" value="${pageContext.request.requestURI}" />
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindMate - Mental Health Platform</title>
+    <title>MindMate</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-gray-50">
-    <nav class="bg-blue-600 text-white shadow-lg">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-8">
-                    <a href="/student/dashboard" class="text-xl font-bold">MindMate</a>
-                    <div class="hidden md:flex space-x-4">
-                        <a href="/student/dashboard" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
-                        <a href="/student/assessment" class="hover:bg-blue-700 px-3 py-2 rounded">Assessment</a>
-                        <a href="/student/library" class="hover:bg-blue-700 px-3 py-2 rounded">Content</a>
-                        <a href="/student/forum" class="hover:bg-blue-700 px-3 py-2 rounded">Forum</a>
-                        <a href="/student/telehealth" class="hover:bg-blue-700 px-3 py-2 rounded">Telehealth</a>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="shrink-0 flex items-center">
+                        <a href="${role == 'counselor' ? '/counselor/dashboard' : (role == 'admin' ? '/admin/dashboard' : '/student/dashboard')}" 
+                           class="text-2xl font-bold text-indigo-600">MindMate</a>
                     </div>
+    
+                    <c:if test="${role == 'student' || role == null}">
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a href="/student/dashboard" 
+                               class="${fn:contains(currentUrl, '/student/dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Dashboard
+                            </a>
+                            <a href="/student/assessment" 
+                               class="${fn:contains(currentUrl, '/student/assessment') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Assessment
+                            </a>
+                            <a href="/student/library" 
+                               class="${fn:contains(currentUrl, '/student/library') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Library
+                            </a>
+                            <a href="/student/telehealth" 
+                               class="${fn:contains(currentUrl, '/student/telehealth') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Telehealth
+                            </a>
+                        </div>
+                    </c:if>
+    
+                    <c:if test="${role == 'counselor'}">
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a href="/counselor/dashboard" 
+                               class="${fn:contains(currentUrl, '/counselor/dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Dashboard
+                            </a>
+                            <a href="/counselor/schedule" 
+                               class="${fn:contains(currentUrl, '/counselor/schedule') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Schedule
+                            </a>
+                            <a href="/counselor/content" 
+                               class="${fn:contains(currentUrl, '/counselor/content') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Content
+                            </a>
+                        </div>
+                    </c:if>
+    
+                    <c:if test="${role == 'admin'}">
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a href="/admin/dashboard" 
+                               class="${fn:contains(currentUrl, '/admin/dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                               Analytics
+                            </a>
+                        </div>
+                    </c:if>
                 </div>
-                <div>
-                    <a href="/login" class="hover:bg-blue-700 px-3 py-2 rounded">Logout</a>
+                
+                <div class="flex items-center">
+                    <a href="/logout" class="text-sm text-red-600 hover:text-red-800">Logout</a>
                 </div>
             </div>
         </div>
     </nav>
-    <main class="container mx-auto px-4 py-8">
-
-
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
 
 ================================================================================
 File: target\mindmate-1.0.0\WEB-INF\jsp\counselor\content-manager.jsp
@@ -1705,22 +1901,24 @@ Size: 1.54 kB
 
 ================================================================================
 File: target\mindmate-1.0.0\WEB-INF\jsp\student\content-view.jsp
-Size: 569 B
+Size: 828 B
 ================================================================================
 
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <jsp:include page="../common/header.jsp" />
-<h1 class="text-3xl font-bold mb-6">Content View</h1>
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-2xl font-semibold mb-4">Article Title</h2>
-    <p class="text-gray-600 mb-4">Published on: January 1, 2024</p>
-    <div class="prose max-w-none">
-        <p class="text-gray-700 leading-relaxed">Article content will be displayed here...</p>
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Understanding Anxiety</h1>
+        <p class="text-gray-600 mb-4">By Dr. Smith • 5 min read</p>
+        <div class="prose max-w-none text-gray-500">
+            <p>[Placeholder Content] Anxiety is a normal reaction to stress...</p>
+            <p>(This is a demo article view. In the real app, this content would be pulled from the database based on the ID.)</p>
+        </div>
+        <div class="mt-6">
+            <a href="/student/library" class="text-indigo-600 hover:text-indigo-900">← Back to Library</a>
+        </div>
     </div>
 </div>
 <jsp:include page="../common/footer.jsp" />
-
-
 
 ================================================================================
 File: target\mindmate-1.0.0\WEB-INF\jsp\student\dashboard.jsp
@@ -1883,47 +2081,49 @@ Size: 2.49 kB
 
 ================================================================================
 File: target\mindmate-1.0.0\WEB-INF\jsp\student\telehealth-my-appointments.jsp
-Size: 1.88 kB
+Size: 2.07 kB
 ================================================================================
 
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <jsp:include page="../common/header.jsp" />
-<h1 class="text-3xl font-bold mb-6">My Appointments</h1>
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <div class="mb-4">
-        <a href="/student/telehealth" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block">
-            Book New Appointment
-        </a>
-    </div>
-    <h2 class="text-xl font-semibold mb-4">Upcoming Appointments</h2>
-    <div class="space-y-4">
-        <div class="border border-gray-200 rounded-md p-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-lg font-semibold">Dr. Jane Smith</h3>
-                    <p class="text-gray-600">January 15, 2024 at 10:00 AM</p>
-                    <p class="text-gray-500 text-sm mt-1">Reason: General consultation</p>
-                </div>
-                <div class="flex space-x-2">
-                    <button class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm">
-                        Join Session
-                    </button>
-                    <button class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm">
-                        Cancel
-                    </button>
-                </div>
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+        <div class="flex">
+            <div class="ml-3">
+                <p class="text-sm text-green-700">
+                    Success! Your appointment has been booked.
+                </p>
             </div>
         </div>
     </div>
-    <h2 class="text-xl font-semibold mb-4 mt-8">Past Appointments</h2>
-    <div class="space-y-4">
-        <div class="border border-gray-200 rounded-md p-4 bg-gray-50">
-            <h3 class="text-lg font-semibold">Dr. John Doe</h3>
-            <p class="text-gray-600">January 1, 2024 at 2:00 PM</p>
-            <p class="text-gray-500 text-sm mt-1">Completed</p>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">My Upcoming Appointments</h3>
+        </div>
+        <div class="border-t border-gray-200">
+            <ul class="divide-y divide-gray-200">
+                <li class="px-4 py-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-indigo-600 truncate">Session with Dr. Emily Chen</p>
+                        <div class="ml-2 flex-shrink-0 flex">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Confirmed</span>
+                        </div>
+                    </div>
+                    <div class="mt-2 sm:flex sm:justify-between">
+                        <div class="sm:flex">
+                            <p class="flex items-center text-sm text-gray-500">
+                                <i data-lucide="calendar" class="mr-1.5 h-5 w-5 text-gray-400"></i>
+                                Nov 28, 2025
+                            </p>
+                            <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                <i data-lucide="clock" class="mr-1.5 h-5 w-5 text-gray-400"></i>
+                                10:00 AM
+                            </p>
+                        </div>
+                    </div>
+                </li>
+            </ul>
         </div>
     </div>
 </div>
 <jsp:include page="../common/footer.jsp" />
-
-

@@ -13,19 +13,25 @@ public class AuthController {
     }
 
     @GetMapping("/login")
-    public String login() {
+    public String showLoginPage() {
         return "auth/login";
-    }
-
-    @GetMapping("/register")
-    public String register() {
-        return "auth/register";
     }
 
     @PostMapping("/login")
     public String processLogin() {
-        // Mock login logic - redirect to student dashboard for now
         return "redirect:/student/dashboard";
     }
-}
 
+    @GetMapping("/register")
+    public String showRegisterPage() {
+        return "auth/register";
+    }
+
+    @GetMapping("/logout")
+    public String logout() {
+        // In a real app, we would invalidate the session here.
+        // For the demo, just redirecting to login is fine.
+        return "redirect:/login";
+    }
+    // -----------------------
+}

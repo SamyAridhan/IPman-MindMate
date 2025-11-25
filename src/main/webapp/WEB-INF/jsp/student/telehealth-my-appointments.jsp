@@ -1,40 +1,43 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <jsp:include page="../common/header.jsp" />
-<h1 class="text-3xl font-bold mb-6">My Appointments</h1>
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <div class="mb-4">
-        <a href="/student/telehealth" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block">
-            Book New Appointment
-        </a>
-    </div>
-    <h2 class="text-xl font-semibold mb-4">Upcoming Appointments</h2>
-    <div class="space-y-4">
-        <div class="border border-gray-200 rounded-md p-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-lg font-semibold">Dr. Jane Smith</h3>
-                    <p class="text-gray-600">January 15, 2024 at 10:00 AM</p>
-                    <p class="text-gray-500 text-sm mt-1">Reason: General consultation</p>
-                </div>
-                <div class="flex space-x-2">
-                    <button class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm">
-                        Join Session
-                    </button>
-                    <button class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm">
-                        Cancel
-                    </button>
-                </div>
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+        <div class="flex">
+            <div class="ml-3">
+                <p class="text-sm text-green-700">
+                    Success! Your appointment has been booked.
+                </p>
             </div>
         </div>
     </div>
-    <h2 class="text-xl font-semibold mb-4 mt-8">Past Appointments</h2>
-    <div class="space-y-4">
-        <div class="border border-gray-200 rounded-md p-4 bg-gray-50">
-            <h3 class="text-lg font-semibold">Dr. John Doe</h3>
-            <p class="text-gray-600">January 1, 2024 at 2:00 PM</p>
-            <p class="text-gray-500 text-sm mt-1">Completed</p>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">My Upcoming Appointments</h3>
+        </div>
+        <div class="border-t border-gray-200">
+            <ul class="divide-y divide-gray-200">
+                <li class="px-4 py-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-indigo-600 truncate">Session with Dr. Emily Chen</p>
+                        <div class="ml-2 flex-shrink-0 flex">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Confirmed</span>
+                        </div>
+                    </div>
+                    <div class="mt-2 sm:flex sm:justify-between">
+                        <div class="sm:flex">
+                            <p class="flex items-center text-sm text-gray-500">
+                                <i data-lucide="calendar" class="mr-1.5 h-5 w-5 text-gray-400"></i>
+                                Nov 28, 2025
+                            </p>
+                            <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                <i data-lucide="clock" class="mr-1.5 h-5 w-5 text-gray-400"></i>
+                                10:00 AM
+                            </p>
+                        </div>
+                    </div>
+                </li>
+            </ul>
         </div>
     </div>
 </div>
 <jsp:include page="../common/footer.jsp" />
-
