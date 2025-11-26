@@ -19,18 +19,7 @@ public class StudentController {
         return "student/dashboard";
     }
 
-    // --- Assessment Module ---
-    @GetMapping("/assessment")
-    public String assessmentList(Model model) {
-        model.addAttribute("role", "student");
-        return "student/assessment-list";
-    }
-
-    @GetMapping("/assessment/take")
-    public String assessmentQuestions(Model model) {
-        model.addAttribute("role", "student");
-        return "student/assessment-questions";
-    }
+    //assessment module handled by AssessmentController
 
     // --- Content/Library Module ---
     @GetMapping("/library")
