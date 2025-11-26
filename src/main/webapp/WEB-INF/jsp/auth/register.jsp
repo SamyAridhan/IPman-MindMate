@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - MindMate</title>
     
+    <link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/images/favicon.svg">
+    
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/global.css">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,9 +59,10 @@
     <div class="bg-card p-8 rounded-lg shadow-lg border border-border w-full max-w-md">
         
         <div class="flex flex-col items-center mb-6">
-            <div class="p-3 bg-secondary rounded-full mb-3">
-                <i data-lucide="heart-handshake" class="h-8 w-8 text-primary"></i>
-            </div>
+<img src="${pageContext.request.contextPath}/images/MindMate.png" 
+     alt="MindMate Logo" 
+     class="h-16 w-16 mb-2 object-contain logo-mindmate">
+            
             <h1 class="text-3xl font-bold text-foreground">Register</h1>
             <p class="text-muted-foreground mt-2">Create your MindMate account</p>
         </div>

@@ -11,6 +11,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MindMate</title>
     
+    <link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/images/favicon.svg">
+
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/global.css">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -64,10 +66,16 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex">
-                    <div class="shrink-0 flex items-center gap-2">
-                        <i data-lucide="heart-handshake" class="h-6 w-6 text-primary"></i>
+                    <div class="shrink-0 flex items-center">
                         <a href="${role == 'counselor' ? '/counselor/dashboard' : (role == 'admin' ? '/admin/dashboard' : '/student/dashboard')}" 
-                           class="text-xl font-bold text-foreground tracking-tight">MindMate</a>
+                           class="flex items-center gap-2 group">
+                            
+                            <img src="${pageContext.request.contextPath}/images/MindMate.png" 
+                                 alt="Logo" 
+                                 class="h-10 w-10 object-contain logo-mindmate">
+                            
+                            <span class="text-xl font-bold text-foreground tracking-tight">MindMate</span>
+                        </a>
                     </div>
     
                     <c:if test="${role == 'student' || role == null}">

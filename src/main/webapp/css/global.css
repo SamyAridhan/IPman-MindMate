@@ -53,3 +53,7 @@ body {
     /* Enforce system font stack */
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
+
+.logo-mindmate {
+    filter: hue-rotate(320deg) saturate(0.7) brightness(1.1);
+}
