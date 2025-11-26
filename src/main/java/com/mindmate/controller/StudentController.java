@@ -1,11 +1,13 @@
 package com.mindmate.controller;
 
+import org.apache.logging.log4j.message.Message;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping; // Added this import
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -68,9 +70,20 @@ public class StudentController {
 
     // --- Chatbot Module ---
     @GetMapping("/chatbot")
-    public String chatbot(Model model) {
-        model.addAttribute("role", "student");
-        return "student/chatbot";
+    public String showChatbot(Model model) {
+        // 1. Initial Data (The equivalent of the initial useState)
+        // In a real app, you would load recent chat history from a database.
+        // For the Phase 2 demo, we provide the initial message.
+        
+        // This list will contain the messages to be displayed when the page first loads
+        List<Message> initialMessages = new ArrayList<>();
+        initialMessages.add(new Message("assistant", "Hello! I'm here to support you. How are you feeling today?"));
+        
+        // Pass the messages list to the JSP view
+        model.addAttribute("messages", initialMessages);
+        
+        // Return the JSP view name (which will be resolved to /WEB-INF/jsp/student/chatbot.jsp)
+        return "student/chatbot"; 
     }
 
     // --- Telehealth Module ---
