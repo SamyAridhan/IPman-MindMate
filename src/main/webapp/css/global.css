@@ -1,0 +1,59 @@
+@charset "UTF-8";
+
+/* * MindMate Design System 
+ * Based on strict HSL requirements
+ */
+:root {
+    /* Background: Pale Warm Pink */
+    --background: 340 100% 98%; 
+    
+    /* Foreground: Dark Mauve (Text) */
+    --foreground: 320 8% 44%;
+
+    /* Card: Pure White */
+    --card: 0 0% 100%;
+    --card-foreground: 320 8% 44%;
+
+    /* * UPDATED: Primary Brand Color 
+     * "Dusty Rose" - Darker and Desaturated for better blend & visibility.
+     * Old (Vibrant): 325 80% 65%
+     * New (Soft):    330 55% 60%
+     */
+    --primary: 330 55% 60%;
+    
+    /* * UPDATED: Primary Text Color
+     * White ensures the buttons look clean against the Dusty Rose background.
+     */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: Muted Pink (used for hover states/icon backgrounds) */
+    --secondary: 325 96% 96%;
+    --secondary-foreground: 320 8% 44%;
+
+    /* Destructive: Soft Red (Error/Delete) */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Muted: Very Light Grey/Pink (Subtitles) */
+    --muted: 0 0% 99%;
+    --muted-foreground: 320 8% 60%;
+
+    /* Borders and Inputs */
+    --border: 325 96% 90%;
+    --input: 325 96% 90%;
+    
+    /* * UPDATED: Ring matches the new Dusty Rose */
+    --ring: 330 55% 60%;
+    
+    /* Radius for rounded corners (12px) */
+    --radius: 0.75rem;
+}
+
+body {
+    /* Enforce system font stack */
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.logo-mindmate {
+    filter: hue-rotate(320deg) saturate(0.7) brightness(1.1);
+}
