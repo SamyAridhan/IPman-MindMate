@@ -5,53 +5,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - MindMate</title>
+    
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/global.css">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        border: "hsl(var(--border))",
+                        input: "hsl(var(--input))",
+                        ring: "hsl(var(--ring))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                        primary: {
+                            DEFAULT: "hsl(var(--primary))",
+                            foreground: "hsl(var(--primary-foreground))",
+                        },
+                        secondary: {
+                            DEFAULT: "hsl(var(--secondary))",
+                            foreground: "hsl(var(--secondary-foreground))",
+                        },
+                        destructive: {
+                            DEFAULT: "hsl(var(--destructive))",
+                            foreground: "hsl(var(--destructive-foreground))",
+                        },
+                        muted: {
+                            DEFAULT: "hsl(var(--muted))",
+                            foreground: "hsl(var(--muted-foreground))",
+                        },
+                        card: {
+                            DEFAULT: "hsl(var(--card))",
+                            foreground: "hsl(var(--card-foreground))",
+                        },
+                    },
+                    borderRadius: {
+                        lg: "var(--radius)",
+                        md: "calc(var(--radius) - 2px)",
+                        sm: "calc(var(--radius) - 4px)",
+                    },
+                },
+            },
+        }
+    </script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
-        <h1 class="text-3xl font-bold text-center mb-6 text-blue-600">Register</h1>
+<body class="bg-background min-h-screen flex items-center justify-center font-sans antialiased">
+    
+    <div class="bg-card p-8 rounded-lg shadow-lg border border-border w-full max-w-md">
+        
+        <div class="flex flex-col items-center mb-6">
+            <div class="p-3 bg-secondary rounded-full mb-3">
+                <i data-lucide="heart-handshake" class="h-8 w-8 text-primary"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-foreground">Register</h1>
+            <p class="text-muted-foreground mt-2">Create your MindMate account</p>
+        </div>
         
         <form method="POST" action="/register" class="space-y-4">
             <div>
-                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label for="name" class="block text-sm font-medium text-foreground mb-1">Full Name</label>
                 <input type="text" id="name" name="name" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-white text-foreground placeholder:text-muted-foreground" 
                        required>
             </div>
             
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label for="email" class="block text-sm font-medium text-foreground mb-1">Email</label>
                 <input type="email" id="email" name="email" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-white text-foreground placeholder:text-muted-foreground" 
                        required>
             </div>
             
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label for="password" class="block text-sm font-medium text-foreground mb-1">Password</label>
                 <input type="password" id="password" name="password" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-white text-foreground placeholder:text-muted-foreground" 
                        required>
             </div>
             
             <div>
-                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <label for="confirmPassword" class="block text-sm font-medium text-foreground mb-1">Confirm Password</label>
                 <input type="password" id="confirmPassword" name="confirmPassword" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-white text-foreground placeholder:text-muted-foreground" 
                        required>
             </div>
             
             <button type="submit" 
-                    class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="w-full bg-primary text-primary-foreground font-medium py-2 px-4 rounded-md hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring">
                 Register
             </button>
         </form>
         
         <div class="mt-6 text-center">
-            <p class="text-sm text-gray-600">Already have an account? 
-                <a href="/login" class="text-blue-600 hover:underline">Login here</a>
+            <p class="text-sm text-muted-foreground">Already have an account? 
+                <a href="/login" class="text-primary hover:underline font-medium">Login here</a>
             </p>
         </div>
     </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 </html>
-

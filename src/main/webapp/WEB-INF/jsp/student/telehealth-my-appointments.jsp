@@ -1,43 +1,51 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <jsp:include page="../common/header.jsp" />
-<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
-        <div class="flex">
-            <div class="ml-3">
-                <p class="text-sm text-green-700">
-                    Success! Your appointment has been booked.
-                </p>
-            </div>
+
+<div class="space-y-6">
+    <h1 class="text-3xl font-bold text-foreground">My Appointments</h1>
+
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+        <i data-lucide="check-circle-2" class="h-5 w-5 text-green-600 mt-0.5"></i>
+        <div>
+            <h3 class="text-sm font-medium text-green-800">Success</h3>
+            <p class="text-sm text-green-700 mt-1">
+                Your appointment has been booked successfully.
+            </p>
         </div>
     </div>
 
-    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">My Upcoming Appointments</h3>
+    <div class="bg-card shadow-sm border border-border rounded-lg overflow-hidden">
+        <div class="px-6 py-5 border-b border-border">
+            <h3 class="text-lg font-semibold text-foreground">Upcoming Sessions</h3>
         </div>
-        <div class="border-t border-gray-200">
-            <ul class="divide-y divide-gray-200">
-                <li class="px-4 py-4 sm:px-6">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm font-medium text-indigo-600 truncate">Session with Dr. Emily Chen</p>
-                        <div class="ml-2 flex-shrink-0 flex">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Confirmed</span>
-                        </div>
+        
+        <ul class="divide-y divide-border">
+            <li class="px-6 py-5 hover:bg-secondary/20 transition-colors">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-lg font-medium text-foreground">
+                        Session with <span class="text-primary">Dr. Emily Chen</span>
+                    </p>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+                        Confirmed
+                    </span>
+                </div>
+                
+                <div class="sm:flex sm:justify-between">
+                    <div class="sm:flex gap-6">
+                        <p class="flex items-center text-sm text-muted-foreground">
+                            <i data-lucide="calendar" class="mr-2 h-4 w-4 text-primary"></i>
+                            Nov 28, 2025
+                        </p>
+                        <p class="mt-2 flex items-center text-sm text-muted-foreground sm:mt-0">
+                            <i data-lucide="clock" class="mr-2 h-4 w-4 text-primary"></i>
+                            10:00 AM
+                        </p>
                     </div>
-                    <div class="mt-2 sm:flex sm:justify-between">
-                        <div class="sm:flex">
-                            <p class="flex items-center text-sm text-gray-500">
-                                <i data-lucide="calendar" class="mr-1.5 h-5 w-5 text-gray-400"></i>
-                                Nov 28, 2025
-                            </p>
-                            <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                                <i data-lucide="clock" class="mr-1.5 h-5 w-5 text-gray-400"></i>
-                                10:00 AM
-                            </p>
-                        </div>
                     </div>
-                </li>
+            </li>
+            
             </ul>
-        </div>
     </div>
 </div>
+
 <jsp:include page="../common/footer.jsp" />
