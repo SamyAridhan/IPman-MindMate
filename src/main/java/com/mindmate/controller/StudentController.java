@@ -88,4 +88,10 @@ public class StudentController {
         model.addAttribute("role", "student");
         return "student/telehealth-my-appointments";
     }
+
+    @GetMapping("/profile")
+public String profile(Model model) {
+    model.addAttribute("role", "student");
+    return "student/profile"; // Create this JSP placeholder
+}
 }

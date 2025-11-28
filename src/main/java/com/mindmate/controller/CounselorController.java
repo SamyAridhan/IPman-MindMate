@@ -84,4 +84,10 @@ public class CounselorController {
         STORE.remove(id);
         return "redirect:/counselor/content";
     }
+
+    @GetMapping("/profile")
+public String profile(Model model) {
+    model.addAttribute("role", "counselor");
+    return "counselor/profile"; // Create placeholder
+}
 }
