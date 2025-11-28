@@ -99,6 +99,11 @@
                                class="${fn:contains(currentUrl, '/student/telehealth') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                                Telehealth
                             </a>
+
+                            <a href="/student/forum" 
+                               class="${fn:contains(currentUrl, '/student/forum') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                               Forum
+                            </a>
                         </div>
                     </c:if>
     

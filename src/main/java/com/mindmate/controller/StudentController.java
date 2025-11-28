@@ -67,7 +67,7 @@ public class StudentController {
         model.addAttribute("role", "student");
         return "student/forum-thread";
     }
-
+/*
     // --- Chatbot Module ---
     @GetMapping("/chatbot")
     public String showChatbot(Model model) {
@@ -85,7 +85,7 @@ public class StudentController {
         // Return the JSP view name (which will be resolved to /WEB-INF/jsp/student/chatbot.jsp)
         return "student/chatbot"; 
     }
-
+*/
     // --- Telehealth Module ---
     @GetMapping("/telehealth") // Matches the Header Link
     public String telehealthBook(Model model) {
