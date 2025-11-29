@@ -1,159 +1,317 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+
 </main>
+
 <footer class="bg-white/80 backdrop-blur-md border-t border-border mt-12">
     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <p class="text-center text-sm text-muted-foreground">&copy; 2025 MindMate Project. All rights reserved.</p>
     </div>
-    <jsp:include page="chatbot-widget.jsp" /> 
+    
+    <!-- Student-Only Chatbot Widget -->
+    <c:if test="${role == 'student'}">
+        <jsp:include page="chatbot-widget.jsp" /> 
+    </c:if>
 </footer>
 
 <script>
     // Ensure Lucide icons are processed
     lucide.createIcons();
 
-    // 1. STATE VARIABLES
+    // ============================================
+    // CHATBOT STATE MANAGEMENT WITH PERSISTENCE
+    // ============================================
+
+    // Storage keys
+    const STORAGE_KEYS = {
+        MESSAGES: 'mindmate_chat_messages',
+        IS_OPEN: 'mindmate_chat_is_open',
+        LAST_INTERACTION: 'mindmate_chat_last_interaction'
+    };
+
+    // State variables
     let isChatOpen = false;
     let isLoading = false;
-    
-    let currentMessages = [
-        { role: 'assistant', content: "Hello! I'm here to support you. How are you feeling today?" }
-    ];
+    let currentMessages = [];
 
     // DOM Elements
-    // NOTE: These must be declared *before* any function that uses them is called (like toggleChatWindow(false) below)
     const chatButton = document.getElementById('chat-open-button');
     const chatWindow = document.getElementById('chat-window');
     const messagesContainer = document.getElementById('messages-container');
     const inputField = document.getElementById('chat-input');
     const sendButton = document.getElementById('chat-send-button');
-    const messagesEndRef = document.getElementById('messages-end-ref');
-    const loadingIndicator = document.getElementById('loading-indicator');
+    const typingIndicator = document.getElementById('typing-indicator');
 
-    // --- Core Functions ---
+    // Only initialize if chatbot elements exist (student view)
+    if (chatButton && chatWindow) {
+        initializeChatbot();
+    }
 
-    /**
-     * 2. Toggles the visibility of the chat window.
-     */
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function initializeChatbot() {
+        // Load saved state from sessionStorage
+        loadChatState();
+        
+        // Restore chat window state
+        const savedIsOpen = sessionStorage.getItem(STORAGE_KEYS.IS_OPEN);
+        if (savedIsOpen === 'true') {
+            toggleChatWindow(true);
+        } else {
+            toggleChatWindow(false);
+        }
+
+        // If no messages exist, add welcome message
+        if (currentMessages.length === 0) {
+            currentMessages = [{
+                role: 'assistant',
+                content: "Hello! I'm here to support you. How are you feeling today?",
+                timestamp: new Date().toISOString()
+            }];
+            saveChatState();
+        }
+
+        renderMessages();
+
+        // Add Enter key listener
+        if (inputField) {
+            inputField.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                }
+            });
+        }
+
+        // Save state before page unload
+        window.addEventListener('beforeunload', saveChatState);
+    }
+
+    // ============================================
+    // STATE PERSISTENCE
+    // ============================================
+
+    function loadChatState() {
+        try {
+            const savedMessages = sessionStorage.getItem(STORAGE_KEYS.MESSAGES);
+            if (savedMessages) {
+                currentMessages = JSON.parse(savedMessages);
+            }
+        } catch (error) {
+            console.error('Error loading chat state:', error);
+            currentMessages = [];
+        }
+    }
+
+    function saveChatState() {
+        try {
+            sessionStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(currentMessages));
+            sessionStorage.setItem(STORAGE_KEYS.IS_OPEN, isChatOpen.toString());
+            sessionStorage.setItem(STORAGE_KEYS.LAST_INTERACTION, new Date().toISOString());
+        } catch (error) {
+            console.error('Error saving chat state:', error);
+        }
+    }
+
+    function clearChatState() {
+        sessionStorage.removeItem(STORAGE_KEYS.MESSAGES);
+        sessionStorage.removeItem(STORAGE_KEYS.IS_OPEN);
+        sessionStorage.removeItem(STORAGE_KEYS.LAST_INTERACTION);
+        currentMessages = [{
+            role: 'assistant',
+            content: "Hello! I'm here to support you. How are you feeling today?",
+            timestamp: new Date().toISOString()
+        }];
+        renderMessages();
+    }
+
+    // ============================================
+    // CHAT WINDOW TOGGLE
+    // ============================================
+
     function toggleChatWindow(open) {
-        // Safety check: only proceed if essential DOM elements exist
-        if (!chatWindow || !chatButton) return; 
+        if (!chatWindow || !chatButton) return;
         
         isChatOpen = open;
+        
         if (isChatOpen) {
             chatWindow.classList.remove('hidden');
             chatButton.classList.add('hidden');
-            renderMessages(); // Render messages when opening
+            renderMessages();
             scrollToBottom();
+            if (inputField) inputField.focus();
         } else {
             chatWindow.classList.add('hidden');
             chatButton.classList.remove('hidden');
         }
-    }
-
-    /**
-     * Helper function to scroll to the bottom of the chat.
-     */
-    function scrollToBottom() {
-        if (messagesEndRef) {
-            messagesEndRef.scrollIntoView({ behavior: "smooth" });
-        }
-    }
-
-    /**
-     * 3. Renders all messages from the currentMessages array into the container.
-     */
-    function renderMessages() {
-        if (!messagesContainer) return; // Safety check
         
-        // Clear old content
+        saveChatState();
+    }
+
+    // ============================================
+    // MESSAGE RENDERING
+    // ============================================
+
+    function renderMessages() {
+        if (!messagesContainer) return;
+        
         messagesContainer.innerHTML = '';
         
         currentMessages.forEach(msg => {
-            const isUser = msg.role === 'user';
-            const alignmentClass = isUser ? "justify-end" : "justify-start"; 
-            const colorClass = isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground";
-
-            // 1. CREATE the outer div
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `flex ${alignmentClass}`; 
-            
-            // 2. CREATE the inner content div
-            const contentDiv = document.createElement('div');
-            // 3. APPLY classes and text
-            contentDiv.className = `rounded-lg px-4 py-2 max-w-[80%] ${colorClass}`;
-            contentDiv.textContent = msg.content;
-            
-            // 4. APPEND
-            messageDiv.appendChild(contentDiv);
-            messagesContainer.appendChild(messageDiv);
+            const messageElement = createMessageElement(msg);
+            messagesContainer.appendChild(messageElement);
         });
-
-        // Re-append the loading indicator and scroll ref after messages
-        if (loadingIndicator) messagesContainer.appendChild(loadingIndicator);
-        if (messagesEndRef) messagesContainer.appendChild(messagesEndRef);
         
         scrollToBottom();
     }
-    
-    /**
-     * 4. Handles sending the message (SIMULATION MODE).
-     * NOTE: 'async' removed as fetch/await is commented out.
-     */
-    function handleSendMessage() { 
-        if (!inputField) return; // Safety check
+
+    function createMessageElement(message) {
+        const isUser = message.role === 'user';
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex items-start gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`;
+        
+        // Avatar
+        const avatar = document.createElement('div');
+        if (isUser) {
+            avatar.className = 'w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0';
+            avatar.textContent = 'You';
+        } else {
+            avatar.className = 'w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shrink-0';
+            avatar.innerHTML = '<i data-lucide="bot" class="h-4 w-4 text-primary"></i>';
+        }
+        
+        // Message bubble
+        const bubble = document.createElement('div');
+        bubble.className = isUser 
+            ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2.5 max-w-[75%] shadow-sm'
+            : 'bg-secondary text-foreground rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[75%] shadow-sm border border-border/50';
+        
+        const content = document.createElement('p');
+        content.className = 'text-sm leading-relaxed whitespace-pre-wrap break-words';
+        content.textContent = message.content;
+        
+        bubble.appendChild(content);
+        
+        // Timestamp (optional)
+        if (message.timestamp) {
+            const time = document.createElement('span');
+            time.className = `text-[10px] mt-1 block ${isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'}`;
+            time.textContent = formatTime(message.timestamp);
+            bubble.appendChild(time);
+        }
+        
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        
+        // Re-initialize Lucide icons for the new elements
+        setTimeout(() => lucide.createIcons(), 0);
+        
+        return messageDiv;
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function scrollToBottom() {
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    }
+
+    // ============================================
+    // MESSAGE HANDLING
+    // ============================================
+
+    function handleSendMessage() {
+        if (!inputField) return;
         
         const userMessage = inputField.value.trim();
         if (!userMessage || isLoading) return;
 
-        // A. Add user message to state and UI
-        currentMessages.push({ role: 'user', content: userMessage });
+        // Add user message
+        currentMessages.push({
+            role: 'user',
+            content: userMessage,
+            timestamp: new Date().toISOString()
+        });
+        
         inputField.value = '';
         renderMessages();
+        saveChatState();
 
-        // B. Show loading state
+        // Show typing indicator
         isLoading = true;
-        if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+        if (typingIndicator) typingIndicator.classList.remove('hidden');
         if (sendButton) sendButton.disabled = true;
         if (inputField) inputField.disabled = true;
         scrollToBottom();
 
-        // --- SIMULATION START ---
-        const responses = [
-            "I understand you're going through a difficult time. Remember that seeking help is a sign of strength.",
-            "It's important to take care of your mental health. Have you considered speaking with a counselor?",
-            "Thank you for sharing. Would you like me to help you find some resources or schedule a session?",
-            "I'm here to listen. Please know that you're not alone in this.",
-        ];
-        const aiResponseText = responses[Math.floor(Math.random() * responses.length)];
-
-        // Simulate a network delay (1 second)
+        // Simulate AI response
         setTimeout(() => {
-            // E. Update state and UI with simulated AI message
-            currentMessages.push({ role: 'assistant', content: aiResponseText });
+            const aiResponse = generateAIResponse(userMessage);
+            
+            currentMessages.push({
+                role: 'assistant',
+                content: aiResponse,
+                timestamp: new Date().toISOString()
+            });
 
-            // F. Hide loading state and re-render
+            // Hide typing indicator
             isLoading = false;
-            if (loadingIndicator) loadingIndicator.classList.add('hidden');
+            if (typingIndicator) typingIndicator.classList.add('hidden');
             if (sendButton) sendButton.disabled = false;
             if (inputField) inputField.disabled = false;
+            
             renderMessages();
-
-        }, 1000); // 1-second delay
-        // --- SIMULATION END ---
-    }
-    
-    // --- Event Listeners ---
-    
-    // Add Enter key functionality to the input field
-    if (inputField) {
-        inputField.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                handleSendMessage();
-            }
-        });
+            saveChatState();
+            
+            if (inputField) inputField.focus();
+        }, 1200);
     }
 
-    // Initialize the widget display state (Must be called after all functions are defined)
-    toggleChatWindow(false); 
+    function generateAIResponse(userMessage) {
+        const lowerMessage = userMessage.toLowerCase();
+        
+        // Context-aware responses
+        if (lowerMessage.includes('anxious') || lowerMessage.includes('anxiety') || lowerMessage.includes('worried')) {
+            return "I understand you're feeling anxious. It's completely normal to feel this way sometimes. Have you tried any relaxation techniques like deep breathing or mindfulness? I'm here to help you through this.";
+        }
+        
+        if (lowerMessage.includes('sad') || lowerMessage.includes('depressed') || lowerMessage.includes('down')) {
+            return "I'm sorry you're feeling this way. Your feelings are valid, and it's important to acknowledge them. Would you like to talk about what's been troubling you? Sometimes sharing can help lighten the burden.";
+        }
+        
+        if (lowerMessage.includes('stress') || lowerMessage.includes('stressed') || lowerMessage.includes('overwhelmed')) {
+            return "Stress can be really challenging. Remember that it's okay to take breaks and prioritize self-care. Have you considered speaking with one of our counselors? They can provide you with personalized coping strategies.";
+        }
+        
+        if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia') || lowerMessage.includes('tired')) {
+            return "Sleep issues can significantly impact your well-being. Establishing a consistent bedtime routine and limiting screen time before bed can help. Would you like some specific tips for improving your sleep hygiene?";
+        }
+        
+        if (lowerMessage.includes('help') || lowerMessage.includes('counselor') || lowerMessage.includes('appointment')) {
+            return "I'm glad you're reaching out for help! You can easily book an appointment with one of our professional counselors. Would you like me to guide you through the booking process?";
+        }
+        
+        if (lowerMessage.includes('thank')) {
+            return "You're very welcome! I'm always here to support you. Remember, seeking help is a sign of strength. Is there anything else I can help you with today?";
+        }
+        
+        // Default responses
+        const defaultResponses = [
+            "I'm here to listen and support you. Can you tell me more about what's on your mind?",
+            "Thank you for sharing. Remember that you're not alone in this journey. How can I best support you right now?",
+            "It's important to take care of your mental health. Would you like to explore some resources or speak with a counselor?",
+            "I understand this is difficult. Have you considered what might help you feel better in this moment?",
+            "Your well-being matters. Let's work through this together. What would be most helpful for you right now?"
+        ];
+        
+        return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    }
     
 </script>
 </html>
