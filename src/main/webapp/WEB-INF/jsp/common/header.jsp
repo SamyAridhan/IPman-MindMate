@@ -12,7 +12,6 @@
     <title>MindMate</title>
     
     <link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/images/favicon.svg">
-    
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/global.css">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -62,24 +61,26 @@
 </head>
 <body class="bg-background text-foreground font-sans antialiased min-h-screen flex flex-col">
     
+    <!-- RESOLVED: Modern navigation with icons (YOUR changes) + Forum link (TEAMMATE's addition) -->
     <nav class="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50 w-full">
         <div class="container mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
                 
-                <div class="flex items-center">
+                <!-- Logo Section -->
+                <div class="flex items-center space-x-2">
                     <a href="${role == 'counselor' ? '/counselor/dashboard' : (role == 'admin' ? '/admin/dashboard' : '/student/dashboard')}" 
                        class="flex items-center gap-2 group">
-                        
                         <img src="${pageContext.request.contextPath}/images/MindMate.png" 
                              alt="Logo" 
                              class="h-10 w-10 object-contain logo-mindmate">
-                        
                         <span class="text-xl font-bold text-foreground tracking-tight">MindMate</span>
                     </a>
                 </div>
 
+                <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-1">
                     
+                    <!-- STUDENT NAVIGATION (with Forum link from teammate) -->
                     <c:if test="${role == 'student' || role == null}">
                         <a href="/student/dashboard" 
                            class="${fn:contains(currentUrl, '/student/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -99,6 +100,7 @@
                             Learning
                         </a>
                         
+                        <!-- MERGED: Forum link from teammate's branch -->
                         <a href="/student/forum" 
                            class="${fn:contains(currentUrl, '/student/forum') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                             <i data-lucide="message-circle" class="w-4 h-4"></i>
@@ -118,6 +120,7 @@
                         </a>
                     </c:if>
 
+                    <!-- COUNSELOR NAVIGATION -->
                     <c:if test="${role == 'counselor'}">
                         <a href="/counselor/dashboard" 
                            class="${fn:contains(currentUrl, '/counselor/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -144,6 +147,7 @@
                         </a>
                     </c:if>
 
+                    <!-- ADMIN NAVIGATION -->
                     <c:if test="${role == 'admin'}">
                         <a href="/admin/dashboard" 
                            class="${fn:contains(currentUrl, '/admin/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -164,6 +168,7 @@
                         </a>
                     </c:if>
 
+                    <!-- Logout Button -->
                     <a href="/logout" 
                        class="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors ml-2">
                         <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -171,6 +176,7 @@
                     </a>
                 </div>
 
+                <!-- Mobile Navigation -->
                 <div class="md:hidden flex items-center gap-2">
                     <a href="/logout" 
                        class="inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
@@ -185,9 +191,11 @@
             </div>
         </div>
 
+        <!-- Mobile Menu Dropdown -->
         <div id="mobile-menu" class="hidden md:hidden border-t border-border bg-card">
             <div class="container mx-auto px-4 py-3 space-y-1">
                 
+                <!-- STUDENT MOBILE NAVIGATION (with Forum link) -->
                 <c:if test="${role == 'student' || role == null}">
                     <a href="/student/dashboard" 
                        class="${fn:contains(currentUrl, '/student/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -204,11 +212,14 @@
                         <i data-lucide="book-open" class="w-4 h-4"></i>
                         Learning
                     </a>
+                    
+                    <!-- MERGED: Forum link in mobile menu -->
                     <a href="/student/forum" 
                        class="${fn:contains(currentUrl, '/student/forum') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         <i data-lucide="message-circle" class="w-4 h-4"></i>
                         Community
                     </a>
+                    
                     <a href="/student/telehealth" 
                        class="${fn:contains(currentUrl, '/student/telehealth') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         <i data-lucide="calendar" class="w-4 h-4"></i>
@@ -221,6 +232,7 @@
                     </a>
                 </c:if>
 
+                <!-- COUNSELOR MOBILE NAVIGATION -->
                 <c:if test="${role == 'counselor'}">
                     <a href="/counselor/dashboard" 
                        class="${fn:contains(currentUrl, '/counselor/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -244,6 +256,7 @@
                     </a>
                 </c:if>
 
+                <!-- ADMIN MOBILE NAVIGATION -->
                 <c:if test="${role == 'admin'}">
                     <a href="/admin/dashboard" 
                        class="${fn:contains(currentUrl, '/admin/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -265,6 +278,7 @@
         </div>
     </nav>
 
+    <!-- Mobile Menu Toggle Script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const menuButton = document.getElementById('mobile-menu-button');
