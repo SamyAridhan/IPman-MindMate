@@ -1,7 +1,7 @@
 
 ================================================================================
 File: pom.xml
-Size: 3.05 kB
+Size: 3.24 kB
 ================================================================================
 
 <?xml version="1.0" encoding="UTF-8"?>
@@ -72,6 +72,12 @@ Size: 3.05 kB
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope> 
         </dependency>
     </dependencies>
 
@@ -325,7 +331,7 @@ University Project - Internal Use Only
 
 ================================================================================
 File: src\main\java\com\mindmate\controller\AdminController.java
-Size: 534 B
+Size: 886 B
 ================================================================================
 
 package com.mindmate.controller;
@@ -343,6 +349,246 @@ public class AdminController {
     public String dashboard(Model model) {
         model.addAttribute("role", "admin"); // 2. Set Role to 'admin'
         return "admin/dashboard";
+    }
+
+    @GetMapping("/profile")
+public String profile(Model model) {
+    model.addAttribute("role", "admin");
+    return "admin/profile"; // Create placeholder
+}
+
+@GetMapping("/forum-moderation")
+public String forumModeration(Model model) {
+    model.addAttribute("role", "admin");
+    return "admin/forum-moderation"; // Create placeholder
+}
+}
+
+================================================================================
+File: src\main\java\com\mindmate\controller\AssessmentController.java
+Size: 9.23 kB
+================================================================================
+
+package com.mindmate.controller;
+
+import com.mindmate.model.Question; // Needs the Question Model
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import jakarta.servlet.http.HttpSession; // Use Jakarta import
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+// Class-level RequestMapping defines the base URL for the assessment module
+@Controller
+@RequestMapping("/student/assessment")
+public class AssessmentController {
+
+    // --- Assessment Data (Static Configuration) ---
+    private static final List<Question> ASSESSMENT_QUESTIONS = Arrays.asList(
+        new Question(1, "How often do you feel nervous, anxious, or on edge?", createOptions()),
+        new Question(2, "How often have you been unable to stop or control worrying?", createOptions()),
+        new Question(3, "How often do you feel down, depressed, or hopeless?", createOptions()),
+        new Question(4, "How often have you had little interest or pleasure in doing things?", createOptions()),
+        new Question(5, "How often have you had trouble falling or staying asleep, or sleeping too much?", createOptions())
+    );
+    
+    private static final int TOTAL_QUESTIONS = ASSESSMENT_QUESTIONS.size();
+
+    private static List<Map<String, Object>> createOptions() {
+        return Arrays.asList(
+            Map.of("value", 0, "label", "Not at all"),
+            Map.of("value", 1, "label", "Several days"),
+            Map.of("value", 2, "label", "More than half the days"),
+            Map.of("value", 3, "label", "Nearly every day")
+        );
+    }
+    
+    // --- Utility Methods (Scoring) ---
+    private Map<String, Object> calculateResults(int totalScore) {
+        // ... (Keep the exact scoring logic from the previous controller) ...
+        String level;
+        String action;
+        String colorClass;
+        String backgroundClass;
+        boolean highRisk = false;
+
+        if (totalScore >= 12) {
+            level = "Severe";
+            action = "Please consider reaching out for immediate support. We strongly recommend sharing your results.";
+            colorClass = "text-destructive";
+            backgroundClass = "bg-destructive/10";
+            highRisk = true;
+        } else if (totalScore >= 7) {
+            level = "Moderate";
+            action = "Your results suggest a moderate need for support. Exploring our resources is highly recommended.";
+            colorClass = "text-primary";
+            backgroundClass = "bg-primary/10";
+        } else {
+            level = "Minimal";
+            action = "Your results suggest minimal symptoms. Keep up with healthy habits!";
+            colorClass = "text-green-600";
+            backgroundClass = "bg-green-100";
+        }
+
+        int maxPossibleScore = TOTAL_QUESTIONS * 3;
+        int scorePercentage = (int) (((double) totalScore / maxPossibleScore) * 100);
+
+        return Map.of(
+            "totalScore", totalScore,
+            "score", scorePercentage,
+            "level", level,
+            "action", action,
+            "color", colorClass,
+            "bg", backgroundClass,
+            "highRisk", highRisk
+        );
+    }
+    
+    // --- Assessment Flow Handlers ---
+
+    /**
+     * Initializes or continues the assessment.
+     * Maps to: GET /student/assessment
+     */
+    @GetMapping
+    public String startAssessment(HttpSession session, Model model) {
+        // Pass the role just in case the header needs it
+        model.addAttribute("role", "student"); 
+
+        Boolean showResults = (Boolean) session.getAttribute("showResults");
+        if (showResults != null && showResults) {
+            Map<String, ?> resultsMap = (Map<String, ?>) session.getAttribute("assessmentResultsData");
+            if (resultsMap != null) {
+                model.addAllAttributes(resultsMap); 
+            }
+            
+            model.addAttribute("showResults", true);
+            
+            Boolean highRisk = (Boolean) session.getAttribute("highRisk");
+            Boolean consentGiven = (Boolean) session.getAttribute("consentDialogShown");
+            
+            if (highRisk != null && highRisk && (consentGiven == null || !consentGiven)) {
+                 model.addAttribute("showConsentDialog", true);
+            }
+            return "student/assessment-questions";
+        }
+
+        Integer currentQIndex = (Integer) session.getAttribute("currentQuestionIndex");
+        if (currentQIndex == null || currentQIndex < 0 || currentQIndex >= TOTAL_QUESTIONS) {
+            currentQIndex = 0;
+            session.setAttribute("currentQuestionIndex", 0);
+            session.setAttribute("assessmentResponses", new int[TOTAL_QUESTIONS]);
+            session.removeAttribute("assessmentResultsData");
+            session.removeAttribute("highRisk");
+            session.removeAttribute("consentDialogShown");
+            session.removeAttribute("showResults"); // Ensure this is explicitly reset
+        }
+
+        return displayQuestion(currentQIndex, model);
+    }
+
+    /**
+     * Processes the user's answer.
+     * Maps to: POST /student/assessment/submit
+     */
+    @PostMapping("/submit")
+    public String processSubmission(
+            @RequestParam(name = "currentQuestionIndex") int currentQIndex,
+            @RequestParam(name = "response", required = false) Integer responseValue,
+            @RequestParam(name = "direction") String direction,
+            HttpSession session, Model model) {
+
+        int[] responses = (int[]) session.getAttribute("assessmentResponses");
+        
+        // This ensures the response for the question the user is LEAVING is always recorded.
+        if (responseValue != null && currentQIndex >= 0 && currentQIndex < TOTAL_QUESTIONS) {
+            responses[currentQIndex] = responseValue;
+            session.setAttribute("assessmentResponses", responses);
+        }
+
+        int nextIndex = currentQIndex;
+        if (direction.equals("next")) {
+            nextIndex++;
+        } else if (direction.equals("previous") && currentQIndex > 0) {
+            nextIndex--;
+        }
+        
+        session.setAttribute("currentQuestionIndex", nextIndex);
+        model.addAttribute("role", "student");
+
+        if (nextIndex >= TOTAL_QUESTIONS) {
+            return showResults(responses, session, model);
+        }
+
+        return displayQuestion(nextIndex, model);
+    }
+
+    /**
+     * Handles consent dialog action.
+     * Maps to: GET /student/assessment/consent
+     */
+    @GetMapping("/consent")
+    public String handleConsent(@RequestParam("share") boolean share, HttpSession session) {
+        session.setAttribute("consentDialogShown", true);
+        if (share) {
+            System.out.println("User consented to share results.");
+        }
+        return "redirect:/student/assessment";
+    }
+
+    /**
+     * Resets the assessment state.
+     * Maps to: GET /student/assessment/reset
+     */
+    @GetMapping("/reset")
+    public String resetAssessment(HttpSession session) {
+        session.removeAttribute("currentQuestionIndex");
+        session.removeAttribute("assessmentResponses");
+        session.removeAttribute("showResults");
+        session.removeAttribute("assessmentResultsData");
+        session.removeAttribute("highRisk");
+        session.removeAttribute("consentDialogShown");
+        return "redirect:/student/assessment";
+    }
+
+    // --- Utility Views ---
+    
+    private String showResults(int[] responses, HttpSession session, Model model) {
+        int totalScore = Arrays.stream(responses).sum();
+        Map<String, Object> results = calculateResults(totalScore);
+
+        session.setAttribute("showResults", true);
+        session.setAttribute("assessmentResultsData", results);
+        session.setAttribute("highRisk", (Boolean) results.get("highRisk"));
+
+        model.addAttribute("showResults", true);
+        model.addAllAttributes(results);
+
+        Boolean consentGiven = (Boolean) session.getAttribute("consentDialogShown");
+        if ((Boolean) results.get("highRisk") && (consentGiven == null || !consentGiven)) {
+             model.addAttribute("showConsentDialog", true);
+        }
+
+        return "student/assessment-questions";
+    }
+
+    private String displayQuestion(int index, Model model) {
+        Question currentQuestion = ASSESSMENT_QUESTIONS.get(index);
+        
+        model.addAttribute("currentQuestionIndex", index);
+        model.addAttribute("totalQuestions", TOTAL_QUESTIONS);
+        model.addAttribute("currentQuestion", currentQuestion.getText());
+        model.addAttribute("responseOptions", currentQuestion.getOptions());
+        model.addAttribute("showResults", false);
+        model.addAttribute("showConsentDialog", false);
+        
+        return "student/assessment-questions";
     }
 }
 
@@ -391,59 +637,118 @@ public class AuthController {
 
 ================================================================================
 File: src\main\java\com\mindmate\controller\CounselorController.java
-Size: 1.19 kB
+Size: 3.57 kB
 ================================================================================
 
 package com.mindmate.controller;
 
+import com.mindmate.model.Content;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model; // 1. Import Model
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Controller
 @RequestMapping("/counselor")
 public class CounselorController {
 
+    // Simple in-memory store. Not for production.
+    private static final Map<Long, Content> STORE = new LinkedHashMap<>();
+    private static final AtomicLong ID_COUNTER = new AtomicLong(1);
+
+    static {
+        // seed some demo content
+        STORE.put(1L, new Content(1L, "Stress Management 101", "Article",
+                "Learn effective stress-coping strategies for students", ""));
+        STORE.put(2L, new Content(2L, "Mindfulness Meditation Guide", "Video",
+                "15-minute guided meditation for anxiety relief", ""));
+        STORE.put(3L,
+                new Content(3L, "Sleep Hygiene", "Article", "Interactive module on building better sleep habits", ""));
+        STORE.put(4L,
+                new Content(4L, "Understanding Anxiety", "Article", "What causes anxiety and how to manage it", ""));
+        STORE.put(5L, new Content(5L, "Building Resilience", "Article",
+                "Develop emotional resilience for long-term wellbeing", ""));
+        ID_COUNTER.set(6);
+    }
+
     @GetMapping("/dashboard")
     public String showDashboard(Model model) {
-        model.addAttribute("role", "counselor"); // 2. Set Role
+        model.addAttribute("role", "counselor");
         return "counselor/dashboard";
     }
 
     @GetMapping("/schedule")
     public String showSchedule(Model model) {
-        model.addAttribute("role", "counselor"); // 2. Set Role
-        return "counselor/schedule"; 
+        model.addAttribute("role", "counselor");
+        return "counselor/schedule";
     }
 
     @GetMapping("/content")
     public String manageContent(Model model) {
-        model.addAttribute("role", "counselor"); // 2. Set Role
+        model.addAttribute("role", "counselor");
+        List<Content> list = new ArrayList<>(STORE.values());
+        model.addAttribute("contents", list);
         return "counselor/content-manager";
     }
 
-    @GetMapping("/content/new")
-    public String showCreateContentForm() {
-        // Redirects don't need the model attribute because 
-        // the browser starts a new request to the target URL.
+    @PostMapping("/content/create")
+    public String createOrUpdateContent(@RequestParam String title,
+            @RequestParam String contentType,
+            @RequestParam String description,
+            @RequestParam String content,
+            @RequestParam(required = false) Long editingId) {
+        if (editingId != null) {
+            Content existing = STORE.get(editingId);
+            if (existing != null) {
+                existing.setTitle(title);
+                existing.setType(contentType);
+                existing.setDescription(description);
+                existing.setContent(content);
+            }
+        } else {
+            long id = ID_COUNTER.getAndIncrement();
+            Content c = new Content(id, title, contentType, description, content);
+            STORE.put(id, c);
+        }
         return "redirect:/counselor/content";
     }
+
+    @PostMapping("/content/delete")
+    public String deleteContent(@RequestParam Long id) {
+        STORE.remove(id);
+        return "redirect:/counselor/content";
+    }
+
+    @GetMapping("/profile")
+public String profile(Model model) {
+    model.addAttribute("role", "counselor");
+    return "counselor/profile"; // Create placeholder
+}
 }
 
 ================================================================================
 File: src\main\java\com\mindmate\controller\StudentController.java
-Size: 3.36 kB
+Size: 3.94 kB
 ================================================================================
 
 package com.mindmate.controller;
 
+import org.apache.logging.log4j.message.Message;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping; // Added this import
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -457,18 +762,7 @@ public class StudentController {
         return "student/dashboard";
     }
 
-    // --- Assessment Module ---
-    @GetMapping("/assessment")
-    public String assessmentList(Model model) {
-        model.addAttribute("role", "student");
-        return "student/assessment-list";
-    }
-
-    @GetMapping("/assessment/take")
-    public String assessmentQuestions(Model model) {
-        model.addAttribute("role", "student");
-        return "student/assessment-questions";
-    }
+    //assessment module handled by AssessmentController
 
     // --- Content/Library Module ---
     @GetMapping("/library")
@@ -503,14 +797,25 @@ public class StudentController {
         model.addAttribute("role", "student");
         return "student/forum-thread";
     }
-
+/*
     // --- Chatbot Module ---
     @GetMapping("/chatbot")
-    public String chatbot(Model model) {
-        model.addAttribute("role", "student");
-        return "student/chatbot";
+    public String showChatbot(Model model) {
+        // 1. Initial Data (The equivalent of the initial useState)
+        // In a real app, you would load recent chat history from a database.
+        // For the Phase 2 demo, we provide the initial message.
+        
+        // This list will contain the messages to be displayed when the page first loads
+        List<Message> initialMessages = new ArrayList<>();
+        initialMessages.add(new Message("assistant", "Hello! I'm here to support you. How are you feeling today?"));
+        
+        // Pass the messages list to the JSP view
+        model.addAttribute("messages", initialMessages);
+        
+        // Return the JSP view name (which will be resolved to /WEB-INF/jsp/student/chatbot.jsp)
+        return "student/chatbot"; 
     }
-
+*/
     // --- Telehealth Module ---
     @GetMapping("/telehealth") // Matches the Header Link
     public String telehealthBook(Model model) {
@@ -537,6 +842,12 @@ public class StudentController {
         model.addAttribute("role", "student");
         return "student/telehealth-my-appointments";
     }
+
+    @GetMapping("/profile")
+public String profile(Model model) {
+    model.addAttribute("role", "student");
+    return "student/profile"; // Create this JSP placeholder
+}
 }
 
 ================================================================================
@@ -558,6 +869,162 @@ public class MindMateApplication extends SpringBootServletInitializer {
     }
 }
 
+
+
+================================================================================
+File: src\main\java\com\mindmate\model\Content.java
+Size: 1.22 kB
+================================================================================
+
+package com.mindmate.model;
+
+public class Content {
+    private Long id;
+    private String title;
+    private String type;
+    private String description;
+    private String content;
+
+    public Content() {
+    }
+
+    public Content(Long id, String title, String type, String description, String content) {
+        this.id = id;
+        this.title = title;
+        this.type = type;
+        this.description = description;
+        this.content = content;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+}
+
+
+================================================================================
+File: src\main\java\com\mindmate\model\Message.java
+Size: 550 B
+================================================================================
+
+package com.mindmate.model;
+
+public class Message {
+    private String role;
+    private String content;
+
+    // 1. Constructor (To fix the 'new Message(...)')
+    public Message(String role, String content) {
+        this.role = role;
+        this.content = content;
+    }
+
+    // 2. Getters (Required for the JSP to read the data)
+    public String getRole() {
+        return role;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    // You can skip setters for an immutable object like a chat message
+}
+
+================================================================================
+File: src\main\java\com\mindmate\model\Question.java
+Size: 1.39 kB
+================================================================================
+
+package com.mindmate.model;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Model class to represent a single assessment question.
+ * It holds the question text and the available response options.
+ */
+public class Question {
+    
+    private final int id;
+    private final String text;
+    // Options are structured as a List of Maps: 
+    // e.g., [{ "value": 0, "label": "Not at all" }, ...]
+    private final List<Map<String, Object>> options;
+
+    /**
+     * Constructor for the Question model.
+     * * @param id The unique identifier for the question.
+     * @param text The text of the question.
+     * @param options The list of available answer options.
+     */
+    public Question(int id, String text, List<Map<String, Object>> options) {
+        this.id = id;
+        this.text = text;
+        this.options = options;
+    }
+
+    // --- Getters ---
+    
+    public int getId() {
+        return id;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public List<Map<String, Object>> getOptions() {
+        return options;
+    }
+
+    // --- Optional: For better debugging/logging ---
+    @Override
+    public String toString() {
+        return "Question{" +
+                "id=" + id +
+                ", text='" + text + '\'' +
+                ", options=" + options +
+                '}';
+    }
+}
 
 
 ================================================================================
@@ -831,6 +1298,20 @@ Size: 9.92 kB
 <jsp:include page="../common/footer.jsp" />
 
 ================================================================================
+File: src\main\webapp\WEB-INF\jsp\admin\forum-moderation.jsp
+Size: 23 B
+================================================================================
+
+<h1>Coming Soon...</h1>
+
+================================================================================
+File: src\main\webapp\WEB-INF\jsp\admin\profile.jsp
+Size: 23 B
+================================================================================
+
+<h1>Coming Soon...</h1>
+
+================================================================================
 File: src\main\webapp\WEB-INF\jsp\auth\login.jsp
 Size: 5.7 kB
 ================================================================================
@@ -1079,26 +1560,456 @@ Size: 5.48 kB
 </html>
 
 ================================================================================
-File: src\main\webapp\WEB-INF\jsp\common\footer.jsp
-Size: 354 B
+File: src\main\webapp\WEB-INF\jsp\common\chatbot-widget.jsp
+Size: 6.38 kB
 ================================================================================
 
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+
+<%--
+    JSP Chatbot Widget Fragment - STUDENT ONLY
+    Embedded on every page (via footer.jsp), but only displays for students.
+--%>
+
+<!-- Only render chatbot for students -->
+<c:if test="${role == 'student'}">
+    <div id="ai-chat-widget" class="z-50">
+        
+        <%-- 1. Floating Chat Button --%>
+        <button
+            id="chat-open-button"
+            onclick="toggleChatWindow(true)"
+            class="fixed bottom-6 right-6 z-50 h-16 w-16 rounded-full shadow-xl bg-primary text-primary-foreground hover:scale-110 transition-all duration-300 group"
+            aria-label="Open AI Chat"
+        >
+            <%-- Icon with subtle animation --%>
+            <i data-lucide="message-circle" class="h-7 w-7 mx-auto group-hover:scale-110 transition-transform"></i>
+            
+            <%-- Notification badge (optional - can be dynamic later) --%>
+            <span class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse"></span>
+        </button>
+
+        <%-- 2. Chat Window --%>
+        <div
+            id="chat-window"
+            class="fixed bottom-6 right-6 z-50 w-[380px] h-[600px] shadow-2xl flex flex-col bg-card rounded-2xl border border-border hidden"
+        >
+            
+            <%-- Header --%>
+            <div class="p-4 border-b border-border bg-gradient-to-r from-primary/10 to-primary/5 rounded-t-2xl">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <%-- Bot Avatar --%>
+                        <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/30">
+                            <i data-lucide="bot" class="h-5 w-5 text-primary"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-base text-foreground">AI Support Assistant</h3>
+                            <p class="text-xs text-muted-foreground flex items-center gap-1">
+                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                Online
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onclick="toggleChatWindow(false)"
+                        class="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                        aria-label="Close Chat"
+                    >
+                        <i data-lucide="x" class="h-5 w-5"></i>
+                    </button>
+                </div>
+                
+                <%-- Appointment CTA --%>
+                <div class="flex items-center justify-between text-xs bg-card rounded-lg p-2.5 shadow-sm border border-border/50">
+                    <span class="flex items-center gap-1.5 text-muted-foreground">
+                        <i data-lucide="calendar" class="h-3.5 w-3.5 text-primary"></i>
+                        Need professional help?
+                    </span>
+                    <a 
+                        href="/student/telehealth"
+                        class="text-primary hover:text-primary/80 font-semibold transition-colors" 
+                    >
+                        Book Now →
+                    </a>
+                </div>
+            </div>
+
+            <%-- Messages Container --%>
+            <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-background/50">
+                <%-- Dynamic messages will be rendered here --%>
+            </div>
+
+            <%-- Typing Indicator --%>
+            <div id="typing-indicator" class="px-4 pb-2 hidden">
+                <div class="flex items-start gap-2">
+                    <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shrink-0">
+                        <i data-lucide="bot" class="h-4 w-4 text-primary"></i>
+                    </div>
+                    <div class="bg-secondary rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                        <div class="flex gap-1">
+                            <div class="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style="animation-delay: 0ms"></div>
+                            <div class="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style="animation-delay: 150ms"></div>
+                            <div class="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style="animation-delay: 300ms"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <%-- Input Area --%>
+            <div class="p-4 border-t border-border bg-card rounded-b-2xl">
+                <form onsubmit="handleSendMessage(); return false;" class="flex gap-2">
+                    <input
+                        id="chat-input"
+                        type="text"
+                        placeholder="Type your message..."
+                        class="flex-1 h-11 rounded-xl border border-input bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                        autocomplete="off"
+                    />
+                    <button
+                        id="chat-send-button"
+                        type="submit"
+                        class="h-11 w-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                        aria-label="Send Message"
+                    >
+                        <i data-lucide="send" class="h-4 w-4"></i>
+                    </button>
+                </form>
+                <p class="text-[10px] text-muted-foreground text-center mt-2">
+                    AI can make mistakes. Consider checking important information.
+                </p>
+            </div>
+        </div>
+    </div>
+</c:if>
+
+================================================================================
+File: src\main\webapp\WEB-INF\jsp\common\footer.jsp
+Size: 12.7 kB
+================================================================================
+
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+
 </main>
+
 <footer class="bg-white/80 backdrop-blur-md border-t border-border mt-12">
     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <p class="text-center text-sm text-muted-foreground">&copy; 2025 MindMate Project. All rights reserved.</p>
     </div>
+    
+    <!-- Student-Only Chatbot Widget -->
+    <c:if test="${role == 'student'}">
+        <jsp:include page="chatbot-widget.jsp" /> 
+    </c:if>
 </footer>
 
 <script>
+    // Ensure Lucide icons are processed
     lucide.createIcons();
+
+    // ============================================
+    // CHATBOT STATE MANAGEMENT WITH PERSISTENCE
+    // ============================================
+
+    // Storage keys
+    const STORAGE_KEYS = {
+        MESSAGES: 'mindmate_chat_messages',
+        IS_OPEN: 'mindmate_chat_is_open',
+        LAST_INTERACTION: 'mindmate_chat_last_interaction'
+    };
+
+    // State variables
+    let isChatOpen = false;
+    let isLoading = false;
+    let currentMessages = [];
+
+    // DOM Elements
+    const chatButton = document.getElementById('chat-open-button');
+    const chatWindow = document.getElementById('chat-window');
+    const messagesContainer = document.getElementById('messages-container');
+    const inputField = document.getElementById('chat-input');
+    const sendButton = document.getElementById('chat-send-button');
+    const typingIndicator = document.getElementById('typing-indicator');
+
+    // Only initialize if chatbot elements exist (student view)
+    if (chatButton && chatWindow) {
+        initializeChatbot();
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function initializeChatbot() {
+        // Load saved state from sessionStorage
+        loadChatState();
+        
+        // Restore chat window state
+        const savedIsOpen = sessionStorage.getItem(STORAGE_KEYS.IS_OPEN);
+        if (savedIsOpen === 'true') {
+            toggleChatWindow(true);
+        } else {
+            toggleChatWindow(false);
+        }
+
+        // If no messages exist, add welcome message
+        if (currentMessages.length === 0) {
+            currentMessages = [{
+                role: 'assistant',
+                content: "Hello! I'm here to support you. How are you feeling today?",
+                timestamp: new Date().toISOString()
+            }];
+            saveChatState();
+        }
+
+        renderMessages();
+
+        // Add Enter key listener
+        if (inputField) {
+            inputField.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                }
+            });
+        }
+
+        // Save state before page unload
+        window.addEventListener('beforeunload', saveChatState);
+    }
+
+    // ============================================
+    // STATE PERSISTENCE
+    // ============================================
+
+    function loadChatState() {
+        try {
+            const savedMessages = sessionStorage.getItem(STORAGE_KEYS.MESSAGES);
+            if (savedMessages) {
+                currentMessages = JSON.parse(savedMessages);
+            }
+        } catch (error) {
+            console.error('Error loading chat state:', error);
+            currentMessages = [];
+        }
+    }
+
+    function saveChatState() {
+        try {
+            sessionStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(currentMessages));
+            sessionStorage.setItem(STORAGE_KEYS.IS_OPEN, isChatOpen.toString());
+            sessionStorage.setItem(STORAGE_KEYS.LAST_INTERACTION, new Date().toISOString());
+        } catch (error) {
+            console.error('Error saving chat state:', error);
+        }
+    }
+
+    function clearChatState() {
+        sessionStorage.removeItem(STORAGE_KEYS.MESSAGES);
+        sessionStorage.removeItem(STORAGE_KEYS.IS_OPEN);
+        sessionStorage.removeItem(STORAGE_KEYS.LAST_INTERACTION);
+        currentMessages = [{
+            role: 'assistant',
+            content: "Hello! I'm here to support you. How are you feeling today?",
+            timestamp: new Date().toISOString()
+        }];
+        renderMessages();
+    }
+
+    // ============================================
+    // CHAT WINDOW TOGGLE
+    // ============================================
+
+    function toggleChatWindow(open) {
+        if (!chatWindow || !chatButton) return;
+        
+        isChatOpen = open;
+        
+        if (isChatOpen) {
+            chatWindow.classList.remove('hidden');
+            chatButton.classList.add('hidden');
+            renderMessages();
+            scrollToBottom();
+            if (inputField) inputField.focus();
+        } else {
+            chatWindow.classList.add('hidden');
+            chatButton.classList.remove('hidden');
+        }
+        
+        saveChatState();
+    }
+
+    // ============================================
+    // MESSAGE RENDERING
+    // ============================================
+
+    function renderMessages() {
+        if (!messagesContainer) return;
+        
+        messagesContainer.innerHTML = '';
+        
+        currentMessages.forEach(msg => {
+            const messageElement = createMessageElement(msg);
+            messagesContainer.appendChild(messageElement);
+        });
+        
+        scrollToBottom();
+    }
+
+    function createMessageElement(message) {
+        const isUser = message.role === 'user';
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex items-start gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`;
+        
+        // Avatar
+        const avatar = document.createElement('div');
+        if (isUser) {
+            avatar.className = 'w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0';
+            avatar.textContent = 'You';
+        } else {
+            avatar.className = 'w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shrink-0';
+            avatar.innerHTML = '<i data-lucide="bot" class="h-4 w-4 text-primary"></i>';
+        }
+        
+        // Message bubble
+        const bubble = document.createElement('div');
+        bubble.className = isUser 
+            ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2.5 max-w-[75%] shadow-sm'
+            : 'bg-secondary text-foreground rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[75%] shadow-sm border border-border/50';
+        
+        const content = document.createElement('p');
+        content.className = 'text-sm leading-relaxed whitespace-pre-wrap break-words';
+        content.textContent = message.content;
+        
+        bubble.appendChild(content);
+        
+        // Timestamp (optional)
+        if (message.timestamp) {
+            const time = document.createElement('span');
+            time.className = `text-[10px] mt-1 block ${isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'}`;
+            time.textContent = formatTime(message.timestamp);
+            bubble.appendChild(time);
+        }
+        
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        
+        // Re-initialize Lucide icons for the new elements
+        setTimeout(() => lucide.createIcons(), 0);
+        
+        return messageDiv;
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function scrollToBottom() {
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    }
+
+    // ============================================
+    // MESSAGE HANDLING
+    // ============================================
+
+    function handleSendMessage() {
+        if (!inputField) return;
+        
+        const userMessage = inputField.value.trim();
+        if (!userMessage || isLoading) return;
+
+        // Add user message
+        currentMessages.push({
+            role: 'user',
+            content: userMessage,
+            timestamp: new Date().toISOString()
+        });
+        
+        inputField.value = '';
+        renderMessages();
+        saveChatState();
+
+        // Show typing indicator
+        isLoading = true;
+        if (typingIndicator) typingIndicator.classList.remove('hidden');
+        if (sendButton) sendButton.disabled = true;
+        if (inputField) inputField.disabled = true;
+        scrollToBottom();
+
+        // Simulate AI response
+        setTimeout(() => {
+            const aiResponse = generateAIResponse(userMessage);
+            
+            currentMessages.push({
+                role: 'assistant',
+                content: aiResponse,
+                timestamp: new Date().toISOString()
+            });
+
+            // Hide typing indicator
+            isLoading = false;
+            if (typingIndicator) typingIndicator.classList.add('hidden');
+            if (sendButton) sendButton.disabled = false;
+            if (inputField) inputField.disabled = false;
+            
+            renderMessages();
+            saveChatState();
+            
+            if (inputField) inputField.focus();
+        }, 1200);
+    }
+
+    function generateAIResponse(userMessage) {
+        const lowerMessage = userMessage.toLowerCase();
+        
+        // Context-aware responses
+        if (lowerMessage.includes('anxious') || lowerMessage.includes('anxiety') || lowerMessage.includes('worried')) {
+            return "I understand you're feeling anxious. It's completely normal to feel this way sometimes. Have you tried any relaxation techniques like deep breathing or mindfulness? I'm here to help you through this.";
+        }
+        
+        if (lowerMessage.includes('sad') || lowerMessage.includes('depressed') || lowerMessage.includes('down')) {
+            return "I'm sorry you're feeling this way. Your feelings are valid, and it's important to acknowledge them. Would you like to talk about what's been troubling you? Sometimes sharing can help lighten the burden.";
+        }
+        
+        if (lowerMessage.includes('stress') || lowerMessage.includes('stressed') || lowerMessage.includes('overwhelmed')) {
+            return "Stress can be really challenging. Remember that it's okay to take breaks and prioritize self-care. Have you considered speaking with one of our counselors? They can provide you with personalized coping strategies.";
+        }
+        
+        if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia') || lowerMessage.includes('tired')) {
+            return "Sleep issues can significantly impact your well-being. Establishing a consistent bedtime routine and limiting screen time before bed can help. Would you like some specific tips for improving your sleep hygiene?";
+        }
+        
+        if (lowerMessage.includes('help') || lowerMessage.includes('counselor') || lowerMessage.includes('appointment')) {
+            return "I'm glad you're reaching out for help! You can easily book an appointment with one of our professional counselors. Would you like me to guide you through the booking process?";
+        }
+        
+        if (lowerMessage.includes('thank')) {
+            return "You're very welcome! I'm always here to support you. Remember, seeking help is a sign of strength. Is there anything else I can help you with today?";
+        }
+        
+        // Default responses
+        const defaultResponses = [
+            "I'm here to listen and support you. Can you tell me more about what's on your mind?",
+            "Thank you for sharing. Remember that you're not alone in this journey. How can I best support you right now?",
+            "It's important to take care of your mental health. Would you like to explore some resources or speak with a counselor?",
+            "I understand this is difficult. Have you considered what might help you feel better in this moment?",
+            "Your well-being matters. Let's work through this together. What would be most helpful for you right now?"
+        ];
+        
+        return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    }
+    
 </script>
-</body>
 </html>
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\common\header.jsp
-Size: 8.2 kB
+Size: 19.38 kB
 ================================================================================
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
@@ -1115,7 +2026,6 @@ Size: 8.2 kB
     <title>MindMate</title>
     
     <link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/images/favicon.svg">
-
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/global.css">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1165,124 +2075,489 @@ Size: 8.2 kB
 </head>
 <body class="bg-background text-foreground font-sans antialiased min-h-screen flex flex-col">
     
-    <nav class="sticky top-0 z-50 w-full border-b border-border bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="shrink-0 flex items-center">
-                        <a href="${role == 'counselor' ? '/counselor/dashboard' : (role == 'admin' ? '/admin/dashboard' : '/student/dashboard')}" 
-                           class="flex items-center gap-2 group">
-                            
-                            <img src="${pageContext.request.contextPath}/images/MindMate.png" 
-                                 alt="Logo" 
-                                 class="h-10 w-10 object-contain logo-mindmate">
-                            
-                            <span class="text-xl font-bold text-foreground tracking-tight">MindMate</span>
-                        </a>
-                    </div>
-    
-                    <c:if test="${role == 'student' || role == null}">
-                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <a href="/student/dashboard" 
-                               class="${fn:contains(currentUrl, '/student/dashboard') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                               Dashboard
-                            </a>
-                            
-                            <a href="/student/assessment" 
-                               class="${fn:contains(currentUrl, '/student/assessment') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                               Assessment
-                            </a>
-                            
-                            <a href="/student/library" 
-                               class="${fn:contains(currentUrl, '/student/library') || fn:contains(currentUrl, 'content') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                               Library
-                            </a>
-                            
-                            <a href="/student/telehealth" 
-                               class="${fn:contains(currentUrl, '/student/telehealth') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                               Telehealth
-                            </a>
-                        </div>
-                    </c:if>
-    
-                    <c:if test="${role == 'counselor'}">
-                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <a href="/counselor/dashboard" 
-                               class="${fn:contains(currentUrl, '/counselor/dashboard') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                               Dashboard
-                            </a>
-                            <a href="/counselor/schedule" 
-                               class="${fn:contains(currentUrl, '/counselor/schedule') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                               Schedule
-                            </a>
-                            <a href="/counselor/content" 
-                               class="${fn:contains(currentUrl, '/counselor/content') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                               Content
-                            </a>
-                        </div>
-                    </c:if>
-    
-                    <c:if test="${role == 'admin'}">
-                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <a href="/admin/dashboard" 
-                               class="${fn:contains(currentUrl, '/admin/dashboard') ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                               Analytics
-                            </a>
-                        </div>
-                    </c:if>
-                </div>
+    <!-- RESOLVED: Modern navigation with icons (YOUR changes) + Forum link (TEAMMATE's addition) -->
+    <nav class="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50 w-full">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
                 
-                <div class="flex items-center">
-                    <a href="/logout" class="text-sm font-medium text-destructive hover:text-red-700 transition-colors">Logout</a>
+                <!-- Logo Section -->
+                <div class="flex items-center space-x-2">
+                    <a href="${role == 'counselor' ? '/counselor/dashboard' : (role == 'admin' ? '/admin/dashboard' : '/student/dashboard')}" 
+                       class="flex items-center gap-2 group">
+                        <img src="${pageContext.request.contextPath}/images/MindMate.png" 
+                             alt="Logo" 
+                             class="h-10 w-10 object-contain logo-mindmate">
+                        <span class="text-xl font-bold text-foreground tracking-tight">MindMate</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-1">
+                    
+                    <!-- STUDENT NAVIGATION (with Forum link from teammate) -->
+                    <c:if test="${role == 'student' || role == null}">
+                        <a href="/student/dashboard" 
+                           class="${fn:contains(currentUrl, '/student/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="home" class="w-4 h-4"></i>
+                            Dashboard
+                        </a>
+                        
+                        <a href="/student/assessment" 
+                           class="${fn:contains(currentUrl, '/student/assessment') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="heart" class="w-4 h-4"></i>
+                            Self-Check
+                        </a>
+                        
+                        <a href="/student/library" 
+                           class="${fn:contains(currentUrl, '/student/library') || fn:contains(currentUrl, 'content') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="book-open" class="w-4 h-4"></i>
+                            Learning
+                        </a>
+                        
+                        <!-- MERGED: Forum link from teammate's branch -->
+                        <a href="/student/forum" 
+                           class="${fn:contains(currentUrl, '/student/forum') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                            Community
+                        </a>
+                        
+                        <a href="/student/telehealth" 
+                           class="${fn:contains(currentUrl, '/student/telehealth') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            Sessions
+                        </a>
+                        
+                        <a href="/student/profile" 
+                           class="${fn:contains(currentUrl, '/student/profile') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                            My Profile
+                        </a>
+                    </c:if>
+
+                    <!-- COUNSELOR NAVIGATION -->
+                    <c:if test="${role == 'counselor'}">
+                        <a href="/counselor/dashboard" 
+                           class="${fn:contains(currentUrl, '/counselor/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="home" class="w-4 h-4"></i>
+                            Dashboard
+                        </a>
+                        
+                        <a href="/counselor/schedule" 
+                           class="${fn:contains(currentUrl, '/counselor/schedule') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            My Schedule
+                        </a>
+                        
+                        <a href="/counselor/content" 
+                           class="${fn:contains(currentUrl, '/counselor/content') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                            Content Manager
+                        </a>
+                        
+                        <a href="/counselor/profile" 
+                           class="${fn:contains(currentUrl, '/counselor/profile') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                            My Profile
+                        </a>
+                    </c:if>
+
+                    <!-- ADMIN NAVIGATION -->
+                    <c:if test="${role == 'admin'}">
+                        <a href="/admin/dashboard" 
+                           class="${fn:contains(currentUrl, '/admin/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="home" class="w-4 h-4"></i>
+                            Dashboard
+                        </a>
+                        
+                        <a href="/admin/forum-moderation" 
+                           class="${fn:contains(currentUrl, '/admin/forum') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="shield" class="w-4 h-4"></i>
+                            Forum Moderation
+                        </a>
+                        
+                        <a href="/admin/profile" 
+                           class="${fn:contains(currentUrl, '/admin/profile') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                            My Profile
+                        </a>
+                    </c:if>
+
+                    <!-- Logout Button -->
+                    <a href="/logout" 
+                       class="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors ml-2">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        Logout
+                    </a>
+                </div>
+
+                <!-- Mobile Navigation -->
+                <div class="md:hidden flex items-center gap-2">
+                    <a href="/logout" 
+                       class="inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </a>
+                    
+                    <button id="mobile-menu-button" 
+                            class="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
                 </div>
             </div>
         </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-border bg-card">
+            <div class="container mx-auto px-4 py-3 space-y-1">
+                
+                <!-- STUDENT MOBILE NAVIGATION (with Forum link) -->
+                <c:if test="${role == 'student' || role == null}">
+                    <a href="/student/dashboard" 
+                       class="${fn:contains(currentUrl, '/student/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="home" class="w-4 h-4"></i>
+                        Dashboard
+                    </a>
+                    <a href="/student/assessment" 
+                       class="${fn:contains(currentUrl, '/student/assessment') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="heart" class="w-4 h-4"></i>
+                        Self-Check
+                    </a>
+                    <a href="/student/library" 
+                       class="${fn:contains(currentUrl, '/student/library') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        Learning
+                    </a>
+                    
+                    <!-- MERGED: Forum link in mobile menu -->
+                    <a href="/student/forum" 
+                       class="${fn:contains(currentUrl, '/student/forum') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="message-circle" class="w-4 h-4"></i>
+                        Community
+                    </a>
+                    
+                    <a href="/student/telehealth" 
+                       class="${fn:contains(currentUrl, '/student/telehealth') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        Sessions
+                    </a>
+                    <a href="/student/profile" 
+                       class="${fn:contains(currentUrl, '/student/profile') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        My Profile
+                    </a>
+                </c:if>
+
+                <!-- COUNSELOR MOBILE NAVIGATION -->
+                <c:if test="${role == 'counselor'}">
+                    <a href="/counselor/dashboard" 
+                       class="${fn:contains(currentUrl, '/counselor/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="home" class="w-4 h-4"></i>
+                        Dashboard
+                    </a>
+                    <a href="/counselor/schedule" 
+                       class="${fn:contains(currentUrl, '/counselor/schedule') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        My Schedule
+                    </a>
+                    <a href="/counselor/content" 
+                       class="${fn:contains(currentUrl, '/counselor/content') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        Content Manager
+                    </a>
+                    <a href="/counselor/profile" 
+                       class="${fn:contains(currentUrl, '/counselor/profile') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        My Profile
+                    </a>
+                </c:if>
+
+                <!-- ADMIN MOBILE NAVIGATION -->
+                <c:if test="${role == 'admin'}">
+                    <a href="/admin/dashboard" 
+                       class="${fn:contains(currentUrl, '/admin/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="home" class="w-4 h-4"></i>
+                        Dashboard
+                    </a>
+                    <a href="/admin/forum-moderation" 
+                       class="${fn:contains(currentUrl, '/admin/forum') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="shield" class="w-4 h-4"></i>
+                        Forum Moderation
+                    </a>
+                    <a href="/admin/profile" 
+                       class="${fn:contains(currentUrl, '/admin/profile') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        My Profile
+                    </a>
+                </c:if>
+            </div>
+        </div>
     </nav>
+
+    <!-- Mobile Menu Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (menuButton && mobileMenu) {
+                menuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 flex-grow w-full">
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\counselor\content-manager.jsp
-Size: 2.12 kB
+Size: 12.84 kB
 ================================================================================
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <jsp:include page="../common/header.jsp" />
 
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 class="text-3xl font-bold text-foreground">Content Manager</h1>
-        <a href="/counselor/content/new" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity inline-flex items-center gap-2 font-medium shadow-sm">
+        <div>
+            <h1 class="text-3xl font-bold text-foreground">Content Management</h1>
+            <p class="text-muted-foreground mt-1">Manage learning materials and resources</p>
+        </div>
+        <button id="addContentBtn" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity inline-flex items-center gap-2 font-medium shadow-sm">
             <i data-lucide="plus" class="h-4 w-4"></i>
-            Create New Content
-        </a>
+            Add New Content
+        </button>
     </div>
 
     <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
-        <h2 class="text-xl font-semibold mb-4 text-foreground">Published Content</h2>
+        <h2 class="text-xl font-semibold mb-4 text-foreground">All Learning Content</h2>
         
-        <div class="space-y-4">
-            <div class="border-b border-border pb-4 last:border-0 last:pb-0">
-                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                    <div>
-                        <h3 class="text-lg font-semibold text-foreground">Understanding Anxiety</h3>
-                        <p class="text-muted-foreground text-sm mt-1">Published on: January 1, 2024</p>
-                    </div>
-                    
-                    <div class="flex space-x-2">
-                        <button class="bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:opacity-90 transition-opacity text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring">
-                            Edit
-                        </button>
-                        
-                        <button class="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-md hover:opacity-90 transition-opacity text-sm font-medium focus:outline-none focus:ring-2 focus:ring-destructive">
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-border">
+                        <th class="text-left py-3 px-4 font-semibold text-foreground">Title</th>
+                        <th class="text-left py-3 px-4 font-semibold text-foreground hidden sm:table-cell">Type</th>
+                        <th class="text-left py-3 px-4 font-semibold text-foreground hidden md:table-cell">Description</th>
+                        <th class="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="item" items="${contents}">
+                        <tr data-id="${item.id}" class="border-b border-border hover:bg-secondary/50 transition-colors">
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-2">
+                                    <c:choose>
+                                        <c:when test="${item.type == 'Video'}">
+                                            <i data-lucide="play-circle" class="h-4 w-4 text-muted-foreground"></i>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <i data-lucide="file-text" class="h-4 w-4 text-muted-foreground"></i>
+                                        </c:otherwise>
+                                    </c:choose>
+                                    <span class="font-medium">${item.title}</span>
+                                </div>
+                                <p class="text-sm text-muted-foreground mt-1 sm:hidden">${item.description}</p>
+                            </td>
+                            <td class="py-4 px-4 hidden sm:table-cell">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">${item.type}</span>
+                            </td>
+                            <td class="py-4 px-4 hidden md:table-cell text-muted-foreground text-sm">${item.description}</td>
+                            <td class="py-4 px-4">
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" class="p-2 hover:bg-secondary rounded-md transition-colors editBtn" title="Edit">
+                                        <i data-lucide="edit" class="h-4 w-4 text-foreground"></i>
+                                    </button>
+                                    <form method="post" action="${pageContext.request.contextPath}/counselor/content/delete" data-title="${fn:escapeXml(item.title)}">
+                                        <input type="hidden" name="id" value="${item.id}" />
+                                        <button type="submit" class="p-2 hover:bg-destructive/10 rounded-md transition-colors" title="Delete">
+                                            <i data-lucide="trash-2" class="h-4 w-4 text-destructive"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+
+<!-- Modal Overlay -->
+<div id="modalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"></div>
+
+<!-- Modal -->
+<div id="contentModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="bg-card rounded-lg shadow-xl w-full max-w-2xl transform transition-all">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-border">
+                <h2 class="text-xl font-semibold text-foreground">Add New Learning Content</h2>
+                <button id="closeModal" class="text-muted-foreground hover:text-foreground transition-colors">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <form action="/counselor/content/create" method="POST" class="p-6 space-y-5" id="contentForm">
+                <!-- Title -->
+                <div>
+                    <label for="title" class="block text-sm font-medium text-foreground mb-1.5">Title</label>
+                    <input 
+                        type="text" 
+                        id="title" 
+                        name="title" 
+                        placeholder="Content title"
+                        class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground"
+                        required
+                    />
+                </div>
+                <input type="hidden" id="editingId" name="editingId" value="" />
+                
+                <!-- Content Type -->
+                <div>
+                    <label for="contentType" class="block text-sm font-medium text-foreground mb-1.5">Content Type</label>
+                    <select 
+                        id="contentType" 
+                        name="contentType"
+                        class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
+                        required
+                    >
+                        <option value="Article">Article</option>
+                        <option value="Video">Video</option>
+                    </select>
+                </div>
+                
+                <!-- Description -->
+                <div>
+                    <label for="description" class="block text-sm font-medium text-foreground mb-1.5">Description</label>
+                    <textarea 
+                        id="description" 
+                        name="description" 
+                        rows="3"
+                        placeholder="Brief description"
+                        class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground resize-none"
+                        required
+                    ></textarea>
+                </div>
+                
+                <!-- Content -->
+                <div>
+                    <label for="content" class="block text-sm font-medium text-foreground mb-1.5">Content</label>
+                    <textarea 
+                        id="content" 
+                        name="content" 
+                        rows="6"
+                        placeholder="Main content or URL"
+                        class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground resize-none"
+                        required
+                    ></textarea>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="flex justify-end gap-3 pt-4">
+                    <button 
+                        type="button" 
+                        id="cancelBtn"
+                        class="px-4 py-2 border border-border rounded-md text-foreground hover:bg-secondary transition-colors font-medium"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="submit"
+                        class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity font-medium shadow-sm"
+                    >
+                        Create Content
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Modal functionality
+    const modal = document.getElementById('contentModal');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const addContentBtn = document.getElementById('addContentBtn');
+    const closeModalBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+    
+    function openModal() {
+        modal.classList.remove('hidden');
+        modalOverlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeModal() {
+        modal.classList.add('hidden');
+        modalOverlay.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
+    addContentBtn.addEventListener('click', openModal);
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', closeModal);
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeModal();
+        }
+    });
+
+    // Edit handling: populate modal and submit to server for persistence
+    (function() {
+        const tableBody = document.querySelector('table tbody');
+        const form = document.getElementById('contentForm');
+        const editingId = document.getElementById('editingId');
+        const titleInput = document.getElementById('title');
+        const typeInput = document.getElementById('contentType');
+        const descInput = document.getElementById('description');
+        const contentInput = document.getElementById('content');
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        // when clicking Add New Content, ensure form is in create mode
+        addContentBtn.addEventListener('click', () => {
+            editingId.value = '';
+            form.reset();
+            if (submitBtn) submitBtn.textContent = 'Create Content';
+        });
+
+        // delegate edit button clicks
+        tableBody.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.editBtn');
+            if (!editBtn) return;
+            const row = editBtn.closest('tr');
+            const tds = row.querySelectorAll('td');
+            const id = row.getAttribute('data-id');
+            const title = (tds[0].querySelector('div > span') || { textContent: '' }).textContent.trim();
+            const desc = tds[0].querySelector('p') ? tds[0].querySelector('p').textContent.trim() : (tds[2] ? tds[2].textContent.trim() : '');
+            const typeCell = tds[1] ? tds[1].querySelector('span') : null;
+            const type = typeCell ? typeCell.textContent.trim() : 'Article';
+
+            editingId.value = id;
+            titleInput.value = title;
+            descInput.value = desc;
+            typeInput.value = type;
+            if (submitBtn) submitBtn.textContent = 'Update Content';
+            openModal();
+        });
+
+        // attach confirmation to delete forms (safer than inline onsubmit)
+        document.querySelectorAll('form[action$="/counselor/content/delete"]').forEach(function(f) {
+            f.addEventListener('submit', function(evt) {
+                const t = f.dataset.title || 'this item';
+                if (!confirm('Delete "' + t + '"?')) {
+                    evt.preventDefault();
+                }
+            });
+        });
+    })();
+</script>
 
 <jsp:include page="../common/footer.jsp" />
 
@@ -1337,6 +2612,13 @@ Size: 2.46 kB
 </div>
 
 <jsp:include page="../common/footer.jsp" />
+
+================================================================================
+File: src\main\webapp\WEB-INF\jsp\counselor\profile.jsp
+Size: 23 B
+================================================================================
+
+<h1>Coming Soon...</h1>
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\counselor\schedule.jsp
@@ -1428,51 +2710,217 @@ Size: 1.86 kB
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\student\assessment-questions.jsp
-Size: 2.61 kB
+Size: 12.29 kB
 ================================================================================
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <jsp:include page="../common/header.jsp" />
 
-<div class="space-y-6">
-    <h1 class="text-3xl font-bold text-foreground">Assessment Questions</h1>
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-foreground">Self-Assessment</h1>
+        <p class="text-muted-foreground">AI-guided assessment to identify areas for support</p>
+    </div>
 
-    <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
-        <form method="POST" action="/student/assessment/submit" class="space-y-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-card p-6 rounded-lg shadow-lg border border-border" style="--tw-bg-opacity: 1;">
             
-            <div>
-                <label class="block text-lg font-medium mb-4 text-foreground">Question 1: How often do you feel anxious?</label>
-                <div class="space-y-3">
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="q1" value="never" class="mr-3 h-4 w-4 accent-primary text-primary focus:ring-primary border-input"> 
-                        <span class="text-foreground">Never</span>
-                    </label>
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="q1" value="rarely" class="mr-3 h-4 w-4 accent-primary text-primary focus:ring-primary border-input"> 
-                        <span class="text-foreground">Rarely</span>
-                    </label>
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="q1" value="sometimes" class="mr-3 h-4 w-4 accent-primary text-primary focus:ring-primary border-input"> 
-                        <span class="text-foreground">Sometimes</span>
-                    </label>
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="q1" value="often" class="mr-3 h-4 w-4 accent-primary text-primary focus:ring-primary border-input"> 
-                        <span class="text-foreground">Often</span>
-                    </label>
-                    <label class="flex items-center cursor-pointer">
-                        <input type="radio" name="q1" value="always" class="mr-3 h-4 w-4 accent-primary text-primary focus:ring-primary border-input"> 
-                        <span class="text-foreground">Always</span>
-                    </label>
-                </div>
-            </div>
+            <c:choose>
+                <c:when test="${requestScope.showResults == true}">
+                    
+                    <%-- ------------------------------------------------ --%>
+                    <%-- ✅ ASSESSMENT RESULTS UI (Uses Custom CSS Vars) --%>
+                    <%-- ------------------------------------------------ --%>
+                    <div class="text-center space-y-6">
+                        <div class="p-6 rounded-lg" style="background-color: hsl(var(--secondary));">
+                            <h3 class="text-xl font-semibold mb-4 text-card-foreground">Assessment Results</h3>
+                            
+                            <div class="space-y-4">
+                                <div class="inline-flex items-center space-x-4">
+                                    <div class="text-4xl font-bold" style="color: hsl(var(--primary));">
+                                        ${requestScope.score}%
+                                    </div>
+                                    <%-- The bg and color vars must be calculated in the Java Controller based on the score --%>
+                                    <div class="px-3 py-1 rounded-full ${requestScope.bg}">
+                                        <span class="font-medium ${requestScope.color}">
+                                            ${requestScope.level} Symptoms
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-sm text-muted-foreground">
+                                    ${requestScope.action}
+                                </p>
+                            </div>
+                        </div>
 
-            <button type="submit" class="bg-primary text-primary-foreground px-6 py-2.5 rounded-md hover:opacity-90 transition-opacity font-medium focus:outline-none focus:ring-2 focus:ring-ring shadow-sm">
-                Submit Assessment
-            </button>
-        </form>
+                        <div class="flex space-x-4 justify-center">
+                            <%-- Retake/Reset button (Style: variant="outline" using secondary/primary-foreground) --%>
+                            <a href="/student/assessment/reset" 
+                                class="border border-input text-foreground px-6 py-2.5 rounded-md hover:bg-secondary transition-colors font-medium focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                Retake Assessment
+                            </a>
+                            <%-- Explore Resources button (Style: variant="default" using primary) --%>
+                            <a href="/student/resources" 
+                                class="bg-primary text-primary-foreground px-6 py-2.5 rounded-md hover:opacity-90 transition-opacity font-medium shadow-sm">
+                                Explore Resources
+                            </a>
+                        </div>
+                    </div>
+                    
+                </c:when>
+                
+                <c:otherwise>
+                    
+                    <%-- ------------------------------------------------ --%>
+                    <%-- ❓ QUESTION DISPLAY UI (Uses Custom CSS Vars) --%>
+                    <%-- ------------------------------------------------ --%>
+                    
+                    <div class="card-header text-center">
+                        <h2 class="flex items-center justify-center text-2xl font-semibold mb-2 text-card-foreground">
+                            <i data-lucide="heart" class="w-6 h-6 mr-2" style="color: hsl(330 55% 60%);"></i>
+                            Mental Health Self-Assessment
+                        </h2>
+                        <div class="space-y-2 text-sm text-muted-foreground">
+                            <p>This validated assessment helps identify areas for support.</p>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" action="/student/assessment/submit" class="space-y-6 mt-6">
+                        <%-- Hidden field to submit the current question index or ID for backend tracking --%>
+                        <input type="hidden" name="currentQuestionIndex" value="${requestScope.currentQuestionIndex}">
+                        
+                        <%-- Progress indicator --%>
+                        <c:set var="total" value="${requestScope.totalQuestions}" />
+                        <c:set var="current" value="${requestScope.currentQuestionIndex}" />
+                        <c:set var="progress" value="${(current / total) * 100}" />
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm text-muted-foreground">
+                                <span>Question ${current + 1} of ${total}</span>
+                                <span><fmt:formatNumber value="${progress}" pattern="0" />% Complete</span>
+                            </div>
+                            <div class="progress h-2 rounded-full" style="background-color: hsl(var(--muted));">
+                                <div class="progress-bar h-full rounded-full" style="width: ${progress}%; background-color: hsl(var(--primary));" role="progressbar" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+
+                        <%-- Question --%>
+                        <div class="text-center py-8">
+                            <h3 class="text-lg font-medium mb-6 leading-relaxed text-card-foreground">
+                                ${requestScope.currentQuestion}
+                            </h3>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <c:forEach var="option" items="${requestScope.responseOptions}" varStatus="loop">
+                                    <c:set var="uniqueId" value="option_${option.value}"/>
+                                    
+                                    <%-- Radio buttons styled as buttons --%>
+                                    
+                                    <label for="${uniqueId}" 
+                                        class="h-auto p-4 text-center cursor-pointer border rounded-lg transition-all 
+                                        text-card-foreground border-input 
+                                        hover:bg-secondary hover:border-primary 
+                                        has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                        
+                                        <input type="radio" class="hidden" name="response" id="${uniqueId}" value="${option.value}" required>
+
+                                        <div class="w-full">
+                                            <div class="font-medium">${option.value}</div>
+                                            <div class="text-xs mt-1">${option.label}</div>
+                                        </div>
+                                    </label>
+                                </c:forEach>
+                            </div>
+                        </div>
+
+                        <%-- Navigation --%>
+                        <div class="flex justify-between pt-4">
+                            <%-- Previous Button (Style: variant="ghost") --%>
+                            <button type="submit" name="direction" value="previous"
+                                class="text-foreground px-4 py-2 hover:bg-muted rounded-md transition-colors"
+                                <c:if test="${current == 0}">disabled</c:if>>
+                                Previous
+                            </button>
+                            
+                            <%-- Next/Complete Button (Style: variant="default") --%>
+                            <button type="submit" name="direction" value="next"
+                                class="bg-primary text-primary-foreground px-6 py-2.5 rounded-md hover:opacity-90 transition-opacity font-medium shadow-sm">
+                                <c:choose>
+                                    <c:when test="${current + 1 == total}">
+                                        Complete Assessment
+                                    </c:when>
+                                    <c:otherwise>
+                                        Next Question 
+                                        <i data-lucide="arrow-right" class="w-4 h-4 ml-1 inline-block"></i>
+                                    </c:otherwise>
+                                </c:choose>
+                            </button>
+                        </div>
+                    </form>
+                    
+                </c:otherwise>
+            </c:choose>
+            
+        </div>
     </div>
 </div>
 
+<%-- ------------------------------------------------ --%>
+<%-- ⚠️ HIGH-RISK CONSENT DIALOG (Separate Element) --%>
+<%-- ------------------------------------------------ --%>
+
+<c:if test="${requestScope.showConsentDialog == true}">
+    <%-- Backdrop: fixed, opaque, covers entire screen --%>
+    <div class="fixed inset-0 z-50 bg-background/80 flex items-center justify-center backdrop-blur-sm" 
+         style="background-color: hsla(var(--background), 0.8);">
+        
+        <%-- Dialog Content (Modal) --%>
+        <div class="w-full max-w-md bg-card p-6 rounded-lg shadow-2xl animate-in fade-in zoom-in-95" 
+             style="border: 1px solid hsl(var(--border)); background-color: hsl(var(--card));">
+            
+            <div class="space-y-4">
+                <h3 class="flex items-center text-lg font-semibold text-card-foreground">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 mr-2" style="color: hsl(0 84.2% 60.2%);"></i>
+                    Additional Support Available
+                </h3>
+                
+                <p class="text-sm text-card-foreground">
+                    Your assessment indicates you may benefit from additional professional support. 
+                    Would you like us to share your results with a counselor who can provide personalized guidance?
+                </p>
+                
+                <div class="p-3 rounded-md" style="background-color: hsl(var(--secondary));">
+                    <p class="text-xs" style="color: hsl(var(--primary));">
+                        🔒 Your privacy is important. Sharing is optional and you can withdraw consent at any time.
+                    </p>
+                </div>
+                
+                <div class="flex space-x-3 pt-2">
+                    <%-- Yes Button --%>
+                    <a href="/student/assessment/consent?share=true" 
+                        class="flex-1 bg-primary text-primary-foreground text-center px-4 py-2 rounded-md hover:opacity-90 transition-opacity font-medium shadow-sm">
+                        Yes, Share Results
+                    </a>
+                    <%-- No Button --%>
+                    <a href="/student/assessment/consent?share=false" 
+                        class="flex-1 border border-input text-foreground text-center px-4 py-2 rounded-md hover:bg-secondary transition-colors font-medium">
+                        Keep Private
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:if>
+
+<%-- Script to initialize Lucide/Feather icons --%>
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>
 <jsp:include page="../common/footer.jsp" />
 
 ================================================================================
@@ -1740,51 +3188,255 @@ Size: 3.44 kB
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\student\forum-list.jsp
-Size: 2.15 kB
+Size: 15.12 kB
 ================================================================================
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <jsp:include page="../common/header.jsp" />
 
-<div class="space-y-6">
-    <div>
-        <h1 class="text-3xl font-bold text-foreground">Community Forum</h1>
-        <p class="text-muted-foreground mt-2">Join discussions, share experiences, and find support from the community.</p>
-    </div>
-
-    <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-semibold text-foreground">Discussion Threads</h2>
-            <button class="text-sm bg-secondary text-primary px-3 py-1.5 rounded-md font-medium hover:bg-secondary/80 transition-colors">
-                New Post
-            </button>
+<%-- MOCK DATA ASSUMPTIONS:
+    Your Spring Controller must provide the following Model Attributes:
+    1. ${categories}: List of category objects (id, name, color, count).
+    2. ${posts}: List of post objects (id, title, content, author, timestamp, category, replies, likes, views, supportLevel, tags).
+    3. ${urgentPosts}: List of posts marked as urgent (for the sidebar).
+--%>
+<div class="container mx-auto py-3">
+    <div class="flex items-center justify-between mb-2 border-b pb-4">
+        <div class="flex items-center space-x-4">
+            <%-- Assuming header/nav handles the back button --%>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Peer Support Forum</h1>
+                <p class="text-gray-600 mt-1">Safe, anonymous community support • Join discussions, share experiences, and find support.</p>
+            </div>
         </div>
         
-        <ul class="space-y-4">
-            <c:forEach var="thread" items="${forumThreads}">
-                <li class="border-b border-border pb-4 last:border-0 last:pb-0">
-                    <div class="flex items-start gap-4">
-                        <div class="p-2 bg-secondary rounded-full mt-1 shrink-0">
-                            <i data-lucide="message-circle" class="h-5 w-5 text-primary"></i>
-                        </div>
-                        
-                        <div class="flex-1">
-                            <a href="/student/forum/thread" class="text-lg font-medium text-foreground hover:text-primary transition-colors block">
-                                ${thread}
+        <%-- New Post Button (DialogTrigger converted to simple button/onclick) --%>
+        <button onclick="openNewPostModal()" class="flex items-center bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-semibold shadow-md transition-colors">
+            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+            Share or Ask for Support
+        </button>
+    </div>
+
+    <%-- Main Tabs (Keeping only the structure for User View, ignoring Moderator View logic) --%>
+    <div class="w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            <%-- START SIDEBAR (lg:col-span-1) --%>
+            <div class="lg:col-span-1 space-y-6">
+                
+                <%-- Support Categories Card --%>
+                <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
+                    <h2 class="text-lg font-semibold text-foreground flex items-center mb-3 pb-3 border-b border-border/70">
+                        <i data-lucide="handshake" class="w-5 h-5 mr-2"></i>
+                        Support Categories
+                    </h2>
+                    <div class="space-y-2">
+                        <c:set var="categories" value="${forumCategories}" /> <%-- Use the controller's attribute name if available --%>
+                        <c:if test="${empty categories}">
+                            <%-- Mock categories if controller didn't provide them (for UI preview) --%>
+                            <c:set var="categories" value="${[{'id': 'all', 'name': 'All Topics', 'count': 42, 'color': 'bg-blue-100 text-blue-800'}, {'id': 'anxiety', 'name': 'Anxiety Support', 'count': 15, 'color': 'bg-purple-100 text-purple-800'}, {'id': 'general', 'name': 'General Support', 'count': 2, 'color': 'bg-gray-100 text-gray-800'}]}" />
+                        </c:if>
+
+                        <c:forEach var="category" items="${categories}">
+                            <%-- Mocking selected category based on a URL parameter or default value --%>
+                            <a href="?category=${category.id}" 
+                                class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
+                                    <c:choose>
+                                        <c:when test="${param.category eq category.id}">bg-primary text-primary-foreground hover:bg-primary/90</c:when>
+                                        <c:otherwise>text-foreground hover:bg-gray-50</c:otherwise>
+                                    </c:choose>
+                                ">
+                                <span class="text-sm font-medium">${category.name}</span>
+                                <c:if test="${category.id ne 'all'}">
+                                    <span class="ml-2 px-2 py-0.5 text-xs rounded-full ${category.color}">${category.count}</span>
+                                </c:if>
                             </a>
-                            <p class="text-muted-foreground text-sm mt-1">Click to view replies and join the discussion.</p>
-                        </div>
-                        
-                        <div class="hidden sm:block mt-2">
-                             <i data-lucide="chevron-right" class="h-5 w-5 text-muted-foreground/50"></i>
+                        </c:forEach>
+                    </div>
+                </div>
+
+                <%-- Urgent Support Needed Card (Simplified Mock) --%>
+                <c:if test="${not empty urgentPosts}">
+                    <div class="bg-card p-4 rounded-lg shadow-sm border border-red-200">
+                        <h2 class="text-lg font-semibold text-red-700 flex items-center mb-3 pb-3 border-b border-red-200/70">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 mr-2"></i>
+                            Urgent Support Needed
+                        </h2>
+                        <div class="space-y-2">
+                            <c:forEach var="post" items="${urgentPosts}" begin="0" end="2">
+                                <div class="text-sm p-2 bg-red-50 rounded">
+                                    <p class="font-medium truncate">${post.title}</p>
+                                    <p class="text-gray-600 text-xs">${post.author} • ${post.timestamp}</p>
+                                </div>
+                            </c:forEach>
+                            <a href="#" class="text-xs text-red-700 hover:underline block mt-2">View all urgent posts</a>
                         </div>
                     </div>
-                </li>
-            </c:forEach>
-        </ul>
+                </c:if>
+
+                <%-- Peer Support Guidelines Card --%>
+                <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
+                    <h2 class="text-lg font-semibold text-foreground mb-3 pb-3 border-b border-border/70">
+                        Peer Support Guidelines
+                    </h2>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p>• Listen with empathy and respect</p>
+                        <p>• Share your experiences, not advice</p>
+                        <p>• Respect anonymity and privacy</p>
+                        <p>• Flag concerning content immediately</p>
+                        <p>• Encourage professional help when needed</p>
+                    </div>
+                </div>
+            </div>
+            <%-- END SIDEBAR --%>
+
+            <%-- START MAIN CONTENT (lg:col-span-3) --%>
+            <div class="lg:col-span-3">
+                
+                <%-- Search and Filters (Converted from React state/hooks to static structure) --%>
+                <div class="mb-6 space-y-4">
+                    <div class="flex gap-4">
+                        <div class="relative flex-1">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                            <input 
+                                type="text"
+                                placeholder="Search posts, topics, or tags..."
+                                class="w-full pl-10 px-3 py-2 border border-input rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                                aria-label="Search forum"
+                            />
+                        </div>
+                        <select 
+                            class="px-3 py-2 border border-input rounded-md bg-background appearance-none cursor-pointer"
+                            aria-label="Sort by"
+                        >
+                            <option value="recent">Most Recent</option>
+                            <option value="popular">Most Popular</option>
+                            <option value="helpful">Most Helpful</option>
+                            <option value="active">Most Active</option>
+                        </select>
+                    </div>
+                </div>
+
+                <%-- Posts Listing (Using JSTL to iterate mock data) --%>
+                <div class="space-y-4">
+                    <c:forEach var="post" items="${posts}">
+                        <%-- Simulate dynamic background color based on supportLevel (React: getSupportLevelColor) --%>
+                        <c:set var="level" value="${post.supportLevel}" />
+                        <c:set var="levelClass">
+                            <c:choose>
+                                <c:when test="${level eq 'urgent'}">border-red-300 bg-red-50</c:when>
+                                <c:when test="${level eq 'high'}">border-orange-300 bg-orange-50</c:when>
+                                <c:when test="${level eq 'medium'}">border-yellow-300 bg-yellow-50</c:when>
+                                <c:when test="${level eq 'positive'}">border-green-300 bg-green-50</c:when>
+                                <c:otherwise>border-border bg-card</c:otherwise>
+                            </c:choose>
+                        </c:set>
+                        
+                        <a href="/student/forum/thread?id=${post.id}" class="block">
+                            <div class="p-6 rounded-lg shadow-sm transition-shadow hover:shadow-lg border ${levelClass}">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="flex items-center space-x-2 flex-wrap">
+                                        <%-- Category Badge --%>
+                                        <span class="text-xs px-2 py-0.5 rounded-full border border-gray-300 text-gray-700 bg-white">
+                                            ${post.categoryName}
+                                        </span>
+                                        <%-- Support Level Badge (React: getSupportLevelBadge) --%>
+                                        <c:if test="${level eq 'urgent'}">
+                                            <span class="text-xs px-2 py-0.5 rounded-full bg-red-600 text-white">Urgent Support Needed</span>
+                                        </c:if>
+                                        <c:if test="${level eq 'high'}">
+                                            <span class="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">High Priority</span>
+                                        </c:if>
+                                        <c:if test="${post.coachingRequested}">
+                                            <span class="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">Professional Support Requested</span>
+                                        </c:if>
+                                    </div>
+                                    <div class="flex items-center text-xs text-gray-500">
+                                        <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
+                                        ${post.timestamp}
+                                    </div>
+                                </div>
+
+                                <h3 class="font-semibold text-lg mb-2 text-foreground">${post.title}</h3>
+                                <p class="text-gray-700 mb-4 line-clamp-2">${post.content}</p>
+
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <div class="flex items-center">
+                                            <i data-lucide="user" class="w-4 h-4 mr-1"></i>
+                                            <span>${post.author}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i data-lucide="message-circle" class="w-4 h-4 mr-1"></i>
+                                            <span>${post.replies} responses</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i data-lucide="eye" class="w-4 h-4 mr-1"></i>
+                                            <span>${post.views} views</span>
+                                        </div>
+                                    </div>
+
+                                    <%-- Action Buttons (Simplified to show presence; full JS interaction not required for UI only) --%>
+                                    <div class="flex items-center space-x-2 text-sm">
+                                        <span class="text-gray-500 flex items-center">
+                                            <i data-lucide="heart" class="w-4 h-4 mr-1"></i> ${post.likes}
+                                        </span>
+                                        <span class="text-gray-500 flex items-center">
+                                            <i data-lucide="award" class="w-4 h-4 mr-1"></i> ${post.helpfulCount}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </c:forEach>
+                    
+                    <%-- Fallback if no posts are available --%>
+                    <c:if test="${empty posts}">
+                         <div class="text-center py-10 border border-dashed rounded-lg text-gray-500 bg-card">
+                            <i data-lucide="help-circle" class="w-8 h-8 mx-auto mb-3"></i>
+                            <p class="font-medium">No active discussion threads found.</p>
+                            <p class="text-sm">Be the first to <a href="#" onclick="openNewPostModal(); return false;" class="text-primary hover:underline">Share or Ask for Support</a>.</p>
+                        </div>
+                    </c:if>
+                </div>
+            </div>
+            <%-- END MAIN CONTENT --%>
+        </div>
     </div>
 </div>
+
+<%-- 3. INCLUDE THE NEW POST MODAL FRAGMENT (Already defined in common) --%>
+<jsp:include page="new-post-modal.jsp" />
+
+<%-- 4. JAVASCRIPT TO CONTROL THE MODAL (Placed right before footer) --%>
+<script>
+    // NOTE: This assumes 'new-post-modal.jsp' is in '../common/'
+    const postModal = document.getElementById('new-post-modal');
+
+    function openNewPostModal() {
+        if (postModal) {
+            postModal.classList.remove('hidden');
+            // Optional: Disable scrolling on the body when modal is open
+            document.body.style.overflow = 'hidden'; 
+        } else {
+            console.error("New Post Modal element not found. Check if new-post-modal.jsp is included.");
+        }
+    }
+
+    function closeNewPostModal() {
+        if (postModal) {
+            postModal.classList.add('hidden');
+            // Optional: Re-enable scrolling
+            document.body.style.overflow = ''; 
+        }
+    }
+    
+    // Ensure Lucide icons are processed again if this is the main content of the page
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+    }
+</script>
 
 <jsp:include page="../common/footer.jsp" />
 
@@ -1858,6 +3510,92 @@ Size: 3.33 kB
 </div>
 
 <jsp:include page="../common/footer.jsp" />
+
+================================================================================
+File: src\main\webapp\WEB-INF\jsp\student\new-post-modal.jsp
+Size: 4.79 kB
+================================================================================
+
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+    Modal Fragment for creating a new Forum Post.
+    Controlled by JavaScript on the calling page (e.g., forum-list.jsp).
+--%>
+<div id="new-post-modal" class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center hidden">
+    
+    <div class="bg-card w-full max-w-lg p-6 rounded-xl shadow-2xl transform transition-all scale-100 opacity-100 border border-primary/20">
+        
+        <%-- Header --%>
+        <div class="flex justify-between items-center pb-4 border-b border-border">
+            <h3 class="text-xl font-bold text-foreground">Share Your Experience or Ask for Support</h3>
+            <button onclick="closeNewPostModal()" class="p-1 rounded-full text-muted-foreground hover:bg-gray-100 transition-colors" aria-label="Close">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+        </div>
+        
+        <%-- Form Content --%>
+        <form class="mt-6 space-y-4">
+            
+            <%-- Support Category (Matching the drop-down visual) --%>
+            <div class="space-y-2">
+                <label for="support-category" class="text-sm font-medium text-foreground block">Support Category</label>
+                <select id="support-category" name="category" 
+                    class="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 appearance-none">
+                    
+                    <option value="General Support" selected>General Support</option>
+                    <option value="Anxiety Support">Anxiety Support</option>
+                    <option value="Depression Support">Depression Support</option>
+                    <option value="Stress Management">Stress Management</option>
+                    <option value="Sleep Issues">Sleep Issues</option>
+                    <option value="Relationships">Relationships</option>
+                    <option value="Academic Pressure">Academic Pressure</option>
+                </select>
+            </div>
+            
+            <%-- Title Input --%>
+            <div class="space-y-2">
+                <label for="post-title" class="text-sm font-medium text-foreground block">Title</label>
+                <input type="text" id="post-title" name="title" placeholder="What would you like to share or ask about?" 
+                    class="w-full px-4 py-2 border border-primary/50 rounded-lg bg-primary/5 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary transition duration-150" required>
+            </div>
+            
+            <%-- Story or Question Textarea --%>
+            <div class="space-y-2">
+                <label for="post-story" class="text-sm font-medium text-foreground block">Your Story or Question</label>
+                <textarea id="post-story" name="story" rows="5" placeholder="Share your experience, ask for advice, or offer support to others. This is a judgment-free space..." 
+                    class="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 resize-y" required></textarea>
+            </div>
+            
+            <%-- Anonymity Checkbox and Warning --%>
+            <div class="space-y-3">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="post-anonymous" name="anonymous" checked class="form-checkbox text-primary rounded border-gray-300 focus:ring-primary h-4 w-4">
+                    <span class="text-sm font-medium text-foreground">Post anonymously (recommended)</span>
+                </label>
+                
+                <div class="flex items-start p-3 bg-secondary/50 rounded-lg text-sm text-primary border border-primary/20">
+                    <i data-lucide="lock" class="h-4 w-4 text-primary shrink-0 mt-0.5"></i>
+                    <p class="ml-2">Anonymous posts protect your privacy with randomly generated usernames. Your identity is never revealed.</p>
+                </div>
+            </div>
+            
+            <%-- Submit Button --%>
+            <div class="pt-2">
+                <button type="submit" onclick="alert('Post submitted! (Demo Mode)')" class="w-full bg-primary text-primary-foreground py-2.5 rounded-xl font-semibold text-lg shadow-lg hover:bg-primary/90 transition-colors">
+                    Share with Community
+                </button>
+            </div>
+        </form>
+        
+    </div>
+</div>
+
+================================================================================
+File: src\main\webapp\WEB-INF\jsp\student\profile.jsp
+Size: 23 B
+================================================================================
+
+<h1>Coming Soon...</h1>
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\student\telehealth-book.jsp
@@ -2016,23 +3754,27 @@ File: target\maven-status\maven-compiler-plugin\compile\default-compile\createdF
 Size: 228 B
 ================================================================================
 
+com\mindmate\controller\CounselorController.class
 com\mindmate\controller\AdminController.class
 com\mindmate\controller\AuthController.class
 com\mindmate\MindMateApplication.class
-com\mindmate\controller\CounselorController.class
 com\mindmate\controller\StudentController.class
 
 
 ================================================================================
 File: target\maven-status\maven-compiler-plugin\compile\default-compile\inputFiles.lst
-Size: 778 B
+Size: 1.37 kB
 ================================================================================
 
 C:\Users\samyh\OneDrive\Desktop\Homework\UTM\Degree\Sem 5\IP\Project\Source Code\IPman-MindMate\src\main\java\com\mindmate\controller\AdminController.java
+C:\Users\samyh\OneDrive\Desktop\Homework\UTM\Degree\Sem 5\IP\Project\Source Code\IPman-MindMate\src\main\java\com\mindmate\controller\AssessmentController.java
 C:\Users\samyh\OneDrive\Desktop\Homework\UTM\Degree\Sem 5\IP\Project\Source Code\IPman-MindMate\src\main\java\com\mindmate\controller\AuthController.java
 C:\Users\samyh\OneDrive\Desktop\Homework\UTM\Degree\Sem 5\IP\Project\Source Code\IPman-MindMate\src\main\java\com\mindmate\controller\CounselorController.java
 C:\Users\samyh\OneDrive\Desktop\Homework\UTM\Degree\Sem 5\IP\Project\Source Code\IPman-MindMate\src\main\java\com\mindmate\controller\StudentController.java
 C:\Users\samyh\OneDrive\Desktop\Homework\UTM\Degree\Sem 5\IP\Project\Source Code\IPman-MindMate\src\main\java\com\mindmate\MindMateApplication.java
+C:\Users\samyh\OneDrive\Desktop\Homework\UTM\Degree\Sem 5\IP\Project\Source Code\IPman-MindMate\src\main\java\com\mindmate\model\Content.java
+C:\Users\samyh\OneDrive\Desktop\Homework\UTM\Degree\Sem 5\IP\Project\Source Code\IPman-MindMate\src\main\java\com\mindmate\model\Message.java
+C:\Users\samyh\OneDrive\Desktop\Homework\UTM\Degree\Sem 5\IP\Project\Source Code\IPman-MindMate\src\main\java\com\mindmate\model\Question.java
 
 
 ================================================================================

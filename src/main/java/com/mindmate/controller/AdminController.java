@@ -14,4 +14,16 @@ public class AdminController {
         model.addAttribute("role", "admin"); // 2. Set Role to 'admin'
         return "admin/dashboard";
     }
+
+    @GetMapping("/profile")
+public String profile(Model model) {
+    model.addAttribute("role", "admin");
+    return "admin/profile"; // Create placeholder
+}
+
+@GetMapping("/forum-moderation")
+public String forumModeration(Model model) {
+    model.addAttribute("role", "admin");
+    return "admin/forum-moderation"; // Create placeholder
+}
 }
