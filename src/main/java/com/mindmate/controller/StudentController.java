@@ -37,44 +37,9 @@ public class StudentController {
         return "student/content-view"; 
     }
 
-    // --- Forum Module ---
-    @GetMapping("/forum")
-    public String forumList(Model model) {
-        model.addAttribute("role", "student");
-        List<String> forumThreads = Arrays.asList(
-            "How to manage stress during exams?",
-            "Coping with anxiety - sharing experiences",
-            "Tips for better sleep",
-            "Building self-confidence"
-        );
-        model.addAttribute("forumThreads", forumThreads);
-        return "student/forum-list";
-    }
+    // --- Forum Module Handled in ForumController---
+    
 
-    @GetMapping("/forum/thread")
-    public String forumThread(Model model) {
-        model.addAttribute("role", "student");
-        return "student/forum-thread";
-    }
-/*
-    // --- Chatbot Module ---
-    @GetMapping("/chatbot")
-    public String showChatbot(Model model) {
-        // 1. Initial Data (The equivalent of the initial useState)
-        // In a real app, you would load recent chat history from a database.
-        // For the Phase 2 demo, we provide the initial message.
-        
-        // This list will contain the messages to be displayed when the page first loads
-        List<Message> initialMessages = new ArrayList<>();
-        initialMessages.add(new Message("assistant", "Hello! I'm here to support you. How are you feeling today?"));
-        
-        // Pass the messages list to the JSP view
-        model.addAttribute("messages", initialMessages);
-        
-        // Return the JSP view name (which will be resolved to /WEB-INF/jsp/student/chatbot.jsp)
-        return "student/chatbot"; 
-    }
-*/
     // --- Telehealth Module ---
     @GetMapping("/telehealth") // Matches the Header Link
     public String telehealthBook(Model model) {

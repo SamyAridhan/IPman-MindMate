@@ -379,5 +379,6 @@
         </div>
     </div>
 </div>
-
+<!-- Student-Only Chatbot Widget -->
+<jsp:include page="chatbot-widget.jsp" /> 
 <jsp:include page="../common/footer.jsp" />

@@ -59,4 +59,5 @@
     </div>
 </div>
 
+<jsp:include page="chatbot-widget.jsp" /> 
 <jsp:include page="../common/footer.jsp" />

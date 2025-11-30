@@ -8,10 +8,7 @@
         <p class="text-center text-sm text-muted-foreground">&copy; 2025 MindMate Project. All rights reserved.</p>
     </div>
     
-    <!-- Student-Only Chatbot Widget -->
-    <c:if test="${role == 'student'}">
-        <jsp:include page="chatbot-widget.jsp" /> 
-    </c:if>
+    
 </footer>
 
 <script>
