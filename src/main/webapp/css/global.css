@@ -47,6 +47,19 @@
     
     /* Radius for rounded corners (12px) */
     --radius: 0.75rem;
+
+    /* NEW: Soft Blue Accent - Inspired by prototype */
+    --accent-blue: 210 80% 85%;
+    --accent-blue-foreground: 210 60% 35%;
+    --accent-blue-border: 210 60% 75%;
+    
+    /* NEW: Success color with softer green */
+    --success: 150 50% 88%;
+    --success-foreground: 150 60% 35%;
+    
+    /* NEW: Info color - matches prototype's notification style */
+    --info: 210 70% 90%;
+    --info-foreground: 210 60% 40%;
 }
 
 body {
@@ -56,4 +69,197 @@ body {
 
 .logo-mindmate {
     filter: hue-rotate(320deg) saturate(0.7) brightness(1.1);
+}
+
+/* Enhanced Card Styling - Softer shadows like prototype */
+.bg-card {
+    background: hsl(var(--card));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    border-radius: var(--radius);
+}
+
+/* Mood Tracker Circles - Blue accent style */
+.mood-circle {
+    background: hsl(var(--accent-blue));
+    color: hsl(var(--accent-blue-foreground));
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+}
+
+.mood-circle:hover {
+    background: hsl(var(--accent-blue-border));
+    transform: scale(1.05);
+}
+
+/* Enhanced Progress Bars - Gradient style from prototype */
+.progress-bar-container {
+    background: hsl(var(--secondary));
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    background: linear-gradient(90deg, 
+        hsl(var(--primary)) 0%, 
+        hsl(330 60% 65%) 100%);
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+}
+
+/* Alternative blue-tinted progress for certain modules */
+.progress-bar-fill.blue-accent {
+    background: linear-gradient(90deg, 
+        hsl(var(--accent-blue-border)) 0%, 
+        hsl(210 70% 70%) 100%);
+}
+
+/* Notification Cards - Blue border accent */
+.notification-card {
+    background: hsl(var(--info));
+    border-left: 4px solid hsl(var(--accent-blue-border));
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.notification-card:hover {
+    background: hsl(210 70% 95%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Success Badge - Softer green */
+.badge-success {
+    background: hsl(var(--success));
+    color: hsl(var(--success-foreground));
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* AI Recommendation Cards - Enhanced styling */
+.recommendation-card {
+    background: hsl(var(--secondary) / 0.3);
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.recommendation-card:hover {
+    background: hsl(var(--secondary) / 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Button hover states - Softer transitions */
+button, .btn {
+    transition: all 0.2s ease;
+}
+
+button:hover, .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Icon buttons - Match prototype style */
+.icon-btn {
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+    background: hsl(var(--secondary));
+}
+
+/* Quick Start Card - Gradient enhancement */
+.quick-start-card {
+    background: linear-gradient(135deg, 
+        hsl(var(--primary) / 0.1) 0%, 
+        hsl(210 80% 95%) 100%);
+    border: 1px solid hsl(var(--primary) / 0.2);
+    border-radius: var(--radius);
+}
+
+/* Upcoming Sessions - Accent color variation */
+.session-card {
+    background: hsl(var(--accent-blue));
+    border-left: 4px solid hsl(var(--accent-blue-border));
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+/* Alternative pink session card */
+.session-card.pink-accent {
+    background: hsl(var(--primary) / 0.1);
+    border-left: 4px solid hsl(var(--primary));
+}
+
+/* Badge variants */
+.badge-outline-blue {
+    background: transparent;
+    border: 1px solid hsl(var(--accent-blue-border));
+    color: hsl(var(--accent-blue-foreground));
+    border-radius: 9999px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Learning Hub Cards - Softer appearance */
+.learning-card {
+    background: hsl(var(--secondary) / 0.3);
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+}
+
+.learning-card:hover {
+    background: hsl(var(--secondary) / 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* Select dropdowns - Refined styling */
+select {
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    color: hsl(var(--foreground));
+    transition: all 0.2s ease;
+}
+
+select:hover, select:focus {
+    border-color: hsl(var(--accent-blue-border));
+    box-shadow: 0 0 0 3px hsl(var(--accent-blue) / 0.3);
+}
+
+/* Typography refinements */
+h1, h2, h3, h4 {
+    color: hsl(var(--foreground));
+    font-weight: 600;
+}
+
+/* Subtle animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Responsive spacing adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
 }
