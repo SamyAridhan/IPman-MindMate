@@ -2,12 +2,6 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <jsp:include page="../common/header.jsp" />
 
-<%-- MOCK DATA ASSUMPTIONS:
-    Your Spring Controller must provide the following Model Attributes:
-    1. ${forumCategories}: List of category objects (id, name, color, count).
-    2. ${posts}: List of post objects (id, title, content, author, timestamp, category, replies, likes, views, supportLevel, tags).
-    3. ${urgentPosts}: List of posts marked as urgent (for the sidebar).
---%>
 <div class="container mx-auto py-3">
     <div class="flex items-center justify-between mb-2 border-b pb-4">
         <div class="flex items-center space-x-4">
@@ -25,7 +19,6 @@
         </button>
     </div>
 
-    <%-- Main Tabs (Keeping only the structure for User View, ignoring Moderator View logic) --%>
     <div class="w-full">
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             
@@ -133,7 +126,6 @@
                                     <option value="active" <c:if test="${currentSort eq 'active'}">selected</c:if>>Most Active</option>
                                 </select>
                                 
-                                <%-- Downward Arrow Icon (Absolute position relative to the surrounding div) --%>
                                 <i 
                                     data-lucide="chevron-down" 
                                     class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none"
@@ -149,7 +141,6 @@
 <%-- 🔥 START POSTS LISTING 🔥 --%>
 <div class="space-y-4">
     <c:forEach var="post" items="${posts}">
-        <%-- (Level Class calculation remains the same) --%>
         <c:set var="level" value="${post.supportLevel}" />
         <c:set var="levelClass">
             <c:choose>
@@ -189,59 +180,59 @@
                 <p class="text-gray-700 mb-4 line-clamp-2">${post.content}</p>
 
                 <%-- FOOTER: User Stats (Left) and Action Buttons (Right) --%>
-<div class="flex items-center justify-between">
-    
-    <%-- Left: User Stats (Author, Replies, Views) --%>
-    <div class="flex items-center space-x-4 text-sm text-gray-500">
-        <div class="flex items-center">
-            <i data-lucide="user" class="w-4 h-4 mr-1"></i>
-            <span>${post.author}</span>
-        </div>
-        <div class="flex items-center">
-            <i data-lucide="message-circle" class="w-4 h-4 mr-1"></i>
-            <span>${post.replies} responses</span>
-        </div>
-        <div class="flex items-center">
-            <i data-lucide="eye" class="w-4 h-4 mr-1"></i>
-            <span>${post.views} views</span>
-        </div>
-    </div>
+                <div class="flex items-center justify-between">
+                    
+                    <%-- Left: User Stats (Author, Replies, Views) --%>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <div class="flex items-center">
+                            <i data-lucide="user" class="w-4 h-4 mr-1"></i>
+                            <span>${post.author}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i data-lucide="message-circle" class="w-4 h-4 mr-1"></i>
+                            <span>${post.replies} responses</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i data-lucide="eye" class="w-4 h-4 mr-1"></i>
+                            <span>${post.views} views</span>
+                        </div>
+                    </div>
 
-    <%-- Right: Interaction Buttons & CTAs --%>
-<div class="flex items-center space-x-4 text-sm">
-    
-    <%-- 🔥 FIX: Group Like, Helpful, and Flag horizontally in one container 🔥 --%>
-    <div class="flex items-center space-x-2 text-base"> 
-        
-        <button 
-            onclick="recordInteraction(${post.id}, 'like', this)" 
-            class="text-gray-500 flex items-center p-1 rounded hover:bg-secondary transition-colors disabled:opacity-50" 
-            aria-label="Like Post"
-        >
-            <i data-lucide="heart" class="w-4 h-4 mr-1"></i> 
-            <span id="likes-count-${post.id}">${post.likes}</span>
-        </button>
-        
-        <button 
-            onclick="recordInteraction(${post.id}, 'helpful', this)" 
-            class="text-gray-500 flex items-center p-1 rounded hover:bg-secondary transition-colors disabled:opacity-50" 
-            aria-label="Mark as helpful"
-        >
-            <i data-lucide="award" class="w-4 h-4 mr-1"></i> 
-            <span id="helpful-count-${post.id}">${post.helpfulCount}</span>
-        </button>
+            <%-- Right: Interaction Buttons & CTAs --%>
+        <div class="flex items-center space-x-4 text-sm">
+            
+            <%-- 🔥 FIX: Group Like, Helpful, and Flag horizontally in one container 🔥 --%>
+            <div class="flex items-center space-x-2 text-base"> 
+                
+                <button 
+                    onclick="recordInteraction(${post.id}, 'like', this)" 
+                    class="text-gray-500 flex items-center p-1 rounded hover:bg-secondary transition-colors disabled:opacity-50" 
+                    aria-label="Like Post"
+                >
+                    <i data-lucide="heart" class="w-4 h-4 mr-1"></i> 
+                    <span id="likes-count-${post.id}">${post.likes}</span>
+                </button>
+                
+                <button 
+                    onclick="recordInteraction(${post.id}, 'helpful', this)" 
+                    class="text-gray-500 flex items-center p-1 rounded hover:bg-secondary transition-colors disabled:opacity-50" 
+                    aria-label="Mark as helpful"
+                >
+                    <i data-lucide="award" class="w-4 h-4 mr-1"></i> 
+                    <span id="helpful-count-${post.id}">${post.helpfulCount}</span>
+                </button>
 
-        <button 
-            id="flag-button-${post.id}"
-            onclick="flagPost(${post.id}, this)" 
-            class="p-1 rounded transition-colors disabled:opacity-50 
-                   <c:if test="${post.isFlagged}">text-[#dc2626] hover:bg-[#ffb2ae]</c:if> <%-- Already flagged --%>
-                   <c:if test="${not post.isFlagged}">text-gray-500 hover:bg-[#ffb2ae] hover:text-[#dc2626]</c:if>" <%-- Not flagged yet --%>
-            aria-label="Flag post for review"
-        >
-            <i data-lucide="flag" class="w-4 h-4"></i>
-        </button>
-    </div>
+                <button 
+                    id="flag-button-${post.id}"
+                    onclick="flagPost(${post.id}, this)" 
+                    class="p-1 rounded transition-colors disabled:opacity-50 
+                        <c:if test="${post.isFlagged}">text-[#dc2626] hover:bg-[#ffb2ae]</c:if> <%-- Already flagged --%>
+                        <c:if test="${not post.isFlagged}">text-gray-500 hover:bg-[#ffb2ae] hover:text-[#dc2626]</c:if>" <%-- Not flagged yet --%>
+                    aria-label="Flag post for review"
+                >
+                    <i data-lucide="flag" class="w-4 h-4"></i>
+                </button>
+            </div>
     
     <%-- Offer/Request CTA Buttons (This group is separate and uses space-x-4 from parent) --%>
     <a href="/student/forum/thread?id=${post.id}" class="inline-flex items-center px-3 py-1.5 border border-green-300 rounded-lg text-sm font-semibold text-green-700 bg-green-50 hover:bg-green-100 transition-colors">
