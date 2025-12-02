@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <jsp:include page="../common/header.jsp" />
 
+<div class="container mx-auto px-4 py-2">
 <div class="space-y-6">
     <div>
         <h1 class="text-3xl font-bold text-foreground">Content Library</h1>
@@ -55,6 +56,6 @@
         </div>
     </div>
 </div>
-
+</div>
 <jsp:include page="chatbot-widget.jsp" /> 
 <jsp:include page="../common/footer.jsp" />

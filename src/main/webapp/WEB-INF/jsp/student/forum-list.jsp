@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <jsp:include page="../common/header.jsp" />
 
-<div class="container mx-auto py-3">
+<div class="container mx-auto px-4 py-2">
     <div class="flex items-center justify-between mb-2 border-b pb-4">
         <div class="flex items-center space-x-4">
             <%-- Assuming header/nav handles the back button --%>
