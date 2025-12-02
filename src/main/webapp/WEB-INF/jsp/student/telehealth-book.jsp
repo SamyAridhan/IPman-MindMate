@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <jsp:include page="../common/header.jsp" />
 
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto px-4 py-2">
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-foreground mb-2">Book Counseling Session</h1>
         <p class="text-muted-foreground">Schedule your appointment with a counselor</p>
@@ -399,4 +399,5 @@ function closeConfirmationModal() {
 }
 </script>
 
+<jsp:include page="chatbot-widget.jsp" /> 
 <jsp:include page="../common/footer.jsp" />

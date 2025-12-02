@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <jsp:include page="../common/header.jsp" />
 
+<div class="container mx-auto px-4 py-2">
 <div class="space-y-6">
     <h1 class="text-3xl font-bold text-foreground">My Appointments</h1>
 
@@ -84,6 +85,6 @@
         </c:choose>
     </div>
 </div>
-
+</div>
 <jsp:include page="chatbot-widget.jsp" /> 
 <jsp:include page="../common/footer.jsp" />

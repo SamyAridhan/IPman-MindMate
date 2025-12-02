@@ -14,7 +14,7 @@
 <div class="min-h-screen bg-background">
     <%-- <Navigation /> is typically included in the header/layout in JSP --%>
     
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-2">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-foreground mb-2">Forum Moderation</h1>
             <p class="text-muted-foreground">Review and moderate flagged forum posts</p>
