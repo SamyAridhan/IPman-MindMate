@@ -19,95 +19,50 @@
                 </div>
 
                 <div class="space-y-4" id="counselor-list">
-                    <!-- Counselor 1 -->
-                    <div class="counselor-card p-4 border rounded-lg cursor-pointer transition-all hover:border-primary/50" 
-                         data-id="1" 
-                         data-name="Dr. Sarah Johnson"
-                         data-specialization="Mental Health Counseling"
-                         data-rating="4.5"
-                         data-experience="5 years"
-                         data-availability="High">
-                        <div class="flex items-start space-x-3">
-                            <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
-                                SJ
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="font-semibold text-foreground">Dr. Sarah Johnson</h4>
-                                <p class="text-sm text-muted-foreground mb-2">Mental Health Counseling</p>
-                                <div class="flex items-center space-x-2 text-xs">
-                                    <div class="flex items-center">
-                                        <i data-lucide="star" class="w-3 h-3 text-yellow-500 mr-1"></i>
-                                        <span>4.5</span>
-                                    </div>
-                                    <span class="text-muted-foreground">•</span>
-                                    <span>5 years</span>
+                    <c:forEach var="counselor" items="${counselors}">
+                        <div class="counselor-card p-4 border rounded-lg cursor-pointer transition-all hover:border-primary/50" 
+                             data-id="${counselor.id}" 
+                             data-name="${counselor.name}"
+                             data-specialization="${counselor.specialization}"
+                             data-rating="${counselor.rating}"
+                             data-experience="${counselor.experience}"
+                             data-availability="${counselor.availability}">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
+                                    ${counselor.avatar}
                                 </div>
-                                <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800">
-                                    High Availability
-                                </span>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-foreground">${counselor.name}</h4>
+                                    <p class="text-sm text-muted-foreground mb-2">${counselor.specialization}</p>
+                                    <div class="flex items-center space-x-2 text-xs">
+                                        <div class="flex items-center">
+                                            <i data-lucide="star" class="w-3 h-3 text-yellow-500 mr-1"></i>
+                                            <span>${counselor.rating}</span>
+                                        </div>
+                                        <span class="text-muted-foreground">•</span>
+                                        <span>${counselor.experience}</span>
+                                    </div>
+                                    <c:choose>
+                                        <c:when test="${counselor.availability == 'High'}">
+                                            <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800">
+                                                High Availability
+                                            </span>
+                                        </c:when>
+                                        <c:when test="${counselor.availability == 'Medium'}">
+                                            <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                                                Medium Availability
+                                            </span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">
+                                                Low Availability
+                                            </span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Counselor 2 -->
-                    <div class="counselor-card p-4 border rounded-lg cursor-pointer transition-all hover:border-primary/50"
-                         data-id="2"
-                         data-name="Dr. Michael Chen"
-                         data-specialization="Mental Health Counseling"
-                         data-rating="4.6"
-                         data-experience="6 years"
-                         data-availability="Medium">
-                        <div class="flex items-start space-x-3">
-                            <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
-                                MC
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="font-semibold text-foreground">Dr. Michael Chen</h4>
-                                <p class="text-sm text-muted-foreground mb-2">Mental Health Counseling</p>
-                                <div class="flex items-center space-x-2 text-xs">
-                                    <div class="flex items-center">
-                                        <i data-lucide="star" class="w-3 h-3 text-yellow-500 mr-1"></i>
-                                        <span>4.6</span>
-                                    </div>
-                                    <span class="text-muted-foreground">•</span>
-                                    <span>6 years</span>
-                                </div>
-                                <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                                    Medium Availability
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Counselor 3 -->
-                    <div class="counselor-card p-4 border rounded-lg cursor-pointer transition-all hover:border-primary/50"
-                         data-id="3"
-                         data-name="Dr. Emily Rodriguez"
-                         data-specialization="Mental Health Counseling"
-                         data-rating="4.7"
-                         data-experience="7 years"
-                         data-availability="Low">
-                        <div class="flex items-start space-x-3">
-                            <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
-                                ER
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="font-semibold text-foreground">Dr. Emily Rodriguez</h4>
-                                <p class="text-sm text-muted-foreground mb-2">Mental Health Counseling</p>
-                                <div class="flex items-center space-x-2 text-xs">
-                                    <div class="flex items-center">
-                                        <i data-lucide="star" class="w-3 h-3 text-yellow-500 mr-1"></i>
-                                        <span>4.7</span>
-                                    </div>
-                                    <span class="text-muted-foreground">•</span>
-                                    <span>7 years</span>
-                                </div>
-                                <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">
-                                    Low Availability
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                    </c:forEach>
                 </div>
             </div>
         </div>
@@ -116,7 +71,7 @@
         <div class="lg:col-span-1">
             <div class="space-y-6">
                 
-                <!-- Simple Calendar (Static Display) -->
+                <!-- Simple Calendar -->
                 <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                     <div class="flex items-center mb-4">
                         <i data-lucide="calendar" class="w-5 h-5 mr-2 text-success"></i>
@@ -128,7 +83,7 @@
                         <button type="button" class="p-1 hover:bg-secondary rounded">
                             <i data-lucide="chevron-left" class="w-5 h-5"></i>
                         </button>
-                        <span class="font-semibold" id="current-month">November 2025</span>
+                        <span class="font-semibold" id="current-month">December 2025</span>
                         <button type="button" class="p-1 hover:bg-secondary rounded">
                             <i data-lucide="chevron-right" class="w-5 h-5"></i>
                         </button>
@@ -145,55 +100,19 @@
                         <div class="text-muted-foreground font-medium p-2">Fr</div>
                         <div class="text-muted-foreground font-medium p-2">Sa</div>
 
-                        <!-- Dates (Previous Month Faded) -->
-                        <div class="p-2 text-muted-foreground/50">26</div>
-                        <div class="p-2 text-muted-foreground/50">27</div>
-                        <div class="p-2 text-muted-foreground/50">28</div>
-                        <div class="p-2 text-muted-foreground/50">29</div>
+                        <!-- Calendar dates (simplified for demo) -->
                         <div class="p-2 text-muted-foreground/50">30</div>
-                        <div class="p-2 text-muted-foreground/50">31</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">1</div>
-
-                        <!-- Current Month Dates -->
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">2</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">3</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">4</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">5</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">6</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">7</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">8</div>
-
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">9</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">10</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">11</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">12</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">13</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">14</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">15</div>
-
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">16</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">17</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">18</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">19</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">20</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">21</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">22</div>
-
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">23</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">24</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">25</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">26</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">27</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">28</div>
-                        <div class="p-2 bg-primary text-primary-foreground rounded cursor-pointer font-semibold calendar-date" data-date="2025-11-29">29</div>
-
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer">30</div>
-                        <div class="p-2 text-muted-foreground/50">1</div>
-                        <div class="p-2 text-muted-foreground/50">2</div>
-                        <div class="p-2 text-muted-foreground/50">3</div>
-                        <div class="p-2 text-muted-foreground/50">4</div>
-                        <div class="p-2 text-muted-foreground/50">5</div>
-                        <div class="p-2 text-muted-foreground/50">6</div>
+                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-01">1</div>
+                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-02">2</div>
+                        <div class="p-2 bg-primary text-primary-foreground rounded cursor-pointer calendar-date" data-date="2025-12-03">3</div>
+                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-04">4</div>
+                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-05">5</div>
+                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-06">6</div>
+                        
+                        <!-- Additional weeks would go here -->
+                        <c:forEach begin="7" end="31" var="day">
+                            <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-${day}">${day}</div>
+                        </c:forEach>
                     </div>
                 </div>
 
@@ -218,7 +137,7 @@
                     <i data-lucide="clock" class="w-5 h-5 mr-2 text-primary"></i>
                     <h2 class="text-xl font-semibold text-foreground">Available Times</h2>
                 </div>
-                <p class="text-sm text-muted-foreground mb-4" id="selected-date-display">Saturday, November 29, 2025</p>
+                <p class="text-sm text-muted-foreground mb-4" id="selected-date-display">Wednesday, December 03, 2025</p>
 
                 <div id="time-slots-container">
                     <!-- Default: No counselor selected -->
@@ -229,21 +148,25 @@
 
                     <!-- Time Slots (Hidden by default) -->
                     <div class="space-y-3 hidden" id="time-slots-list">
+                        <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="09:00">
+                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
+                            09:00 AM
+                        </button>
+                        <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="10:00">
+                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
+                            10:00 AM
+                        </button>
                         <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="14:00">
                             <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            14:00
+                            02:00 PM
                         </button>
                         <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="15:00">
                             <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            15:00
+                            03:00 PM
                         </button>
                         <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="16:00">
                             <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            16:00
-                        </button>
-                        <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="17:00">
-                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            17:00
+                            04:00 PM
                         </button>
                     </div>
                 </div>
@@ -318,7 +241,7 @@
 <script>
 // Booking state
 let selectedCounselor = null;
-let selectedDate = '2025-11-29';
+let selectedDate = '2025-12-03';
 let selectedTime = null;
 let selectedSessionType = null;
 
@@ -353,6 +276,20 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('no-counselor-message').classList.add('hidden');
             document.getElementById('time-slots-list').classList.remove('hidden');
             
+            updateSummary();
+        });
+    });
+    
+    // Calendar date selection
+    document.querySelectorAll('.calendar-date').forEach(date => {
+        date.addEventListener('click', function() {
+            document.querySelectorAll('.calendar-date').forEach(d => {
+                d.classList.remove('bg-primary', 'text-primary-foreground');
+            });
+            this.classList.add('bg-primary', 'text-primary-foreground');
+            
+            selectedDate = this.dataset.date;
+            updateDateDisplay();
             updateSummary();
         });
     });
@@ -393,12 +330,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+function updateDateDisplay() {
+    const dateObj = new Date(selectedDate);
+    const formatted = dateObj.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    document.getElementById('selected-date-display').textContent = formatted;
+}
+
 function updateSummary() {
     const allSelected = selectedCounselor && selectedTime && selectedSessionType;
     
     if (allSelected) {
+        const dateObj = new Date(selectedDate);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+        
         document.getElementById('summary-counselor').textContent = selectedCounselor.name;
-        document.getElementById('summary-date').textContent = 'Nov 29, 2025';
+        document.getElementById('summary-date').textContent = formattedDate;
         document.getElementById('summary-time').textContent = selectedTime;
         document.getElementById('summary-type').textContent = selectedSessionType;
         document.getElementById('booking-summary').classList.remove('hidden');
@@ -408,15 +363,29 @@ function updateSummary() {
 }
 
 function openConfirmationModal() {
+    const dateObj = new Date(selectedDate);
+    const formattedDateTime = dateObj.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+    }) + ' at ' + selectedTime;
+    
+    const formattedDate = dateObj.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+    
     document.getElementById('confirm-counselor').textContent = selectedCounselor.name;
     document.getElementById('confirm-specialization').textContent = selectedCounselor.specialization;
-    document.getElementById('confirm-datetime').textContent = `Saturday, November 29, 2025 at ${selectedTime}`;
+    document.getElementById('confirm-datetime').textContent = formattedDateTime;
     document.getElementById('confirm-type').textContent = selectedSessionType;
     
     // Set form values
     document.getElementById('form-counselor-id').value = selectedCounselor.id;
     document.getElementById('form-counselor-name').value = selectedCounselor.name;
-    document.getElementById('form-date').value = 'Nov 29, 2025';
+    document.getElementById('form-date').value = formattedDate;
     document.getElementById('form-time').value = selectedTime;
     document.getElementById('form-session-type').value = selectedSessionType;
     
