@@ -6,6 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping; // Added this import
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,8 +69,9 @@ public class StudentController {
     }
 
     @GetMapping("/profile")
-public String profile(Model model) {
-    model.addAttribute("role", "student");
-    return "student/profile"; // Create this JSP placeholder
-}
+    public String profile(Model model) {
+        model.addAttribute("role", "student");
+        return "student/profile"; // Create this JSP placeholder
+    }
+
 }

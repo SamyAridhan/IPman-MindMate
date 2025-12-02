@@ -192,7 +192,8 @@
 
                 <div class="space-y-4">
                     <!-- Recommendation 1 -->
-                    <div class="p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
+                    <a href="/student/recommendation?id=mindfulness-beginners"
+                        class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-2">
@@ -218,10 +219,11 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </a>
 
                     <!-- Recommendation 2 -->
-                    <div class="p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
+                    <a href="/student/recommendation?id=sleep-hygiene-tips"
+                        class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-2">
@@ -247,10 +249,11 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </a>
 
                     <!-- Recommendation 3 -->
-                    <div class="p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
+                    <a href="/student/recommendation?id=breathing-exercises-quick"
+                     class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-2">
@@ -276,7 +279,7 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
 
