@@ -725,7 +725,7 @@ public class AuthController {
 
 ================================================================================
 File: src\main\java\com\mindmate\controller\CounselorController.java
-Size: 3.57 kB
+Size: 7.84 kB
 ================================================================================
 
 package com.mindmate.controller;
@@ -738,45 +738,159 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/counselor")
 public class CounselorController {
 
-    // Simple in-memory store. Not for production.
+    // Content store
     private static final Map<Long, Content> STORE = new LinkedHashMap<>();
     private static final AtomicLong ID_COUNTER = new AtomicLong(1);
 
+    // Appointments store
+    private static final List<Map<String, Object>> APPOINTMENTS = new ArrayList<>();
+    private static final AtomicLong APPOINTMENT_ID = new AtomicLong(1);
+
     static {
-        // seed some demo content
+        // Seed content
         STORE.put(1L, new Content(1L, "Stress Management 101", "Article",
                 "Learn effective stress-coping strategies for students", ""));
         STORE.put(2L, new Content(2L, "Mindfulness Meditation Guide", "Video",
                 "15-minute guided meditation for anxiety relief", ""));
-        STORE.put(3L,
-                new Content(3L, "Sleep Hygiene", "Article", "Interactive module on building better sleep habits", ""));
-        STORE.put(4L,
-                new Content(4L, "Understanding Anxiety", "Article", "What causes anxiety and how to manage it", ""));
+        STORE.put(3L, new Content(3L, "Sleep Hygiene", "Article", 
+                "Interactive module on building better sleep habits", ""));
+        STORE.put(4L, new Content(4L, "Understanding Anxiety", "Article", 
+                "What causes anxiety and how to manage it", ""));
         STORE.put(5L, new Content(5L, "Building Resilience", "Article",
                 "Develop emotional resilience for long-term wellbeing", ""));
         ID_COUNTER.set(6);
+
+        // Seed appointments
+        APPOINTMENTS.add(createAppointment(
+            "2025-11-22",
+            "15:30",
+            "pending",
+            "First session - social anxiety",
+            "Sarah Chen"
+        ));
+        
+        APPOINTMENTS.add(createAppointment(
+            "2025-11-25",
+            "10:00",
+            "pending",
+            "Crisis intervention follow-up",
+            "Michael Torres"
+        ));
+        
+        APPOINTMENTS.add(createAppointment(
+            "2025-11-29",
+            "14:00",
+            "pending",
+            "group session",
+            "Anxiety Support Group"
+        ));
+        
+        APPOINTMENTS.add(createAppointment(
+            "2025-12-02",
+            "09:00",
+            "confirmed",
+            "Individual session",
+            "Emily Johnson"
+        ));
+    }
+
+    private static Map<String, Object> createAppointment(String date, String time, 
+                                                          String status, String notes, String studentName) {
+        Map<String, Object> apt = new HashMap<>();
+        apt.put("id", String.valueOf(APPOINTMENT_ID.getAndIncrement()));
+        apt.put("date", date);
+        apt.put("time", time);
+        apt.put("status", status);
+        apt.put("notes", notes);
+        apt.put("studentName", studentName);
+        return apt;
     }
 
     @GetMapping("/dashboard")
     public String showDashboard(Model model) {
         model.addAttribute("role", "counselor");
+        
+        // Calculate today's appointments
+        String today = LocalDate.now().toString();
+        long todayCount = APPOINTMENTS.stream()
+            .filter(apt -> today.equals(apt.get("date")))
+            .count();
+        
+        // Calculate pending requests
+        long pendingCount = APPOINTMENTS.stream()
+            .filter(apt -> "pending".equals(apt.get("status")))
+            .count();
+        
+        // Get today's appointments
+        List<Map<String, Object>> todayAppointments = APPOINTMENTS.stream()
+            .filter(apt -> today.equals(apt.get("date")))
+            .collect(Collectors.toList());
+        
+        // Get pending appointments (limit to 3 for dashboard)
+        List<Map<String, Object>> pendingAppointments = APPOINTMENTS.stream()
+            .filter(apt -> "pending".equals(apt.get("status")))
+            .limit(3)
+            .collect(Collectors.toList());
+        
+        model.addAttribute("todayCount", todayCount);
+        model.addAttribute("pendingCount", pendingCount);
+        model.addAttribute("todayAppointments", todayAppointments);
+        model.addAttribute("pendingAppointments", pendingAppointments);
+        
         return "counselor/dashboard";
     }
 
     @GetMapping("/schedule")
     public String showSchedule(Model model) {
         model.addAttribute("role", "counselor");
+        
+        // Get all pending appointments
+        List<Map<String, Object>> pendingAppointments = APPOINTMENTS.stream()
+            .filter(apt -> "pending".equals(apt.get("status")))
+            .collect(Collectors.toList());
+        
+        // Get today's appointments
+        String today = LocalDate.now().toString();
+        List<Map<String, Object>> todayAppointments = APPOINTMENTS.stream()
+            .filter(apt -> today.equals(apt.get("date")))
+            .collect(Collectors.toList());
+        
+        model.addAttribute("pendingAppointments", pendingAppointments);
+        model.addAttribute("todayAppointments", todayAppointments);
+        model.addAttribute("selectedDate", today);
+        
         return "counselor/schedule";
+    }
+
+    @PostMapping("/appointment/approve")
+    public String approveAppointment(@RequestParam String appointmentId) {
+        APPOINTMENTS.stream()
+            .filter(apt -> appointmentId.equals(apt.get("id")))
+            .findFirst()
+            .ifPresent(apt -> apt.put("status", "confirmed"));
+        
+        return "redirect:/counselor/schedule";
+    }
+
+    @PostMapping("/appointment/deny")
+    public String denyAppointment(@RequestParam String appointmentId) {
+        APPOINTMENTS.stream()
+            .filter(apt -> appointmentId.equals(apt.get("id")))
+            .findFirst()
+            .ifPresent(apt -> apt.put("status", "cancelled"));
+        
+        return "redirect:/counselor/schedule";
     }
 
     @GetMapping("/content")
@@ -816,10 +930,10 @@ public class CounselorController {
     }
 
     @GetMapping("/profile")
-public String profile(Model model) {
-    model.addAttribute("role", "counselor");
-    return "counselor/profile"; // Create placeholder
-}
+    public String profile(Model model) {
+        model.addAttribute("role", "counselor");
+        return "counselor/profile";
+    }
 }
 
 ================================================================================
@@ -3052,49 +3166,183 @@ Size: 12.84 kB
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\counselor\dashboard.jsp
-Size: 2.46 kB
+Size: 10.22 kB
 ================================================================================
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <jsp:include page="../common/header.jsp" />
 
-<div class="space-y-8">
-
-    <div>
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
         <h1 class="text-3xl font-bold text-foreground mb-2">Counselor Dashboard</h1>
-        <h2 class="text-xl font-medium text-muted-foreground">Welcome, Counselor!</h2>
-        <p class="text-muted-foreground mt-1">Manage your schedule and content from here.</p>
+        <p class="text-muted-foreground">Professional workspace for counseling management</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        <div class="bg-card p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow flex flex-col h-full">
-            <div class="mb-4">
-                <div class="p-3 bg-secondary w-fit rounded-full mb-3">
-                    <i data-lucide="calendar" class="h-6 w-6 text-primary"></i>
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <a href="/counselor/schedule" class="block">
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border hover:shadow-lg transition-all cursor-pointer">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-muted-foreground">Today's Appointments</p>
+                        <p class="text-3xl font-bold text-foreground">${todayCount}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                        <i data-lucide="calendar" class="w-6 h-6 text-primary"></i>
+                    </div>
                 </div>
-                <h3 class="text-xl font-semibold mb-2 text-foreground">Today's Schedule</h3>
-                <p class="text-muted-foreground text-sm">View and manage your appointments for today.</p>
             </div>
-            <div class="mt-auto">
-                <a href="/counselor/schedule" class="w-full text-center bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity inline-block font-medium focus:outline-none focus:ring-2 focus:ring-ring">
-                    View Schedule
+        </a>
+
+        <a href="/counselor/schedule" class="block">
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border hover:shadow-lg transition-all cursor-pointer">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-muted-foreground">Pending Requests</p>
+                        <p class="text-3xl font-bold text-foreground">${pendingCount}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-info/10 rounded-full flex items-center justify-center">
+                        <i data-lucide="clock" class="w-6 h-6 text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Today's Schedule -->
+        <div class="bg-card rounded-lg shadow-sm border border-border">
+            <div class="p-6 border-b border-border">
+                <h2 class="text-xl font-semibold text-foreground flex items-center">
+                    <i data-lucide="calendar" class="w-5 h-5 mr-2 text-primary"></i>
+                    Today's Schedule
+                </h2>
+            </div>
+            <div class="p-6">
+                <c:choose>
+                    <c:when test="${empty todayAppointments}">
+                        <div class="text-center py-8 text-muted-foreground">
+                            <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 text-success"></i>
+                            <p>No appointments today</p>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="space-y-3">
+                            <c:forEach var="apt" items="${todayAppointments}">
+                                <div class="p-4 bg-muted/50 rounded-lg border border-border">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-semibold text-foreground">
+                                            ${apt.time}
+                                        </span>
+                                        <c:choose>
+                                            <c:when test="${apt.status == 'confirmed'}">
+                                                <span class="px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">Confirmed</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="px-2 py-0.5 text-xs rounded-full bg-secondary text-secondary-foreground">Pending</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                    <p class="text-sm text-muted-foreground">${apt.notes}</p>
+                                    <c:if test="${apt.status == 'confirmed'}">
+                                        <button class="w-full mt-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm hover:opacity-90 transition-opacity">
+                                            Join Session
+                                        </button>
+                                    </c:if>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+                <a href="/counselor/schedule" class="block w-full mt-4">
+                    <button class="w-full border border-border bg-background text-foreground px-4 py-2 rounded-md hover:bg-secondary transition-colors">
+                        View Full Schedule
+                    </button>
                 </a>
             </div>
         </div>
 
-        <div class="bg-card p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow flex flex-col h-full">
-            <div class="mb-4">
-                <div class="p-3 bg-secondary w-fit rounded-full mb-3">
-                    <i data-lucide="file-text" class="h-6 w-6 text-primary"></i>
-                </div>
-                <h3 class="text-xl font-semibold mb-2 text-foreground">Content Manager</h3>
-                <p class="text-muted-foreground text-sm">Create and manage educational content for students.</p>
+        <!-- Pending Requests -->
+        <div class="bg-card rounded-lg shadow-sm border border-border">
+            <div class="p-6 border-b border-border">
+                <h2 class="text-xl font-semibold text-foreground flex items-center">
+                    <i data-lucide="clock" class="w-5 h-5 mr-2 text-info"></i>
+                    Pending Appointment Requests
+                </h2>
             </div>
-            <div class="mt-auto">
-                <a href="/counselor/content" class="w-full text-center bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity inline-block font-medium focus:outline-none focus:ring-2 focus:ring-ring">
-                    Manage Content
-                </a>
+            <div class="p-6">
+                <c:choose>
+                    <c:when test="${empty pendingAppointments}">
+                        <div class="text-center py-8 text-muted-foreground">
+                            <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 text-success"></i>
+                            <p>No pending requests</p>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="space-y-3">
+                            <c:forEach var="apt" items="${pendingAppointments}">
+                                <div class="p-4 bg-muted/50 rounded-lg border border-border">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-semibold text-foreground">
+                                            ${apt.date} ${apt.time}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-muted-foreground mb-3">${apt.notes}</p>
+                                    <div class="flex space-x-2">
+                                        <form method="POST" action="/counselor/appointment/approve" class="flex-1">
+                                            <input type="hidden" name="appointmentId" value="${apt.id}" />
+                                            <button type="submit" class="w-full bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm hover:opacity-90 transition-opacity">
+                                                Approve
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="/counselor/appointment/deny" class="flex-1">
+                                            <input type="hidden" name="appointmentId" value="${apt.id}" />
+                                            <button type="submit" class="w-full border border-border bg-background text-foreground px-3 py-1.5 rounded-md text-sm hover:bg-secondary transition-colors">
+                                                Deny
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-card rounded-lg shadow-sm border border-border">
+            <div class="p-6 border-b border-border">
+                <h2 class="text-xl font-semibold text-foreground flex items-center">
+                    <i data-lucide="users" class="w-5 h-5 mr-2 text-success"></i>
+                    Recent Activity
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-2 h-2 bg-success rounded-full mt-2"></div>
+                        <div class="flex-1">
+                            <p class="text-sm text-foreground">New assessment completed</p>
+                            <p class="text-xs text-muted-foreground">Student ID: #1234 - 15 min ago</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="w-2 h-2 bg-info rounded-full mt-2"></div>
+                        <div class="flex-1">
+                            <p class="text-sm text-foreground">Module completed</p>
+                            <p class="text-xs text-muted-foreground">Stress Management - 1 hour ago</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                        <div class="flex-1">
+                            <p class="text-sm text-foreground">New forum post</p>
+                            <p class="text-xs text-muted-foreground">Community Discussion - 2 hours ago</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -3111,43 +3359,194 @@ Size: 23 B
 
 ================================================================================
 File: src\main\webapp\WEB-INF\jsp\counselor\schedule.jsp
-Size: 2.06 kB
+Size: 12.72 kB
 ================================================================================
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <jsp:include page="../common/header.jsp" />
 
-<div class="space-y-6">
-    <h1 class="text-3xl font-bold text-foreground">Schedule</h1>
-    
-    <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
-        <h2 class="text-xl font-semibold mb-4 text-foreground">Upcoming Appointments</h2>
-        
-        <div class="space-y-4">
-            <div class="border border-border rounded-md p-4 bg-white/50">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <h3 class="text-lg font-semibold text-foreground">Student: John Doe</h3>
-                        <div class="flex items-center gap-2 mt-1">
-                            <i data-lucide="calendar" class="h-4 w-4 text-primary"></i>
-                            <p class="text-muted-foreground">January 15, 2024 at 10:00 AM</p>
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-foreground mb-2">My Schedule</h1>
+        <p class="text-muted-foreground">Manage your appointments and availability</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Calendar Section -->
+        <div class="lg:col-span-1">
+            <div class="bg-card rounded-lg shadow-sm border border-border">
+                <div class="p-6 border-b border-border">
+                    <h2 class="text-xl font-semibold text-foreground flex items-center">
+                        <i data-lucide="calendar" class="w-5 h-5 mr-2 text-primary"></i>
+                        Select Date
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <!-- Simple Calendar Display -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <button type="button" class="p-1 hover:bg-secondary rounded">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <span class="font-semibold">December 2025</span>
+                            <button type="button" class="p-1 hover:bg-secondary rounded">
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
                         </div>
-                        <p class="text-muted-foreground text-sm mt-1">Reason: General consultation</p>
+                        
+                        <!-- Week Headers -->
+                        <div class="grid grid-cols-7 gap-1 text-center text-sm mb-2">
+                            <div class="text-muted-foreground font-medium p-2">Su</div>
+                            <div class="text-muted-foreground font-medium p-2">Mo</div>
+                            <div class="text-muted-foreground font-medium p-2">Tu</div>
+                            <div class="text-muted-foreground font-medium p-2">We</div>
+                            <div class="text-muted-foreground font-medium p-2">Th</div>
+                            <div class="text-muted-foreground font-medium p-2">Fr</div>
+                            <div class="text-muted-foreground font-medium p-2">Sa</div>
+                        </div>
+                        
+                        <!-- Calendar Days -->
+                        <div class="grid grid-cols-7 gap-1 text-center text-sm">
+                            <div class="p-2 text-muted-foreground/50">30</div>
+                            <div class="p-2 hover:bg-secondary rounded cursor-pointer">1</div>
+                            <div class="p-2 bg-primary text-primary-foreground rounded cursor-pointer">2</div>
+                            <div class="p-2 hover:bg-secondary rounded cursor-pointer">3</div>
+                            <div class="p-2 hover:bg-secondary rounded cursor-pointer">4</div>
+                            <div class="p-2 hover:bg-secondary rounded cursor-pointer">5</div>
+                            <div class="p-2 hover:bg-secondary rounded cursor-pointer">6</div>
+                            <c:forEach begin="7" end="31" var="day">
+                                <div class="p-2 hover:bg-secondary rounded cursor-pointer">${day}</div>
+                            </c:forEach>
+                        </div>
                     </div>
                     
-                    <div class="flex space-x-2 w-full sm:w-auto">
-                        <button class="flex-1 sm:flex-none bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring">
-                            View Details
-                        </button>
-                        
-                        <button class="flex-1 sm:flex-none bg-destructive text-destructive-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity text-sm font-medium focus:outline-none focus:ring-2 focus:ring-destructive">
-                            Cancel
+                    <!-- Availability Settings -->
+                    <div class="mt-6 p-4 bg-muted rounded-lg">
+                        <h4 class="font-semibold mb-2 text-sm text-foreground">Availability Settings</h4>
+                        <p class="text-xs text-muted-foreground mb-3">Set your working hours and days</p>
+                        <button class="w-full border border-border bg-background text-foreground px-4 py-2 rounded-md text-sm hover:bg-secondary transition-colors flex items-center justify-center">
+                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
+                            Configure Availability
                         </button>
                     </div>
                 </div>
             </div>
-            
+        </div>
+
+        <!-- Appointments Section -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Pending Requests -->
+            <c:if test="${not empty pendingAppointments}">
+                <div class="bg-card rounded-lg shadow-sm border border-border">
+                    <div class="p-6 border-b border-border">
+                        <h2 class="text-xl font-semibold text-foreground flex items-center">
+                            <i data-lucide="clock" class="w-5 h-5 mr-2 text-info"></i>
+                            Pending Requests (${pendingAppointments.size()})
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <c:forEach var="apt" items="${pendingAppointments}">
+                                <div class="p-4 bg-info/10 rounded-lg border border-info/20">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <span class="font-semibold text-foreground">
+                                                    ${apt.date} at ${apt.time}
+                                                </span>
+                                                <span class="px-2 py-0.5 text-xs rounded-full bg-secondary text-secondary-foreground">Pending</span>
+                                            </div>
+                                            <p class="text-sm text-muted-foreground">${apt.notes}</p>
+                                        </div>
+                                        <div class="flex space-x-2 ml-4">
+                                            <form method="POST" action="/counselor/appointment/approve">
+                                                <input type="hidden" name="appointmentId" value="${apt.id}" />
+                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm hover:opacity-90 transition-opacity">
+                                                    <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i>
+                                                    Approve
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="/counselor/appointment/deny">
+                                                <input type="hidden" name="appointmentId" value="${apt.id}" />
+                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-destructive text-destructive rounded-md text-sm hover:bg-destructive/10 transition-colors">
+                                                    <i data-lucide="x-circle" class="w-4 h-4 mr-1"></i>
+                                                    Deny
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </div>
+                </div>
+            </c:if>
+
+            <!-- Selected Date Appointments -->
+            <div class="bg-card rounded-lg shadow-sm border border-border">
+                <div class="p-6 border-b border-border">
+                    <h2 class="text-xl font-semibold text-foreground flex items-center">
+                        <i data-lucide="calendar" class="w-5 h-5 mr-2 text-primary"></i>
+                        Appointments on December 02, 2025
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <c:choose>
+                        <c:when test="${empty todayAppointments}">
+                            <div class="text-center py-8 text-muted-foreground">
+                                <i data-lucide="calendar" class="w-12 h-12 mx-auto mb-2 text-muted-foreground/50"></i>
+                                <p>No appointments scheduled for this date</p>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="space-y-3">
+                                <c:forEach var="apt" items="${todayAppointments}">
+                                    <c:set var="statusColor">
+                                        <c:choose>
+                                            <c:when test="${apt.status == 'confirmed'}">bg-success/10 border-success/20</c:when>
+                                            <c:when test="${apt.status == 'pending'}">bg-info/10 border-info/20</c:when>
+                                            <c:when test="${apt.status == 'cancelled'}">bg-destructive/10 border-destructive/20</c:when>
+                                            <c:otherwise>bg-muted border-border</c:otherwise>
+                                        </c:choose>
+                                    </c:set>
+                                    
+                                    <div class="p-4 rounded-lg border ${statusColor}">
+                                        <div class="flex items-start justify-between mb-3">
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-2 mb-1">
+                                                    <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
+                                                    <span class="font-semibold text-foreground">${apt.time}</span>
+                                                    <c:choose>
+                                                        <c:when test="${apt.status == 'confirmed'}">
+                                                            <span class="px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">Confirmed</span>
+                                                        </c:when>
+                                                        <c:when test="${apt.status == 'pending'}">
+                                                            <span class="px-2 py-0.5 text-xs rounded-full bg-secondary text-secondary-foreground">Pending</span>
+                                                        </c:when>
+                                                        <c:when test="${apt.status == 'cancelled'}">
+                                                            <span class="px-2 py-0.5 text-xs rounded-full bg-destructive text-destructive-foreground">Cancelled</span>
+                                                        </c:when>
+                                                    </c:choose>
+                                                </div>
+                                                <p class="text-sm text-muted-foreground">${apt.notes}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <c:if test="${apt.status == 'confirmed'}">
+                                            <button class="w-full inline-flex items-center justify-center bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm hover:opacity-90 transition-opacity">
+                                                <i data-lucide="video" class="w-4 h-4 mr-2"></i>
+                                                Join Telehealth Call
+                                            </button>
+                                        </c:if>
+                                    </div>
+                                </c:forEach>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
             </div>
+        </div>
     </div>
 </div>
 
