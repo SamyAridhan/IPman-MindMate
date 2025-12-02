@@ -13,7 +13,7 @@
         <div class="flex items-center space-x-4">
             <%-- Assuming header/nav handles the back button --%>
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Peer Support Forum</h1>
+                <h1 class="text-3xl font-bold text-foreground mb-2">Peer Support Forum</h1>
                 <p class="text-gray-600 mt-1">Safe, anonymous community support • Join discussions, share experiences, and find support.</p>
             </div>
         </div>
