@@ -4,13 +4,13 @@
 
 <div class="container mx-auto px-4 py-8">
     <!-- Welcome Section -->
-    <div class="mb-8">
+    <div class="mb-8 fade-in">
         <h1 class="text-3xl font-bold text-foreground mb-2">Welcome back, ${sessionScope.userName != null ? sessionScope.userName : 'Student'}!</h1>
         <p class="text-muted-foreground">How are you feeling today?</p>
     </div>
 
     <!-- Quick Start Card -->
-    <div class="bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-lg shadow-sm border border-primary/20 mb-8">
+    <div class="quick-start-card p-6 rounded-lg shadow-sm mb-8 fade-in">
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-xl font-semibold text-foreground mb-2">Quick Start: How are you feeling?</h3>
@@ -25,14 +25,14 @@
     </div>
 
     <!-- New in Learning Hub -->
-    <div class="bg-card p-6 rounded-lg shadow-sm border border-border mb-8">
+    <div class="bg-card p-6 rounded-lg shadow-sm border border-border mb-8 fade-in">
         <div class="flex items-center mb-4">
-            <i data-lucide="book-open" class="w-5 h-5 mr-2 text-success"></i>
+            <i data-lucide="book-open" class="w-5 h-5 mr-2 text-success-foreground"></i>
             <h2 class="text-xl font-semibold text-foreground">New in the Learning Hub</h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Learning Item 1 -->
-            <div class="p-4 bg-secondary/30 rounded-lg border border-border hover:shadow-md transition-all cursor-pointer">
+            <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
                 <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">article</span>
                 <h4 class="font-semibold text-foreground mt-2 mb-1">Stress Management 101</h4>
                 <p class="text-sm text-muted-foreground line-clamp-2">Learn effective stress coping strategies for students</p>
@@ -41,7 +41,7 @@
                 </a>
             </div>
             <!-- Learning Item 2 -->
-            <div class="p-4 bg-secondary/30 rounded-lg border border-border hover:shadow-md transition-all cursor-pointer">
+            <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
                 <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">video</span>
                 <h4 class="font-semibold text-foreground mt-2 mb-1">Mindfulness Meditation Guide</h4>
                 <p class="text-sm text-muted-foreground line-clamp-2">15-minute guided meditation for anxiety relief</p>
@@ -50,7 +50,7 @@
                 </a>
             </div>
             <!-- Learning Item 3 -->
-            <div class="p-4 bg-secondary/30 rounded-lg border border-border hover:shadow-md transition-all cursor-pointer">
+            <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
                 <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">article</span>
                 <h4 class="font-semibold text-foreground mt-2 mb-1">Sleep Hygiene</h4>
                 <p class="text-sm text-muted-foreground line-clamp-2">Interactive module on building better sleep habits</p>
@@ -66,10 +66,10 @@
         <div class="lg:col-span-2 space-y-6">
             
             <!-- Progress Dashboard -->
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
-                        <i data-lucide="trending-up" class="w-5 h-5 mr-2 text-info"></i>
+                        <i data-lucide="trending-up" class="w-5 h-5 mr-2 text-info-foreground"></i>
                         <h2 class="text-xl font-semibold text-foreground">Progress Dashboard</h2>
                     </div>
                     <select class="px-3 py-1.5 border border-input rounded-md bg-background text-sm">
@@ -83,36 +83,36 @@
                 <div class="mb-6">
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="font-medium text-foreground">Weekly Mood Tracker</h4>
-                        <span class="px-2 py-0.5 bg-success/20 text-success text-sm rounded-full">7.4/10</span>
+                        <span class="badge-success">7.4/10</span>
                     </div>
                     <div class="grid grid-cols-7 gap-2">
                         <div class="text-center">
                             <div class="text-xs text-muted-foreground mb-1">Mon</div>
-                            <div class="bg-info/20 rounded-full h-8 flex items-center justify-center text-sm font-medium text-info">7</div>
+                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">7</div>
                         </div>
                         <div class="text-center">
                             <div class="text-xs text-muted-foreground mb-1">Tue</div>
-                            <div class="bg-info/20 rounded-full h-8 flex items-center justify-center text-sm font-medium text-info">6</div>
+                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">6</div>
                         </div>
                         <div class="text-center">
                             <div class="text-xs text-muted-foreground mb-1">Wed</div>
-                            <div class="bg-info/20 rounded-full h-8 flex items-center justify-center text-sm font-medium text-info">8</div>
+                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">8</div>
                         </div>
                         <div class="text-center">
                             <div class="text-xs text-muted-foreground mb-1">Thu</div>
-                            <div class="bg-info/20 rounded-full h-8 flex items-center justify-center text-sm font-medium text-info">7</div>
+                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">7</div>
                         </div>
                         <div class="text-center">
                             <div class="text-xs text-muted-foreground mb-1">Fri</div>
-                            <div class="bg-info/20 rounded-full h-8 flex items-center justify-center text-sm font-medium text-info">9</div>
+                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">9</div>
                         </div>
                         <div class="text-center">
                             <div class="text-xs text-muted-foreground mb-1">Sat</div>
-                            <div class="bg-info/20 rounded-full h-8 flex items-center justify-center text-sm font-medium text-info">8</div>
+                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">8</div>
                         </div>
                         <div class="text-center">
                             <div class="text-xs text-muted-foreground mb-1">Sun</div>
-                            <div class="bg-info/20 rounded-full h-8 flex items-center justify-center text-sm font-medium text-info">7</div>
+                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">7</div>
                         </div>
                     </div>
                 </div>
@@ -129,8 +129,8 @@
                                 </span>
                                 <span>75%</span>
                             </div>
-                            <div class="w-full bg-secondary rounded-full h-2">
-                                <div class="bg-primary h-2 rounded-full" style="width: 75%"></div>
+                            <div class="progress-bar-container h-2">
+                                <div class="progress-bar-fill h-2" style="width: 75%"></div>
                             </div>
                         </div>
                         <div>
@@ -141,8 +141,8 @@
                                 </span>
                                 <span>50%</span>
                             </div>
-                            <div class="w-full bg-secondary rounded-full h-2">
-                                <div class="bg-primary h-2 rounded-full" style="width: 50%"></div>
+                            <div class="progress-bar-container h-2">
+                                <div class="progress-bar-fill blue-accent h-2" style="width: 50%"></div>
                             </div>
                         </div>
                         <div>
@@ -153,8 +153,8 @@
                                 </span>
                                 <span>90%</span>
                             </div>
-                            <div class="w-full bg-secondary rounded-full h-2">
-                                <div class="bg-primary h-2 rounded-full" style="width: 90%"></div>
+                            <div class="progress-bar-container h-2">
+                                <div class="progress-bar-fill h-2" style="width: 90%"></div>
                             </div>
                         </div>
                         <div>
@@ -165,8 +165,8 @@
                                 </span>
                                 <span>100%</span>
                             </div>
-                            <div class="w-full bg-secondary rounded-full h-2">
-                                <div class="bg-primary h-2 rounded-full" style="width: 100%"></div>
+                            <div class="progress-bar-container h-2">
+                                <div class="progress-bar-fill blue-accent h-2" style="width: 100%"></div>
                             </div>
                         </div>
                     </div>
@@ -174,7 +174,7 @@
             </div>
 
             <!-- AI Recommendations -->
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-semibold text-foreground">AI Recommendations</h2>
                     <div class="flex items-center space-x-2">
@@ -184,7 +184,7 @@
                             <option>Sleep</option>
                             <option>Anxiety</option>
                         </select>
-                        <button class="p-1.5 border border-input rounded-md hover:bg-secondary transition-colors">
+                        <button class="icon-btn border border-input">
                             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -202,19 +202,19 @@
                                 </div>
                                 <p class="text-sm text-muted-foreground mb-2">Based on your stress levels, try this calming session</p>
                                 <div class="flex items-center space-x-3 text-xs text-muted-foreground">
-                                    <span class="px-2 py-0.5 bg-background rounded-full border border-border">video</span>
+                                    <span class="badge-outline-blue">video</span>
                                     <span>15 min</span>
-                                    <span class="px-2 py-0.5 bg-background rounded-full border border-border">stress</span>
+                                    <span class="badge-outline-blue">stress</span>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-1 ml-4">
-                                <button class="p-2 hover:bg-background rounded-md transition-colors">
+                                <button class="icon-btn">
                                     <i data-lucide="bookmark" class="w-4 h-4"></i>
                                 </button>
-                                <button class="p-2 hover:bg-background rounded-md transition-colors">
+                                <button class="icon-btn">
                                     <i data-lucide="thumbs-up" class="w-4 h-4"></i>
                                 </button>
-                                <button class="p-2 hover:bg-background rounded-md transition-colors">
+                                <button class="icon-btn">
                                     <i data-lucide="thumbs-down" class="w-4 h-4"></i>
                                 </button>
                             </div>
@@ -232,19 +232,19 @@
                                 </div>
                                 <p class="text-sm text-muted-foreground mb-2">Improve your sleep quality with simple changes</p>
                                 <div class="flex items-center space-x-3 text-xs text-muted-foreground">
-                                    <span class="px-2 py-0.5 bg-background rounded-full border border-border">article</span>
+                                    <span class="badge-outline-blue">article</span>
                                     <span>5 min read</span>
-                                    <span class="px-2 py-0.5 bg-background rounded-full border border-border">sleep</span>
+                                    <span class="badge-outline-blue">sleep</span>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-1 ml-4">
-                                <button class="p-2 hover:bg-background rounded-md transition-colors">
+                                <button class="icon-btn">
                                     <i data-lucide="bookmark" class="w-4 h-4"></i>
                                 </button>
-                                <button class="p-2 hover:bg-background rounded-md transition-colors">
+                                <button class="icon-btn">
                                     <i data-lucide="thumbs-up" class="w-4 h-4"></i>
                                 </button>
-                                <button class="p-2 hover:bg-background rounded-md transition-colors">
+                                <button class="icon-btn">
                                     <i data-lucide="thumbs-down" class="w-4 h-4"></i>
                                 </button>
                             </div>
@@ -262,19 +262,19 @@
                                 </div>
                                 <p class="text-sm text-muted-foreground mb-2">Quick techniques for anxiety management</p>
                                 <div class="flex items-center space-x-3 text-xs text-muted-foreground">
-                                    <span class="px-2 py-0.5 bg-background rounded-full border border-border">exercise</span>
+                                    <span class="badge-outline-blue">exercise</span>
                                     <span>10 min</span>
-                                    <span class="px-2 py-0.5 bg-background rounded-full border border-border">anxiety</span>
+                                    <span class="badge-outline-blue">anxiety</span>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-1 ml-4">
-                                <button class="p-2 hover:bg-background rounded-md transition-colors">
+                                <button class="icon-btn">
                                     <i data-lucide="bookmark" class="w-4 h-4"></i>
                                 </button>
-                                <button class="p-2 hover:bg-background rounded-md transition-colors">
+                                <button class="icon-btn">
                                     <i data-lucide="thumbs-up" class="w-4 h-4"></i>
                                 </button>
-                                <button class="p-2 hover:bg-background rounded-md transition-colors">
+                                <button class="icon-btn">
                                     <i data-lucide="thumbs-down" class="w-4 h-4"></i>
                                 </button>
                             </div>
@@ -289,7 +289,7 @@
         <div class="space-y-6">
             
             <!-- Upcoming Sessions -->
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <div class="flex items-center mb-4">
                     <i data-lucide="calendar" class="w-5 h-5 mr-2 text-primary"></i>
                     <h2 class="text-xl font-semibold text-foreground">Upcoming Sessions</h2>
@@ -300,10 +300,10 @@
                         <c:when test="${not empty bookedAppointments}">
                             <!-- Display Booked Appointments -->
                             <c:forEach var="appointment" items="${bookedAppointments}" begin="0" end="1">
-                                <div class="p-3 bg-primary/10 rounded-lg border-l-4 border-primary">
+                                <div class="session-card pink-accent">
                                     <div class="flex items-center justify-between mb-2">
                                         <h4 class="font-medium text-foreground">${appointment.sessionType}</h4>
-                                        <span class="px-2 py-0.5 text-xs bg-background rounded-full border border-border flex items-center gap-1">
+                                        <span class="badge-outline-blue flex items-center gap-1">
                                             <i data-lucide="clock" class="w-3 h-3"></i>
                                             ${appointment.time}
                                         </span>
@@ -344,30 +344,30 @@
             </div>
 
             <!-- Notifications -->
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <div class="flex items-center mb-4">
                     <i data-lucide="bell" class="w-5 h-5 mr-2 text-primary"></i>
                     <h2 class="text-xl font-semibold text-foreground">Notifications</h2>
                 </div>
 
                 <div class="space-y-3">
-                    <div class="p-3 bg-info/10 rounded-lg border-l-4 border-info">
+                    <div class="notification-card">
                         <p class="text-sm text-foreground">New session scheduled for tomorrow at 2 PM</p>
-                        <span class="px-2 py-0.5 bg-info/20 text-info text-xs rounded-full inline-block mt-1">appointment</span>
+                        <span class="badge-outline-blue inline-block mt-1">appointment</span>
                     </div>
-                    <div class="p-3 bg-info/10 rounded-lg border-l-4 border-info">
+                    <div class="notification-card">
                         <p class="text-sm text-foreground">Complete your weekly mood check-in</p>
-                        <span class="px-2 py-0.5 bg-info/20 text-info text-xs rounded-full inline-block mt-1">reminder</span>
+                        <span class="badge-outline-blue inline-block mt-1">reminder</span>
                     </div>
-                    <div class="p-3 bg-info/10 rounded-lg border-l-4 border-info">
+                    <div class="notification-card">
                         <p class="text-sm text-foreground">New peer discussion in Anxiety Support group</p>
-                        <span class="px-2 py-0.5 bg-info/20 text-info text-xs rounded-full inline-block mt-1">forum</span>
+                        <span class="badge-outline-blue inline-block mt-1">forum</span>
                     </div>
                 </div>
             </div>
 
             <!-- Quick Actions -->
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <h2 class="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
                 <div class="space-y-2">
                     <a href="/student/assessment" class="flex items-center w-full justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors">
@@ -388,6 +388,7 @@
         </div>
     </div>
 </div>
+
 <!-- Student-Only Chatbot Widget -->
 <jsp:include page="chatbot-widget.jsp" /> 
 <jsp:include page="../common/footer.jsp" />
