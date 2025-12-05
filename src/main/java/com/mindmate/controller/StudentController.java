@@ -160,6 +160,7 @@ public class StudentController {
     @GetMapping("/profile")
     public String profile(Model model) {
         model.addAttribute("role", "student");
-        return "student/profile";
+        return "student/profile"; // Create this JSP placeholder
     }
+
 }
