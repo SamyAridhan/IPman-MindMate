@@ -205,7 +205,7 @@
             <div class="flex items-center space-x-2 text-base"> 
                 
                 <button 
-                    onclick="recordInteraction(${post.id}, 'like', this)" 
+                    onclick="recordInteraction('${post.id}', 'like', this)" 
                     class="text-gray-500 flex items-center p-1 rounded hover:bg-secondary transition-colors disabled:opacity-50" 
                     aria-label="Like Post"
                 >
@@ -214,7 +214,7 @@
                 </button>
                 
                 <button 
-                    onclick="recordInteraction(${post.id}, 'helpful', this)" 
+                    onclick="recordInteraction('${post.id}', 'helpful', this)" 
                     class="text-gray-500 flex items-center p-1 rounded hover:bg-secondary transition-colors disabled:opacity-50" 
                     aria-label="Mark as helpful"
                 >
@@ -224,7 +224,7 @@
 
                 <button 
                     id="flag-button-${post.id}"
-                    onclick="flagPost(${post.id}, this)" 
+                    onclick="flagPost('${post.id}', this)" 
                     class="p-1 rounded transition-colors disabled:opacity-50 
                         <c:if test="${post.isFlagged}">text-[#dc2626] hover:bg-[#ffb2ae]</c:if> <%-- Already flagged --%>
                         <c:if test="${not post.isFlagged}">text-gray-500 hover:bg-[#ffb2ae] hover:text-[#dc2626]</c:if>" <%-- Not flagged yet --%>
