@@ -79,7 +79,7 @@
         <div class="bg-card rounded-lg shadow-xl w-full max-w-2xl transform transition-all">
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-6 border-b border-border">
-                <h2 class="text-xl font-semibold text-foreground">Add New Learning Content</h2>
+                <h2 id="modalTitle" class="text-xl font-semibold text-foreground">Add New Learning Content</h2>
                 <button id="closeModal" class="text-muted-foreground hover:text-foreground transition-colors">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
@@ -214,10 +214,12 @@
         const submitBtn = form.querySelector('button[type="submit"]');
 
         // when clicking Add New Content, ensure form is in create mode
+        const modalTitle = document.getElementById('modalTitle');
         addContentBtn.addEventListener('click', () => {
             editingId.value = '';
             form.reset();
             if (submitBtn) submitBtn.textContent = 'Create Content';
+            if (modalTitle) modalTitle.textContent = 'Add New Learning Content';
         });
 
         // delegate edit button clicks
@@ -237,6 +239,7 @@
             descInput.value = desc;
             typeInput.value = type;
             if (submitBtn) submitBtn.textContent = 'Update Content';
+            if (modalTitle) modalTitle.textContent = 'Update Learning Content';
             openModal();
         });
 
