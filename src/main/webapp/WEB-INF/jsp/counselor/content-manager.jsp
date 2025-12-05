@@ -163,6 +163,11 @@
 </div>
 
 <script>
+    // Initialize Lucide icons when page loads
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    
     // Modal functionality
     const modal = document.getElementById('contentModal');
     const modalOverlay = document.getElementById('modalOverlay');
@@ -174,6 +179,9 @@
         modal.classList.remove('hidden');
         modalOverlay.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
     
     function closeModal() {
