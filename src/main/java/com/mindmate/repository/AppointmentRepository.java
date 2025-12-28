@@ -1,3 +1,4 @@
+// src/main/java/com/mindmate/repository/AppointmentRepository.java
 package com.mindmate.repository;
 
 import com.mindmate.model.Appointment;

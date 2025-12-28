@@ -1,3 +1,4 @@
+// src/main/java/com/mindmate/repository/StudentRepository.java
 package com.mindmate.repository;
 
 import com.mindmate.model.Student;
