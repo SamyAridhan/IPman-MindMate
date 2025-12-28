@@ -1,3 +1,4 @@
+//src\main\java\com\mindmate\controller\AuthController.java
 package com.mindmate.controller;
 
 import org.springframework.stereotype.Controller;

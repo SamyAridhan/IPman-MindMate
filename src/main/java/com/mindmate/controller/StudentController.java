@@ -1,3 +1,4 @@
+//src\main\java\com\mindmate\controller\StudentController.java
 package com.mindmate.controller;
 
 import com.mindmate.model.Appointment;

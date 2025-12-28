@@ -34,7 +34,9 @@ public class Counselor {
     @Column(length = 10)
     private String avatar; // e.g., "SJ" for initials
 
-    @Column(precision = 2, scale = 1)
+    // FIXED: Removed 'scale' and 'precision' attributes for Double type
+    // to prevent "scale has no meaning" error during startup.
+    @Column
     private Double rating; // e.g., 4.8
 
     @Column(length = 50)

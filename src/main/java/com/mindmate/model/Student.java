@@ -1,3 +1,4 @@
+//src\main\java\com\mindmate\model\Student.java
 package com.mindmate.model;
 
 import jakarta.persistence.*;
