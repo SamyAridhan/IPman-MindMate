@@ -11,6 +11,8 @@ import com.mindmate.model.Student;
 import com.mindmate.util.PasswordUtil;
 import com.mindmate.util.SessionHelper;
 import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory; // ✅ Import Logger
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +26,13 @@ import java.util.Optional;
 /**
  * Controller handling authentication operations.
  * Manages login, logout, and student registration.
- * 
- * @author Samy (A23CS0246)
+ * * @author Samy (A23CS0246)
  */
 @Controller
 public class AuthController {
+
+    // ✅ Initialize Logger
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
     private StudentDAO studentDAO;
@@ -136,10 +140,11 @@ public class AuthController {
             }
 
             // If we reach here, authentication failed
+            log.warn("Login failed for user: {} with role: {}", email, role); // ✅ Log warning
             return "redirect:/login?error=true";
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("System error during login for user: {}", email, e); // ✅ Log error
             return "redirect:/login?error=true";
         }
     }
@@ -162,6 +167,8 @@ public class AuthController {
             model.addAttribute("errorMessage", "Email already registered. Please login instead.");
         } else if ("passwordmismatch".equals(error)) {
             model.addAttribute("errorMessage", "Passwords do not match.");
+        } else if ("weakpassword".equals(error)) { // ✅ Added weak password case
+             model.addAttribute("errorMessage", "Password must be at least 6 characters.");
         } else if ("failed".equals(error)) {
             model.addAttribute("errorMessage", "Registration failed. Please try again.");
         }
@@ -183,6 +190,11 @@ public class AuthController {
             HttpSession session) {
 
         try {
+            // ✅ Basic Strength Check
+            if (password == null || password.length() < 6) {
+                return "redirect:/register?error=weakpassword";
+            }
+            
             // Validate passwords match
             if (!password.equals(confirmPassword)) {
                 return "redirect:/register?error=passwordmismatch";
@@ -209,10 +221,11 @@ public class AuthController {
                 "student"
             );
 
+            log.info("New student registered: {}", email); // ✅ Log success
             return "redirect:/student/dashboard?registered=true";
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Registration failed for user: {}", email, e); // ✅ Log error
             return "redirect:/register?error=failed";
         }
     }

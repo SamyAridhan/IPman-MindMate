@@ -126,10 +126,12 @@
             <p class="text-xs uppercase tracking-wide text-muted-foreground text-center mb-4">Test Credentials</p>
             <div class="space-y-2 text-xs">
                 <div class="p-2 bg-secondary/30 rounded">
-                    <strong>Student:</strong> demo@student.com / student123
+                    <strong>Student:</strong> demo@student.mindmate.com / student123
                 </div>
                 <div class="p-2 bg-secondary/30 rounded">
-                    <strong>Counselor:</strong> sarah.johnson@mindmate.com / counselor123
+                    <strong>Counselor:</strong> sarah.johnson@mindmate.com / counselor123 <br>
+                    <strong>Counselor:</strong> michael.chen@mindmate.com / counselor123 <br>
+                    <strong>Counselor:</strong> emily.rodriguez@mindmate.com / counselor123 <br>
                 </div>
                 <div class="p-2 bg-secondary/30 rounded">
                     <strong>Admin:</strong> admin@mindmate.com / admin123
