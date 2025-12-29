@@ -1,16 +1,20 @@
 package com.mindmate.controller;
 
+import com.mindmate.dao.AppointmentDAO;
+import com.mindmate.dao.CounselorDAO;
+import com.mindmate.model.Appointment;
 import com.mindmate.model.Content;
+import com.mindmate.model.Counselor;
+import com.mindmate.util.SessionHelper; // ✅ Using Helper
+
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -19,166 +23,140 @@ import java.util.stream.Collectors;
 @RequestMapping("/counselor")
 public class CounselorController {
 
-    // Content store
-    private static final Map<Long, Content> STORE = new LinkedHashMap<>();
-    private static final AtomicLong ID_COUNTER = new AtomicLong(1);
+    @Autowired
+    private AppointmentDAO appointmentDAO;
 
-    // Appointments store
-    private static final List<Map<String, Object>> APPOINTMENTS = new ArrayList<>();
-    private static final AtomicLong APPOINTMENT_ID = new AtomicLong(1);
+    @Autowired
+    private CounselorDAO counselorDAO;
+
+    // Static Content Store (Mock)
+    private static final Map<Long, Content> CONTENT_STORE = new LinkedHashMap<>();
+    private static final AtomicLong CONTENT_ID_COUNTER = new AtomicLong(1);
 
     static {
-        // Seed content
-        STORE.put(1L, new Content(1L, "Stress Management 101", "Article",
-                "Learn effective stress-coping strategies for students", ""));
-        STORE.put(2L, new Content(2L, "Mindfulness Meditation Guide", "Video",
-                "15-minute guided meditation for anxiety relief", ""));
-        STORE.put(3L, new Content(3L, "Sleep Hygiene", "Article", 
-                "Interactive module on building better sleep habits", ""));
-        STORE.put(4L, new Content(4L, "Understanding Anxiety", "Article", 
-                "What causes anxiety and how to manage it", ""));
-        STORE.put(5L, new Content(5L, "Building Resilience", "Article",
-                "Develop emotional resilience for long-term wellbeing", ""));
-        ID_COUNTER.set(6);
-
-        // Seed appointments
-        APPOINTMENTS.add(createAppointment(
-            "2025-11-22",
-            "15:30",
-            "pending",
-            "First session - social anxiety",
-            "Sarah Chen"
-        ));
-        
-        APPOINTMENTS.add(createAppointment(
-            "2025-11-25",
-            "10:00",
-            "pending",
-            "Crisis intervention follow-up",
-            "Michael Torres"
-        ));
-        
-        APPOINTMENTS.add(createAppointment(
-            "2025-11-29",
-            "14:00",
-            "pending",
-            "group session",
-            "Anxiety Support Group"
-        ));
-        
-        APPOINTMENTS.add(createAppointment(
-            "2025-12-02",
-            "09:00",
-            "confirmed",
-            "Individual session",
-            "Emily Johnson"
-        ));
+        CONTENT_STORE.put(1L, new Content(1L, "Stress Management 101", "Article", "Learn effective stress-coping strategies", ""));
+        CONTENT_STORE.put(2L, new Content(2L, "Mindfulness Meditation", "Video", "15-minute guided meditation", ""));
+        CONTENT_ID_COUNTER.set(3);
     }
 
-    private static Map<String, Object> createAppointment(String date, String time, 
-                                                          String status, String notes, String studentName) {
-        Map<String, Object> apt = new HashMap<>();
-        apt.put("id", String.valueOf(APPOINTMENT_ID.getAndIncrement()));
-        apt.put("date", date);
-        apt.put("time", time);
-        apt.put("status", status);
-        apt.put("notes", notes);
-        apt.put("studentName", studentName);
-        return apt;
+    /**
+     * Retrieves logged-in counselor using SessionHelper.
+     */
+    private Counselor getLoggedInCounselor(HttpSession session) {
+        Long userId = SessionHelper.getUserId(session); // ✅ Clean & Consistent
+        if (userId == null || !"counselor".equals(SessionHelper.getRole(session))) {
+            return null;
+        }
+        return counselorDAO.findById(userId);
     }
 
     @GetMapping("/dashboard")
-    public String showDashboard(Model model) {
+    public String showDashboard(Model model, HttpSession session) {
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null) return "redirect:/login";
+
         model.addAttribute("role", "counselor");
-        
-        // Calculate today's appointments
-        String today = LocalDate.now().toString();
-        long todayCount = APPOINTMENTS.stream()
-            .filter(apt -> today.equals(apt.get("date")))
-            .count();
-        
-        // Calculate pending requests
-        long pendingCount = APPOINTMENTS.stream()
-            .filter(apt -> "pending".equals(apt.get("status")))
-            .count();
-        
-        // Get today's appointments
-        List<Map<String, Object>> todayAppointments = APPOINTMENTS.stream()
-            .filter(apt -> today.equals(apt.get("date")))
-            .collect(Collectors.toList());
-        
-        // Get pending appointments (limit to 3 for dashboard)
-        List<Map<String, Object>> pendingAppointments = APPOINTMENTS.stream()
-            .filter(apt -> "pending".equals(apt.get("status")))
-            .limit(3)
-            .collect(Collectors.toList());
-        
+        model.addAttribute("user", SessionHelper.getUserName(session)); // ✅ Using Helper
+
+        // Fetch & Filter Appointments
+        List<Appointment> allAppointments = appointmentDAO.findAll();
+        List<Appointment> myAppointments = allAppointments.stream()
+                .filter(a -> a.getCounselorName() != null && a.getCounselorName().contains(counselor.getName()))
+                .collect(Collectors.toList());
+
+        // Stats
+        LocalDate today = LocalDate.now();
+        long todayCount = myAppointments.stream().filter(a -> a.getDate().isEqual(today)).count();
+        long pendingCount = myAppointments.stream().filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING).count();
+
         model.addAttribute("todayCount", todayCount);
         model.addAttribute("pendingCount", pendingCount);
-        model.addAttribute("todayAppointments", todayAppointments);
-        model.addAttribute("pendingAppointments", pendingAppointments);
         
+        model.addAttribute("todayAppointments", myAppointments.stream()
+                .filter(a -> a.getDate().isEqual(today))
+                .collect(Collectors.toList()));
+                
+        model.addAttribute("pendingAppointments", myAppointments.stream()
+                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING)
+                .limit(3)
+                .collect(Collectors.toList()));
+
         return "counselor/dashboard";
     }
 
     @GetMapping("/schedule")
-    public String showSchedule(Model model) {
+    public String showSchedule(Model model, HttpSession session) {
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null) return "redirect:/login";
+
         model.addAttribute("role", "counselor");
-        
-        // Get all pending appointments
-        List<Map<String, Object>> pendingAppointments = APPOINTMENTS.stream()
-            .filter(apt -> "pending".equals(apt.get("status")))
-            .collect(Collectors.toList());
-        
-        // Get today's appointments
-        String today = LocalDate.now().toString();
-        List<Map<String, Object>> todayAppointments = APPOINTMENTS.stream()
-            .filter(apt -> today.equals(apt.get("date")))
-            .collect(Collectors.toList());
-        
-        model.addAttribute("pendingAppointments", pendingAppointments);
-        model.addAttribute("todayAppointments", todayAppointments);
-        model.addAttribute("selectedDate", today);
-        
+
+        List<Appointment> allAppointments = appointmentDAO.findAll();
+        List<Appointment> myAppointments = allAppointments.stream()
+                .filter(a -> a.getCounselorName() != null && a.getCounselorName().contains(counselor.getName()))
+                .collect(Collectors.toList());
+
+        model.addAttribute("pendingAppointments", myAppointments.stream()
+                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING)
+                .collect(Collectors.toList()));
+
+        model.addAttribute("todayAppointments", myAppointments.stream()
+                .filter(a -> a.getDate().isEqual(LocalDate.now()))
+                .collect(Collectors.toList()));
+
+        model.addAttribute("selectedDate", LocalDate.now().toString());
+
         return "counselor/schedule";
     }
 
     @PostMapping("/appointment/approve")
-    public String approveAppointment(@RequestParam String appointmentId) {
-        APPOINTMENTS.stream()
-            .filter(apt -> appointmentId.equals(apt.get("id")))
-            .findFirst()
-            .ifPresent(apt -> apt.put("status", "confirmed"));
-        
+    @Transactional
+    public String approveAppointment(@RequestParam Long appointmentId, HttpSession session) {
+        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+
+        Appointment apt = appointmentDAO.findById(appointmentId);
+        if (apt != null) {
+            apt.setStatus(Appointment.AppointmentStatus.CONFIRMED);
+            appointmentDAO.update(apt);
+        }
         return "redirect:/counselor/schedule";
     }
 
     @PostMapping("/appointment/deny")
-    public String denyAppointment(@RequestParam String appointmentId) {
-        APPOINTMENTS.stream()
-            .filter(apt -> appointmentId.equals(apt.get("id")))
-            .findFirst()
-            .ifPresent(apt -> apt.put("status", "cancelled"));
-        
+    @Transactional
+    public String denyAppointment(@RequestParam Long appointmentId, HttpSession session) {
+        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+
+        Appointment apt = appointmentDAO.findById(appointmentId);
+        if (apt != null) {
+            apt.setStatus(Appointment.AppointmentStatus.CANCELLED);
+            appointmentDAO.update(apt);
+        }
         return "redirect:/counselor/schedule";
     }
 
     @GetMapping("/content")
-    public String manageContent(Model model) {
+    public String manageContent(Model model, HttpSession session) {
+        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+
         model.addAttribute("role", "counselor");
-        List<Content> list = new ArrayList<>(STORE.values());
-        model.addAttribute("contents", list);
+        model.addAttribute("contents", new ArrayList<>(CONTENT_STORE.values()));
         return "counselor/content-manager";
     }
 
     @PostMapping("/content/create")
-    public String createOrUpdateContent(@RequestParam String title,
+    public String createOrUpdateContent(
+            @RequestParam String title,
             @RequestParam String contentType,
             @RequestParam String description,
             @RequestParam String content,
-            @RequestParam(required = false) Long editingId) {
+            @RequestParam(required = false) Long editingId,
+            HttpSession session) {
+        
+        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+
         if (editingId != null) {
-            Content existing = STORE.get(editingId);
+            Content existing = CONTENT_STORE.get(editingId);
             if (existing != null) {
                 existing.setTitle(title);
                 existing.setType(contentType);
@@ -186,22 +164,27 @@ public class CounselorController {
                 existing.setContent(content);
             }
         } else {
-            long id = ID_COUNTER.getAndIncrement();
+            long id = CONTENT_ID_COUNTER.getAndIncrement();
             Content c = new Content(id, title, contentType, description, content);
-            STORE.put(id, c);
+            CONTENT_STORE.put(id, c);
         }
         return "redirect:/counselor/content";
     }
 
     @PostMapping("/content/delete")
-    public String deleteContent(@RequestParam Long id) {
-        STORE.remove(id);
+    public String deleteContent(@RequestParam Long id, HttpSession session) {
+        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+        CONTENT_STORE.remove(id);
         return "redirect:/counselor/content";
     }
 
     @GetMapping("/profile")
-    public String profile(Model model) {
+    public String profile(Model model, HttpSession session) {
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null) return "redirect:/login";
+
         model.addAttribute("role", "counselor");
+        model.addAttribute("counselor", counselor);
         return "counselor/profile";
     }
 }

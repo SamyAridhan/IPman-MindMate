@@ -1,6 +1,10 @@
+// src/main/java/com/mindmate/controller/RecommendationController.java
 package com.mindmate.controller;
 
-import com.mindmate.model.RecommendationResource; // Still needed for structured data
+import com.mindmate.model.RecommendationResource;
+import com.mindmate.util.SessionHelper; // ✅ Import this
+import jakarta.servlet.http.HttpSession; // ✅ Import this
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,16 +16,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class RecommendationController {
     
     @GetMapping
-    public String viewRecommendation(@RequestParam("id") String resourceId, Model model) {
+    public String viewRecommendation(
+            @RequestParam("id") String resourceId, 
+            Model model,
+            HttpSession session // ✅ Added Session
+    ) {
+        // 🔒 SECURITY CHECK
+        if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
+            return "redirect:/login";
+        }
         
-        System.out.println("Recommendation Clicked ID: " + resourceId);
-
         // Define the Resource object that will hold the content
         RecommendationResource resource;
 
-        // 🌟 ALL RESOURCE MAPPING LOGIC IS NOW DIRECTLY IN THIS METHOD
         if ("mindfulness-beginners".equals(resourceId)) {
-            // Video Resource: Uses Success/Green badge style
             resource = new RecommendationResource(
                 "Mindfulness for Beginners: Guided Session",
                 "A 15-minute introductory session to reduce stress and improve focus. Use headphones for the best experience.",
@@ -31,7 +39,6 @@ public class RecommendationController {
             );
         
         } else if ("sleep-hygiene-tips".equals(resourceId)) {
-            // Article Resource: Uses Accent Blue outline style
             resource = new RecommendationResource(
                 "Top 5 Sleep Hygiene Tips Article",
                 "Simple steps you can take tonight to dramatically improve your sleep quality. Focus on light, temperature, and routine.",
@@ -41,7 +48,6 @@ public class RecommendationController {
             );
 
         } else if ("breathing-exercises-quick".equals(resourceId)) {
-            // Exercise Resource: Uses Primary/Ring style
             resource = new RecommendationResource(
                 "Quick 4-7-8 Breathing Technique",
                 "A simple, powerful exercise for immediate anxiety relief. Inhale for 4, hold for 7, exhale for 8. Repeat for 3 cycles.",
@@ -51,7 +57,6 @@ public class RecommendationController {
             );
 
         } else {
-            // Default Not Found Resource
             resource = new RecommendationResource(
                 "Resource Not Found",
                 "Please return to the main resources page.",
@@ -61,9 +66,7 @@ public class RecommendationController {
             );
         }
 
-        // Add the entire structured resource object to the model
         model.addAttribute("resource", resource);
-        
         return "student/ai-resource"; 
     }
 }

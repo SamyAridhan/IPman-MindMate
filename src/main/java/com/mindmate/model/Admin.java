@@ -1,4 +1,4 @@
-// src/main/java/com/mindmate/model/Student.java
+// src/main/java/com/mindmate/model/Admin.java
 
 package com.mindmate.model;
 
@@ -7,9 +7,15 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing a system administrator.
+ * Admins have full access to analytics and moderation features.
+ * 
+ * @author Samy (A23CS0246)
+ */
 @Entity
-@Table(name = "students")
-public class Student {
+@Table(name = "admins")
+public class Admin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,12 +30,11 @@ public class Student {
     @Column(unique = true, nullable = false)
     private String email;
 
-    // ✅ NEW: Password field (BCrypt hashed)
     @NotBlank(message = "Password is required")
     @Column(nullable = false)
-    private String password;
+    private String password; // BCrypt hashed
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -38,15 +43,9 @@ public class Student {
     }
 
     // Constructors
-    public Student() {}
+    public Admin() {}
 
-    public Student(String name, String email) {
-        this.name = name;
-        this.email = email;
-    }
-
-    // ✅ NEW: Constructor with password
-    public Student(String name, String email, String password) {
+    public Admin(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;
@@ -77,7 +76,6 @@ public class Student {
         this.email = email;
     }
 
-    // ✅ NEW: Password getter/setter
     public String getPassword() {
         return password;
     }
@@ -92,5 +90,14 @@ public class Student {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    @Override
+    public String toString() {
+        return "Admin{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", email='" + email + '\'' +
+                '}';
     }
 }
