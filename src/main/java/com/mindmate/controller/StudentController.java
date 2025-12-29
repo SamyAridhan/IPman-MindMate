@@ -1,4 +1,3 @@
-//src\main\java\com\mindmate\controller\StudentController.java
 package com.mindmate.controller;
 
 import com.mindmate.model.Appointment;
@@ -122,5 +121,16 @@ public class StudentController {
             appointmentDAO.delete(appointmentId);
         }
         return "redirect:/student/dashboard";
+    }
+
+    // ✅ ADDED THIS MISSING METHOD
+    @GetMapping("/profile")
+    public String profile(Model model, HttpSession session) {
+        Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
+
+        model.addAttribute("role", "student");
+        model.addAttribute("student", student);
+        return "student/profile";
     }
 }

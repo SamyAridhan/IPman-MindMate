@@ -76,19 +76,6 @@
         
         <form method="POST" action="/login" class="space-y-4">
             
-            <%-- Role Selector --%>
-            <div>
-                <label for="role" class="block text-sm font-medium text-foreground mb-1">Login As</label>
-                <select id="role" name="role" 
-                        class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-white text-foreground"
-                        required>
-                    <option value="">Select Role</option>
-                    <option value="student">Student</option>
-                    <option value="counselor">Counselor</option>
-                    <option value="admin">Administrator</option>
-                </select>
-            </div>
-
             <%-- Email Input --%>
             <div>
                 <label for="email" class="block text-sm font-medium text-foreground mb-1">Email</label>
