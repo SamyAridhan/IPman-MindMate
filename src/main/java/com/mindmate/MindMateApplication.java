@@ -1,3 +1,4 @@
+//src\main\java\com\mindmate\MindMateApplication.java
 package com.mindmate;
 
 import org.springframework.boot.SpringApplication;
