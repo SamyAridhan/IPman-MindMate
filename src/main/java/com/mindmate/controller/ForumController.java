@@ -1,4 +1,8 @@
+// src/main/java/com/mindmate/controller/ForumController.java
 package com.mindmate.controller;
+
+import com.mindmate.util.SessionHelper; // ✅ Import this
+import jakarta.servlet.http.HttpSession; // ✅ Import this
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,7 +16,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap; // Added import for HashMap
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,7 +27,7 @@ public class ForumController {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
 
-    // 🔥 CORRECTED: Mock Post Data Structure using HashMap for > 10 key-value pairs 🔥
+    // Mock Post Data Structure (Keeping this as is for now)
     private final List<Map<String, Object>> mockPosts = Arrays.asList(
         // Post 1
         new HashMap<String, Object>() {{ 
@@ -42,12 +46,11 @@ public class ForumController {
             put("helpfulCount", 2);
             put("isFlagged", false);
         }},
-        
-        // Post 2
+        // ... (Your other mock posts remain here) ...
         new HashMap<String, Object>() {{ 
             put("id", 2); 
             put("title", "Coping with anxiety - sharing experiences"); 
-            put("content", "I had a panic attack today and need to talk. Feeling completely alone right now."); 
+            put("content", "I had a panic attack today..."); 
             put("author", "AnonUser2"); 
             put("timestamp", LocalDateTime.now().minusDays(1).format(FORMATTER)); 
             put("category", "anxiety"); 
@@ -60,12 +63,10 @@ public class ForumController {
             put("helpfulCount", 5);
             put("isFlagged", false);
         }},
-
-        // Post 3
         new HashMap<String, Object>() {{ 
             put("id", 3); 
             put("title", "Tips for better sleep"); 
-            put("content", "Struggling to fall asleep, what are your best techniques for relaxation?"); 
+            put("content", "Struggling to fall asleep..."); 
             put("author", "AnonUser3"); 
             put("timestamp", LocalDateTime.now().minusDays(3).format(FORMATTER)); 
             put("category", "general"); 
@@ -78,12 +79,10 @@ public class ForumController {
             put("helpfulCount", 1);
             put("isFlagged", false);
         }},
-               
-        // Post 4
         new HashMap<String, Object>() {{ 
             put("id", 4); 
             put("title", "Building self-confidence"); 
-            put("content", "Just wanted to share a small win today! I spoke up in class. It gets better!"); 
+            put("content", "Just wanted to share a small win today!..."); 
             put("author", "AnonUser4"); 
             put("timestamp", LocalDateTime.now().minusDays(5).format(FORMATTER)); 
             put("category", "general"); 
@@ -97,28 +96,30 @@ public class ForumController {
             put("isFlagged", false);
         }}
     );
-    // -------------------------------------------------------------------------
 
-    // Inside ForumController.java (Add this helper method)
-
-    // Helper method to find a post by ID
     private Map<String, Object> findPostById(int postId) {
         return mockPosts.stream()
                 .filter(post -> (Integer) post.get("id") == postId)
                 .findFirst()
                 .orElse(null);
     }
+
     // --- Forum Module ---
     @GetMapping("/forum")
     public String forumList(
         @RequestParam(value = "sortBy", defaultValue = "recent") String sortBy,
         @RequestParam(value = "searchQuery", required = false) String searchQuery,
-        Model model
+        Model model,
+        HttpSession session // ✅ Added Session
     ) {
-        // Start with the full list of mock posts (or fetch from the database)
+        // 🔒 SECURITY CHECK
+        if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
+            return "redirect:/login";
+        }
+
         List<Map<String, Object>> posts = new ArrayList<>(mockPosts);
 
-        // 1. Apply Search Filter (if searchQuery is present)
+        // 1. Apply Search Filter
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             String query = searchQuery.toLowerCase();
             posts.removeIf(post -> 
@@ -127,7 +128,7 @@ public class ForumController {
             );
         }
         
-        // 2. Apply Sorting Logic (as you had it)
+        // 2. Apply Sorting Logic
         posts.sort((postA, postB) -> {
             switch (sortBy) {
                 case "popular":
@@ -138,13 +139,12 @@ public class ForumController {
                     return ((Integer) postB.get("replies")).compareTo((Integer) postA.get("replies"));
                 case "recent":
                 default:
-                    // Use the timestamp string for comparison
                     return ((String) postB.get("timestamp")).compareTo((String) postA.get("timestamp"));
             }
         });
 
-        // 🔥 3. Calculate Category Counts and Define Category List (FIX for missing categories) 🔥
-        Map<String, Long> categoryCounts = posts.stream() // Use the filtered 'posts' list for accurate counts
+        // 3. Calculate Category Counts
+        Map<String, Long> categoryCounts = posts.stream()
                 .collect(Collectors.groupingBy(post -> (String) post.get("category"), Collectors.counting()));
 
         List<Map<String, Object>> forumCategories = Arrays.asList(
@@ -154,44 +154,48 @@ public class ForumController {
         );
         model.addAttribute("forumCategories", forumCategories);
 
-        // 4. Identify Urgent Posts for Sidebar
+        // 4. Identify Urgent Posts
         List<Map<String, Object>> urgentPosts = posts.stream()
                 .filter(post -> "urgent".equals(post.get("supportLevel")))
                 .collect(Collectors.toList());
         model.addAttribute("urgentPosts", urgentPosts);
         
-        // 5. Pass lists and parameters to the view
+        // 5. Pass lists and parameters
         model.addAttribute("posts", posts);
         model.addAttribute("currentSort", sortBy);
         model.addAttribute("currentSearch", searchQuery);
-        model.addAttribute("role", "student"); // Important for chatbot
+        model.addAttribute("role", "student");
 
         return "student/forum-list";
     }
 
-    // Inside ForumController.java (Add this new method)
+    @PostMapping("/forum/flag")
+    @ResponseBody 
+    public Map<String, Object> flagPost(@RequestParam("postId") int postId, HttpSession session) {
+        // 🔒 SECURITY CHECK (JSON response for AJAX)
+        if (!SessionHelper.isLoggedIn(session)) {
+            return Map.of("error", "Unauthorized");
+        }
 
-@PostMapping("/forum/flag")
-@ResponseBody 
-public Map<String, Object> flagPost(@RequestParam("postId") int postId) {
-    Map<String, Object> post = findPostById(postId);
+        Map<String, Object> post = findPostById(postId);
 
-    if (post == null) {
-        return Map.of("error", 404);
+        if (post == null) {
+            return Map.of("error", 404);
+        }
+        
+        post.put("isFlagged", true);
+        System.out.println("--- POST " + postId + " FLAGGED for review. ---");
+        
+        return Map.of("success", true, "isFlagged", post.get("isFlagged"));
     }
-    
-    // Set the post as flagged in the mock data structure
-    post.put("isFlagged", true);
-    
-    // In a real application, you would log this, email an admin, or queue a task.
-    System.out.println("--- POST " + postId + " FLAGGED for review. ---");
-    
-    // Return the new flagged status to update the button color on the client
-    return Map.of("success", true, "isFlagged", post.get("isFlagged"));
-}
 
     @GetMapping("/forum/thread")
-    public String forumThread(Model model) {
+    public String forumThread(Model model, HttpSession session) {
+        // 🔒 SECURITY CHECK
+        if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
+            return "redirect:/login";
+        }
+
         model.addAttribute("role", "student");
         return "student/forum-thread";
     }

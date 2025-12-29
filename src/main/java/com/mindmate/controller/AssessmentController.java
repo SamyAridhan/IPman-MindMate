@@ -1,19 +1,21 @@
+// src/main/java/com/mindmate/controller/AssessmentController.java
 package com.mindmate.controller;
 
-import com.mindmate.model.Question; // Needs the Question Model
+import com.mindmate.model.Question;
+import com.mindmate.util.SessionHelper; // ✅ Import this
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import jakarta.servlet.http.HttpSession; // Use Jakarta import
+import jakarta.servlet.http.HttpSession;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-// Class-level RequestMapping defines the base URL for the assessment module
 @Controller
 @RequestMapping("/student/assessment")
 public class AssessmentController {
@@ -40,7 +42,6 @@ public class AssessmentController {
     
     // --- Utility Methods (Scoring) ---
     private Map<String, Object> calculateResults(int totalScore) {
-        // ... (Keep the exact scoring logic from the previous controller) ...
         String level;
         String action;
         String colorClass;
@@ -81,13 +82,13 @@ public class AssessmentController {
     
     // --- Assessment Flow Handlers ---
 
-    /**
-     * Initializes or continues the assessment.
-     * Maps to: GET /student/assessment
-     */
     @GetMapping
     public String startAssessment(HttpSession session, Model model) {
-        // Pass the role just in case the header needs it
+        // 🔒 SECURITY CHECK
+        if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
+            return "redirect:/login";
+        }
+
         model.addAttribute("role", "student"); 
 
         Boolean showResults = (Boolean) session.getAttribute("showResults");
@@ -116,16 +117,12 @@ public class AssessmentController {
             session.removeAttribute("assessmentResultsData");
             session.removeAttribute("highRisk");
             session.removeAttribute("consentDialogShown");
-            session.removeAttribute("showResults"); // Ensure this is explicitly reset
+            session.removeAttribute("showResults");
         }
 
         return displayQuestion(currentQIndex, model);
     }
 
-    /**
-     * Processes the user's answer.
-     * Maps to: POST /student/assessment/submit
-     */
     @PostMapping("/submit")
     public String processSubmission(
             @RequestParam(name = "currentQuestionIndex") int currentQIndex,
@@ -133,9 +130,13 @@ public class AssessmentController {
             @RequestParam(name = "direction") String direction,
             HttpSession session, Model model) {
 
+        // 🔒 SECURITY CHECK
+        if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
+            return "redirect:/login";
+        }
+
         int[] responses = (int[]) session.getAttribute("assessmentResponses");
         
-        // This ensures the response for the question the user is LEAVING is always recorded.
         if (responseValue != null && currentQIndex >= 0 && currentQIndex < TOTAL_QUESTIONS) {
             responses[currentQIndex] = responseValue;
             session.setAttribute("assessmentResponses", responses);
@@ -158,12 +159,13 @@ public class AssessmentController {
         return displayQuestion(nextIndex, model);
     }
 
-    /**
-     * Handles consent dialog action.
-     * Maps to: GET /student/assessment/consent
-     */
     @GetMapping("/consent")
     public String handleConsent(@RequestParam("share") boolean share, HttpSession session) {
+        // 🔒 SECURITY CHECK
+        if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
+            return "redirect:/login";
+        }
+
         session.setAttribute("consentDialogShown", true);
         if (share) {
             System.out.println("User consented to share results.");
@@ -171,12 +173,13 @@ public class AssessmentController {
         return "redirect:/student/assessment";
     }
 
-    /**
-     * Resets the assessment state.
-     * Maps to: GET /student/assessment/reset
-     */
     @GetMapping("/reset")
     public String resetAssessment(HttpSession session) {
+        // 🔒 SECURITY CHECK
+        if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
+            return "redirect:/login";
+        }
+
         session.removeAttribute("currentQuestionIndex");
         session.removeAttribute("assessmentResponses");
         session.removeAttribute("showResults");

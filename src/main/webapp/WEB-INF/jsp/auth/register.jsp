@@ -1,3 +1,4 @@
+<%-- src/main/webapp/WEB-INF/jsp/auth/register.jsp --%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
@@ -7,7 +8,6 @@
     <title>Register - MindMate</title>
     
     <link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/images/favicon.svg">
-    
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/global.css">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -59,13 +59,20 @@
     <div class="bg-card p-8 rounded-lg shadow-lg border border-border w-full max-w-md">
         
         <div class="flex flex-col items-center mb-6">
-<img src="${pageContext.request.contextPath}/images/MindMate.png" 
-     alt="MindMate Logo" 
-     class="h-16 w-16 mb-2 object-contain logo-mindmate">
+            <img src="${pageContext.request.contextPath}/images/MindMate.png" 
+                 alt="MindMate Logo" 
+                 class="h-16 w-16 mb-2 object-contain logo-mindmate">
             
             <h1 class="text-3xl font-bold text-foreground">Register</h1>
-            <p class="text-muted-foreground mt-2">Create your MindMate account</p>
+            <p class="text-muted-foreground mt-2">Create your Student account</p>
         </div>
+        
+        <%-- Error Message Display (Unified Red Popup) --%>
+        <% if (request.getAttribute("errorMessage") != null) { %>
+            <div class="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p class="text-sm text-destructive text-center"><%= request.getAttribute("errorMessage") %></p>
+            </div>
+        <% } %>
         
         <form method="POST" action="/register" class="space-y-4">
             <div>

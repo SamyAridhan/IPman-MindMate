@@ -7,10 +7,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
-/**
- * Entity representing a mental health counselor.
- * Manages counselor profile data and availability.
- */
 @Entity
 @Table(name = "counselors")
 public class Counselor {
@@ -28,27 +24,29 @@ public class Counselor {
     @Column(unique = true, nullable = false)
     private String email;
 
+    // ✅ NEW: Password field (BCrypt hashed)
+    @NotBlank(message = "Password is required")
+    @Column(nullable = false)
+    private String password;
+
     @Column(length = 500)
     private String specialization;
 
     @Column(length = 10)
-    private String avatar; // e.g., "SJ" for initials
+    private String avatar;
 
-    // FIXED: Removed 'scale' and 'precision' attributes for Double type
-    // to prevent "scale has no meaning" error during startup.
     @Column
-    private Double rating; // e.g., 4.8
+    private Double rating;
 
     @Column(length = 50)
-    private String experience; // e.g., "8 years"
+    private String experience;
 
     @Column(length = 20)
-    private String availability; // e.g., "High", "Medium", "Low"
+    private String availability;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    // Lifecycle callback
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -63,7 +61,15 @@ public class Counselor {
         this.specialization = specialization;
     }
 
-    // Getters and Setters
+    // ✅ NEW: Constructor with password
+    public Counselor(String name, String email, String password, String specialization) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.specialization = specialization;
+    }
+
+    // Getters and Setters (Keep all existing + add password)
     public Long getId() {
         return id;
     }
@@ -86,6 +92,15 @@ public class Counselor {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    // ✅ NEW: Password getter/setter
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getSpecialization() {

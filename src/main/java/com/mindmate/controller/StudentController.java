@@ -1,12 +1,13 @@
-//src\main\java\com\mindmate\controller\StudentController.java
 package com.mindmate.controller;
 
 import com.mindmate.model.Appointment;
 import com.mindmate.model.Counselor;
 import com.mindmate.model.Student;
+import com.mindmate.util.SessionHelper; // ✅ Using Helper
 import com.mindmate.dao.AppointmentDAO;
 import com.mindmate.dao.CounselorDAO;
 import com.mindmate.dao.StudentDAO;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,11 +20,6 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Controller for student-facing features.
- * Handles dashboard, library, and telehealth with embedded business logic.
- * * @author Samy (A23CS0246) - Telehealth Module
- */
 @Controller
 @RequestMapping("/student")
 public class StudentController {
@@ -38,53 +34,49 @@ public class StudentController {
     private StudentDAO studentDAO;
 
     /**
-     * Displays student dashboard with booked appointments.
+     * Retrieves the logged-in student using SessionHelper.
      */
+    private Student getLoggedInStudent(HttpSession session) {
+        Long userId = SessionHelper.getUserId(session); // ✅ Clean & Consistent
+        if (userId == null || !"student".equals(SessionHelper.getRole(session))) {
+            return null;
+        }
+        return studentDAO.findById(userId);
+    }
+
     @GetMapping("/dashboard")
     public String dashboard(Model model, HttpSession session) {
-        model.addAttribute("role", "student");
-        
         Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
+
+        model.addAttribute("role", "student");
+        model.addAttribute("user", SessionHelper.getUserName(session)); // ✅ Using Helper
         
-        if (student != null) {
-            List<Appointment> appointments = appointmentDAO.findByStudentOrderByDateDesc(student);
-            model.addAttribute("bookedAppointments", appointments);
-        }
+        List<Appointment> appointments = appointmentDAO.findByStudentOrderByDateDesc(student);
+        model.addAttribute("bookedAppointments", appointments);
         
         return "student/dashboard";
     }
 
-    /**
-     * Displays content library page.
-     */
     @GetMapping("/library")
-    public String contentLibrary(Model model) {
+    public String contentLibrary(Model model, HttpSession session) {
+        if (getLoggedInStudent(session) == null) return "redirect:/login";
+        
         model.addAttribute("role", "student");
         return "student/content-library";
     }
 
-    // ============================================
-    // TELEHEALTH MODULE - Business Logic Embedded
-    // ============================================
-
-    /**
-     * Displays telehealth booking page with available counselors.
-     */
     @GetMapping("/telehealth")
-    public String showBookingPage(Model model) {
+    public String showBookingPage(Model model, HttpSession session) {
+        if (getLoggedInStudent(session) == null) return "redirect:/login";
+
         model.addAttribute("role", "student");
-        
-        // Fetch counselors directly from DAO
         List<Counselor> counselors = counselorDAO.findAll();
         model.addAttribute("counselors", counselors);
         
         return "student/telehealth-book";
     }
 
-    /**
-     * Processes telehealth appointment booking.
-     * Contains all business logic inline.
-     */
     @PostMapping("/telehealth/book")
     @Transactional
     public String processBooking(
@@ -96,28 +88,20 @@ public class StudentController {
             HttpSession session) {
         
         Student student = getLoggedInStudent(session);
-        
-        if (student == null) {
-            return "redirect:/login?error=notloggedin";
-        }
+        if (student == null) return "redirect:/login?error=notloggedin";
         
         try {
-            // Business Logic: Create appointment
             Appointment appointment = new Appointment();
             appointment.setStudent(student);
             appointment.setCounselorName(counselorName);
             
-            // Parse date (format: "Dec 03, 2025")
             DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
             appointment.setDate(LocalDate.parse(dateStr, dateFormatter));
-            
-            // Parse time (format: "14:00")
             appointment.setTime(LocalTime.parse(timeStr));
             
             appointment.setSessionType(sessionType);
             appointment.setStatus(Appointment.AppointmentStatus.PENDING);
             
-            // Persist via DAO
             appointmentDAO.save(appointment);
             
             return "redirect:/student/dashboard?success=true";
@@ -128,40 +112,25 @@ public class StudentController {
         }
     }
 
-    /**
-     * Cancels an existing appointment.
-     */
     @PostMapping("/telehealth/cancel")
     @Transactional
-    public String cancelAppointment(@RequestParam("appointmentId") Long appointmentId) {
-        
-        if (!appointmentDAO.existsById(appointmentId)) {
-            return "redirect:/student/dashboard?error=notfound";
+    public String cancelAppointment(@RequestParam("appointmentId") Long appointmentId, HttpSession session) {
+        if (getLoggedInStudent(session) == null) return "redirect:/login";
+
+        if (appointmentDAO.existsById(appointmentId)) {
+            appointmentDAO.delete(appointmentId);
         }
-        
-        appointmentDAO.delete(appointmentId);
         return "redirect:/student/dashboard";
     }
 
-    // ============================================
-    // HELPER METHODS
-    // ============================================
+    // ✅ ADDED THIS MISSING METHOD
+    @GetMapping("/profile")
+    public String profile(Model model, HttpSession session) {
+        Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
 
-    /**
-     * Retrieves the currently logged-in student.
-     * For demo: returns first student or creates one.
-     * * TODO: Replace with proper authentication in Phase 3
-     */
-    private Student getLoggedInStudent(HttpSession session) {
-        List<Student> students = studentDAO.findAll();
-        
-        if (!students.isEmpty()) {
-            return students.get(0);
-        }
-        
-        // Create demo student if none exists
-        Student newStudent = new Student("Demo Student", "demo@example.com");
-        studentDAO.save(newStudent);
-        return newStudent;
+        model.addAttribute("role", "student");
+        model.addAttribute("student", student);
+        return "student/profile";
     }
 }

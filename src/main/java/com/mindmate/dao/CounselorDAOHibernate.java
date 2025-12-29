@@ -1,5 +1,4 @@
 // src/main/java/com/mindmate/dao/CounselorDAOHibernate.java
-
 package com.mindmate.dao;
 
 import com.mindmate.model.Counselor;
@@ -12,12 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Hibernate implementation of CounselorDAO.
- * 
- * @author Samy (A23CS0246)
- * @module Telehealth Assistance
- */
 @Repository
 @Transactional
 public class CounselorDAOHibernate implements CounselorDAO {
@@ -91,5 +84,13 @@ public class CounselorDAOHibernate implements CounselorDAO {
         TypedQuery<Counselor> query = entityManager.createQuery(
             "SELECT c FROM Counselor c ORDER BY c.rating DESC", Counselor.class);
         return query.getResultList();
+    }
+
+    // ✅ Added Implementation
+    @Override
+    public long count() {
+        TypedQuery<Long> query = entityManager.createQuery(
+            "SELECT COUNT(c) FROM Counselor c", Long.class);
+        return query.getSingleResult();
     }
 }
