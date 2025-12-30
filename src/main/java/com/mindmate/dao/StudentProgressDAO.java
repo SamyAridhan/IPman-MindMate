@@ -18,4 +18,9 @@ public interface StudentProgressDAO {
      * Checks if a specific module is completed by a student.
      */
     boolean isModuleCompleted(Long studentId, Long contentId);
+
+    /**
+     * Deletes all progress records for a specific content.
+     */
+    void deleteByContentId(Long contentId);
 }

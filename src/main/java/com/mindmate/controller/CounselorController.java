@@ -4,6 +4,7 @@ package com.mindmate.controller;
 import com.mindmate.dao.AppointmentDAO;
 import com.mindmate.dao.CounselorDAO;
 import com.mindmate.dao.EducationalContentDAO;
+import com.mindmate.dao.StudentProgressDAO;
 import com.mindmate.model.Appointment;
 import com.mindmate.model.EducationalContent;
 import com.mindmate.model.Counselor;
@@ -34,6 +35,8 @@ public class CounselorController {
     @Autowired
     private EducationalContentDAO educationalContentDAO;
 
+    @Autowired
+    private StudentProgressDAO studentProgressDAO;
 
     /**
      * Retrieves logged-in counselor using SessionHelper.
@@ -49,7 +52,8 @@ public class CounselorController {
     @GetMapping("/dashboard")
     public String showDashboard(Model model, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         model.addAttribute("role", "counselor");
         model.addAttribute("user", SessionHelper.getUserName(session)); // ✅ Using Helper
@@ -63,15 +67,16 @@ public class CounselorController {
         // Stats
         LocalDate today = LocalDate.now();
         long todayCount = myAppointments.stream().filter(a -> a.getDate().isEqual(today)).count();
-        long pendingCount = myAppointments.stream().filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING).count();
+        long pendingCount = myAppointments.stream().filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING)
+                .count();
 
         model.addAttribute("todayCount", todayCount);
         model.addAttribute("pendingCount", pendingCount);
-        
+
         model.addAttribute("todayAppointments", myAppointments.stream()
                 .filter(a -> a.getDate().isEqual(today))
                 .collect(Collectors.toList()));
-                
+
         model.addAttribute("pendingAppointments", myAppointments.stream()
                 .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING)
                 .limit(3)
@@ -83,7 +88,8 @@ public class CounselorController {
     @GetMapping("/schedule")
     public String showSchedule(Model model, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         model.addAttribute("role", "counselor");
 
@@ -108,7 +114,8 @@ public class CounselorController {
     @PostMapping("/appointment/approve")
     @Transactional
     public String approveAppointment(@RequestParam Long appointmentId, HttpSession session) {
-        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+        if (getLoggedInCounselor(session) == null)
+            return "redirect:/login";
 
         Appointment apt = appointmentDAO.findById(appointmentId);
         if (apt != null) {
@@ -121,7 +128,8 @@ public class CounselorController {
     @PostMapping("/appointment/deny")
     @Transactional
     public String denyAppointment(@RequestParam Long appointmentId, HttpSession session) {
-        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+        if (getLoggedInCounselor(session) == null)
+            return "redirect:/login";
 
         Appointment apt = appointmentDAO.findById(appointmentId);
         if (apt != null) {
@@ -134,7 +142,8 @@ public class CounselorController {
     @GetMapping("/content")
     public String manageContent(Model model, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         model.addAttribute("role", "counselor");
         model.addAttribute("contents", educationalContentDAO.findAll());
@@ -151,9 +160,10 @@ public class CounselorController {
             @RequestParam Integer points,
             @RequestParam(required = false) Long editingId,
             HttpSession session) {
-        
+
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         EducationalContent ec;
         if (editingId != null) {
@@ -169,25 +179,35 @@ public class CounselorController {
             ec.setDescription(description);
             ec.setContentBody(content);
             ec.setPointsValue(points);
-            
-            if (editingId != null) educationalContentDAO.update(ec);
-            else educationalContentDAO.save(ec);
+
+            if (editingId != null)
+                educationalContentDAO.update(ec);
+            else
+                educationalContentDAO.save(ec);
         }
-        
+
         return "redirect:/counselor/content";
     }
+
     @PostMapping("/content/delete")
     @Transactional
     public String deleteContent(@RequestParam Long id, HttpSession session) {
-        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+        if (getLoggedInCounselor(session) == null)
+            return "redirect:/login";
+
+        // Delete all student progress records for this content first
+        studentProgressDAO.deleteByContentId(id);
+        // Then delete the content
         educationalContentDAO.delete(id);
+
         return "redirect:/counselor/content";
     }
 
     @GetMapping("/profile")
     public String profile(Model model, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         model.addAttribute("role", "counselor");
         model.addAttribute("counselor", counselor);

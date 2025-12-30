@@ -1,4 +1,5 @@
 package com.mindmate.dao;
+
 import com.mindmate.dao.StudentProgressDAO;
 import com.mindmate.model.StudentProgress;
 import com.mindmate.model.Student;
@@ -23,10 +24,10 @@ public class StudentProgressDAOHibernate implements StudentProgressDAO {
     public void markAsComplete(Long studentId, Long contentId) {
         try (Session session = sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
-            
+
             // Check if record already exists to avoid duplicates
             Query<StudentProgress> query = session.createQuery(
-                "FROM StudentProgress WHERE student.id = :sid AND content.id = :cid", StudentProgress.class);
+                    "FROM StudentProgress WHERE student.id = :sid AND content.id = :cid", StudentProgress.class);
             query.setParameter("sid", studentId);
             query.setParameter("cid", contentId);
             StudentProgress progress = query.uniqueResult();
@@ -43,7 +44,7 @@ public class StudentProgressDAOHibernate implements StudentProgressDAO {
                 progress.setCompletionDate(LocalDateTime.now());
                 session.merge(progress);
             }
-            
+
             tx.commit();
         }
     }
@@ -52,7 +53,7 @@ public class StudentProgressDAOHibernate implements StudentProgressDAO {
     public List<StudentProgress> getProgressByStudent(Long studentId) {
         try (Session session = sessionFactory.openSession()) {
             Query<StudentProgress> query = session.createQuery(
-                "FROM StudentProgress WHERE student.id = :sid", StudentProgress.class);
+                    "FROM StudentProgress WHERE student.id = :sid", StudentProgress.class);
             query.setParameter("sid", studentId);
             return query.list();
         }
@@ -62,10 +63,22 @@ public class StudentProgressDAOHibernate implements StudentProgressDAO {
     public boolean isModuleCompleted(Long studentId, Long contentId) {
         try (Session session = sessionFactory.openSession()) {
             Query<Long> query = session.createQuery(
-                "SELECT count(id) FROM StudentProgress WHERE student.id = :sid AND content.id = :cid AND isCompleted = true", Long.class);
+                    "SELECT count(id) FROM StudentProgress WHERE student.id = :sid AND content.id = :cid AND isCompleted = true",
+                    Long.class);
             query.setParameter("sid", studentId);
             query.setParameter("cid", contentId);
             return query.uniqueResult() > 0;
+        }
+    }
+
+    @Override
+    public void deleteByContentId(Long contentId) {
+        try (Session session = sessionFactory.openSession()) {
+            Transaction tx = session.beginTransaction();
+            Query<?> query = session.createQuery("DELETE FROM StudentProgress WHERE content.id = :cid");
+            query.setParameter("cid", contentId);
+            query.executeUpdate();
+            tx.commit();
         }
     }
 }
