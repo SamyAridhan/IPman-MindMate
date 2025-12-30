@@ -8,9 +8,13 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.hibernate.SessionFactory;
 
+import java.time.LocalDate;
+import org.hibernate.Session;
 import java.util.List;
 import java.util.Optional;
+import org.hibernate.Transaction;
 
 /**
  * Hibernate implementation of StudentDAO.
@@ -24,6 +28,12 @@ public class StudentDAOHibernate implements StudentDAO {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    private final SessionFactory sessionFactory;
+
+    public StudentDAOHibernate(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
 
     @Override
     public void save(Student student) {
@@ -81,5 +91,51 @@ public class StudentDAOHibernate implements StudentDAO {
         TypedQuery<Long> query = entityManager.createQuery(
             "SELECT COUNT(s) FROM Student s", Long.class);
         return query.getSingleResult();
+    }
+
+    // new
+    @Override
+    public void updatePointsAndStreak(Long studentId, int pointsToAdd) {
+        Session session = sessionFactory.openSession();
+        Transaction tx = null;
+        
+        try {
+            tx = session.beginTransaction();
+            Student student = session.get(Student.class, studentId);
+            
+            if (student != null) {
+                LocalDate today = LocalDate.now();
+                LocalDate lastDate = student.getLastCompletionDate();
+                
+                // 1. Calculate Streak
+                if (lastDate == null) {
+                    // First time ever completing a module
+                    student.setCurrentStreak(1);
+                } else if (lastDate.equals(today.minusDays(1))) {
+                    // Completed yesterday! Increment streak
+                    student.setCurrentStreak(student.getCurrentStreak() + 1);
+                } else if (lastDate.isBefore(today.minusDays(1))) {
+                    // Missed a day or more. Reset streak
+                    student.setCurrentStreak(1);
+                }
+                // If lastDate.equals(today), streak stays the same (they did multiple today)
+
+                // 2. Update Points
+                int currentPoints = student.getTotalPoints() != null ? student.getTotalPoints() : 0;
+                student.setTotalPoints(currentPoints + pointsToAdd);
+                
+                // 3. Update Last Completion Date
+                student.setLastCompletionDate(today);
+                
+                session.merge(student);
+            }
+            
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
     }
 }
