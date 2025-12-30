@@ -3,8 +3,9 @@ package com.mindmate.controller;
 
 import com.mindmate.dao.AppointmentDAO;
 import com.mindmate.dao.CounselorDAO;
+import com.mindmate.dao.EducationalContentDAO;
 import com.mindmate.model.Appointment;
-import com.mindmate.model.Content;
+import com.mindmate.model.EducationalContent;
 import com.mindmate.model.Counselor;
 import com.mindmate.util.SessionHelper; // ✅ Using Helper
 
@@ -30,15 +31,9 @@ public class CounselorController {
     @Autowired
     private CounselorDAO counselorDAO;
 
-    // Static Content Store (Mock)
-    private static final Map<Long, Content> CONTENT_STORE = new LinkedHashMap<>();
-    private static final AtomicLong CONTENT_ID_COUNTER = new AtomicLong(1);
+    @Autowired
+    private EducationalContentDAO educationalContentDAO;
 
-    static {
-        CONTENT_STORE.put(1L, new Content(1L, "Stress Management 101", "Article", "Learn effective stress-coping strategies", ""));
-        CONTENT_STORE.put(2L, new Content(2L, "Mindfulness Meditation", "Video", "15-minute guided meditation", ""));
-        CONTENT_ID_COUNTER.set(3);
-    }
 
     /**
      * Retrieves logged-in counselor using SessionHelper.
@@ -138,44 +133,54 @@ public class CounselorController {
 
     @GetMapping("/content")
     public String manageContent(Model model, HttpSession session) {
-        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null) return "redirect:/login";
 
         model.addAttribute("role", "counselor");
-        model.addAttribute("contents", new ArrayList<>(CONTENT_STORE.values()));
+        model.addAttribute("contents", educationalContentDAO.findAll());
         return "counselor/content-manager";
     }
 
     @PostMapping("/content/create")
+    @Transactional
     public String createOrUpdateContent(
             @RequestParam String title,
             @RequestParam String contentType,
             @RequestParam String description,
-            @RequestParam String content,
+            @RequestParam String content, // Matches articleContent or videoUrl from JSP
+            @RequestParam Integer points,
             @RequestParam(required = false) Long editingId,
             HttpSession session) {
         
-        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null) return "redirect:/login";
 
+        EducationalContent ec;
         if (editingId != null) {
-            Content existing = CONTENT_STORE.get(editingId);
-            if (existing != null) {
-                existing.setTitle(title);
-                existing.setType(contentType);
-                existing.setDescription(description);
-                existing.setContent(content);
-            }
+            ec = educationalContentDAO.findById(editingId);
         } else {
-            long id = CONTENT_ID_COUNTER.getAndIncrement();
-            Content c = new Content(id, title, contentType, description, content);
-            CONTENT_STORE.put(id, c);
+            ec = new EducationalContent();
+            ec.setAuthor(counselor);
         }
+
+        if (ec != null) {
+            ec.setTitle(title);
+            ec.setContentType(contentType);
+            ec.setDescription(description);
+            ec.setContentBody(content);
+            ec.setPointsValue(points);
+            
+            if (editingId != null) educationalContentDAO.update(ec);
+            else educationalContentDAO.save(ec);
+        }
+        
         return "redirect:/counselor/content";
     }
-
     @PostMapping("/content/delete")
+    @Transactional
     public String deleteContent(@RequestParam Long id, HttpSession session) {
         if (getLoggedInCounselor(session) == null) return "redirect:/login";
-        CONTENT_STORE.remove(id);
+        educationalContentDAO.delete(id);
         return "redirect:/counselor/content";
     }
 
