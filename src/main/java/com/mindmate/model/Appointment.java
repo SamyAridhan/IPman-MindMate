@@ -2,8 +2,13 @@ package com.mindmate.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+/**
+ * Entity representing a telehealth counseling appointment.
+ * Updates: Added Counselor entity link, audit timestamps, and notes.
+ */
 @Entity
 @Table(name = "appointments")
 public class Appointment {
@@ -16,7 +21,13 @@ public class Appointment {
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    @Column(name = "counselor_name", nullable = false)
+    // ✅ NEW: Store counselor as entity (The "System" side logic)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "counselor_id")
+    private Counselor counselor;
+
+    // ✅ DEPRECATED: Kept to prevent breaking legacy frontend/logic
+    @Column(name = "counselor_name")
     private String counselorName;
 
     @Column(nullable = false)
@@ -29,69 +40,110 @@ public class Appointment {
     private String sessionType;
 
     @Enumerated(EnumType.STRING)
-    private AppointmentStatus status;
+    @Column(nullable = false)
+    private AppointmentStatus status = AppointmentStatus.PENDING;
 
-    public enum AppointmentStatus {
-        PENDING, CONFIRMED, CANCELLED, COMPLETED
+    // ✅ NEW: Student's notes/reason for booking
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    // ✅ NEW: Counselor's reason for denial
+    @Column(name = "denial_reason", columnDefinition = "TEXT")
+    private String denialReason;
+
+    // ✅ NEW: Audit trails
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // ============================================
+    // LIFECYCLE CALLBACKS (Auto-timestamps)
+    // ============================================
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
-    // Constructors
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    // ============================================
+    // ENUMS
+    // ============================================
+    public enum AppointmentStatus {
+        PENDING,    // Waiting for counselor approval
+        CONFIRMED,  // Approved by counselor
+        CANCELLED,  // Cancelled by student or counselor
+        COMPLETED   // Session finished
+    }
+
+    // ============================================
+    // CONSTRUCTORS
+    // ============================================
     public Appointment() {}
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Student getStudent() {
-        return student;
-    }
-
-    public void setStudent(Student student) {
+    public Appointment(Student student, Counselor counselor, LocalDate date, LocalTime time, String sessionType) {
         this.student = student;
+        this.counselor = counselor;
+        // Logic: specific check to ensure name is synced if counselor exists
+        this.counselorName = (counselor != null) ? counselor.getName() : null; 
+        this.date = date;
+        this.time = time;
+        this.sessionType = sessionType;
+        this.status = AppointmentStatus.PENDING;
+    }
+
+    // ============================================
+    // GETTERS & SETTERS
+    // ============================================
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Student getStudent() { return student; }
+    public void setStudent(Student student) { this.student = student; }
+
+    public Counselor getCounselor() { return counselor; }
+    public void setCounselor(Counselor counselor) {
+        this.counselor = counselor;
+        // Keep counselorName in sync for backward compatibility
+        this.counselorName = (counselor != null) ? counselor.getName() : null;
     }
 
     public String getCounselorName() {
-        return counselorName;
+        // Smart Getter: Prefer entity name if the relationship exists
+        return (counselor != null) ? counselor.getName() : counselorName;
     }
 
     public void setCounselorName(String counselorName) {
         this.counselorName = counselorName;
     }
 
-    public LocalDate getDate() {
-        return date;
-    }
+    public LocalDate getDate() { return date; }
+    public void setDate(LocalDate date) { this.date = date; }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
-    }
+    public LocalTime getTime() { return time; }
+    public void setTime(LocalTime time) { this.time = time; }
 
-    public LocalTime getTime() {
-        return time;
-    }
+    public String getSessionType() { return sessionType; }
+    public void setSessionType(String sessionType) { this.sessionType = sessionType; }
 
-    public void setTime(LocalTime time) {
-        this.time = time;
-    }
+    public AppointmentStatus getStatus() { return status; }
+    public void setStatus(AppointmentStatus status) { this.status = status; }
 
-    public String getSessionType() {
-        return sessionType;
-    }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 
-    public void setSessionType(String sessionType) {
-        this.sessionType = sessionType;
-    }
+    public String getDenialReason() { return denialReason; }
+    public void setDenialReason(String denialReason) { this.denialReason = denialReason; }
 
-    public AppointmentStatus getStatus() {
-        return status;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setStatus(AppointmentStatus status) {
-        this.status = status;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

@@ -1,43 +1,54 @@
-// src/main/java/com/mindmate/dao/AppointmentDAO.java
-
 package com.mindmate.dao;
 
 import com.mindmate.model.Appointment;
+import com.mindmate.model.Counselor;
 import com.mindmate.model.Student;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 /**
  * DAO interface for Appointment entity operations.
- * 
- * @author Samy (A23CS0246)
- * @module Telehealth Assistance
+ * Updates: Added methods for Counselor filtering and slot validation.
  */
 public interface AppointmentDAO extends GenericDAO<Appointment> {
     
-    /**
-     * Finds all appointments for a specific student.
-     * @param student The student entity
-     * @return List of appointments
-     */
+    // ✅ EXISTING METHODS
     List<Appointment> findByStudent(Student student);
-    
-    /**
-     * Finds all appointments for a student, ordered by date descending.
-     * @param student The student entity
-     * @return List of appointments (newest first)
-     */
     List<Appointment> findByStudentOrderByDateDesc(Student student);
-    
-    /**
-     * Checks if an appointment exists by ID.
-     * @param id Appointment ID
-     * @return true if exists, false otherwise
-     */
     boolean existsById(Long id);
+    long count();
+    
+    // ✅ NEW METHODS (Phase 3)
     
     /**
-     * Counts total number of appointments.
-     * @return Total appointment count
+     * Finds all appointments for a specific counselor.
      */
-    long count();
+    List<Appointment> findByCounselor(Counselor counselor);
+    
+    /**
+     * Finds appointments for a counselor by status (e.g., PENDING requests).
+     */
+    List<Appointment> findByCounselorAndStatus(Counselor counselor, Appointment.AppointmentStatus status);
+    
+    /**
+     * Finds appointments for a counselor on a specific date (for calendar view).
+     */
+    List<Appointment> findByCounselorAndDate(Counselor counselor, LocalDate date);
+    
+    /**
+     * Checks if a counselor has an appointment at a specific date/time.
+     * Used to prevent double-booking.
+     */
+    boolean existsByCounselorAndDateAndTime(Counselor counselor, LocalDate date, LocalTime time);
+    
+    /**
+     * Counts appointments by status (for dashboard stats).
+     */
+    long countByStatus(Appointment.AppointmentStatus status);
+    
+    /**
+     * Finds appointments by status (for admin analytics).
+     */
+    List<Appointment> findByStatus(Appointment.AppointmentStatus status);
 }
