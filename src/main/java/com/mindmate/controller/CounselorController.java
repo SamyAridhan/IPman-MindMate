@@ -1,3 +1,4 @@
+//src/main/java/com/mindmate/controller/CounselorController.java
 package com.mindmate.controller;
 
 import com.mindmate.dao.AppointmentDAO;
