@@ -1,9 +1,10 @@
-//src/main/java/com/mindmate/controller/AdminController.java
 package com.mindmate.controller;
 
 import com.mindmate.dao.*;
 import com.mindmate.model.Appointment;
+import com.mindmate.model.Counselor; // ✅ New Import
 import com.mindmate.model.SystemAnalytics;
+import com.mindmate.util.CounselorStats; // ✅ New Import
 import com.mindmate.util.SessionHelper;
 
 import jakarta.servlet.http.HttpSession;
@@ -18,13 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList; // ✅ New Import
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Controller for Admin Dashboard and Analytics.
- * Updates: Added real-time status counts, growth calculations, and historical charting.
- */
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
@@ -35,7 +33,7 @@ public class AdminController {
     private StudentDAO studentDAO;
 
     @Autowired
-    private CounselorDAO counselorDAO; // ✅ Added dependency
+    private CounselorDAO counselorDAO;
 
     @Autowired
     private AppointmentDAO appointmentDAO;
@@ -43,16 +41,10 @@ public class AdminController {
     @Autowired
     private SystemAnalyticsDAO analyticsDAO;
 
-    /**
-     * Helper method to check if user is authenticated admin.
-     */
     private boolean isAdmin(HttpSession session) {
         return SessionHelper.isLoggedIn(session) && "admin".equals(SessionHelper.getRole(session));
     }
 
-    /**
-     * Main Admin Dashboard with Real-Time Metrics.
-     */
     @GetMapping("/dashboard")
     public String dashboard(HttpSession session, Model model) {
         if (!isAdmin(session)) return "redirect:/login";
@@ -62,58 +54,38 @@ public class AdminController {
         
         log.info("Admin dashboard accessed by {}", SessionHelper.getUserName(session));
         
-        // ============================================
-        // 1. REAL-TIME METRICS
-        // ============================================
         long totalStudents = studentDAO.count();
         long totalCounselors = counselorDAO.count();
         long totalUsers = totalStudents + totalCounselors;
         
         long totalAppointments = appointmentDAO.count();
-        // ✅ Uses the new DAO method we added earlier
         long pendingAppointments = appointmentDAO.countByStatus(Appointment.AppointmentStatus.PENDING);
         long confirmedAppointments = appointmentDAO.countByStatus(Appointment.AppointmentStatus.CONFIRMED);
         long cancelledAppointments = appointmentDAO.countByStatus(Appointment.AppointmentStatus.CANCELLED);
         long completedAppointments = appointmentDAO.countByStatus(Appointment.AppointmentStatus.COMPLETED);
         
-        // ============================================
-        // 2. MOCK DATA (For unimplemented modules)
-        // ============================================
         int activeUsers = 856; 
         int assessmentsTaken = 3421; 
         int forumPosts = 1089; 
         
-        // ============================================
-        // 3. GROWTH CALCULATION (Current vs Last Snapshot)
-        // ============================================
         double appointmentGrowth = 0.0;
         double userGrowth = 0.0;
         
         Optional<SystemAnalytics> lastSnapshot = analyticsDAO.findLatestAnalytics();
         if (lastSnapshot.isPresent()) {
             SystemAnalytics previous = lastSnapshot.get();
-            
-            // Calculate percentage growth safely (avoid div by zero)
             if (previous.getTotalAppointments() != null && previous.getTotalAppointments() > 0) {
                 appointmentGrowth = ((double) (totalAppointments - previous.getTotalAppointments()) 
                                    / previous.getTotalAppointments()) * 100;
             }
-            
             if (previous.getTotalUsers() != null && previous.getTotalUsers() > 0) {
                 userGrowth = ((double) (totalUsers - previous.getTotalUsers()) 
                             / previous.getTotalUsers()) * 100;
             }
         }
         
-        // ============================================
-        // 4. TREND DATA (For Charts)
-        // ============================================
-        // ✅ Uses the new DAO method to fetch recent history
         List<SystemAnalytics> trendData = analyticsDAO.findRecentSnapshots(6);
         
-        // ============================================
-        // 5. ADD TO MODEL
-        // ============================================
         model.addAttribute("totalUsers", totalUsers);
         model.addAttribute("totalStudents", totalStudents);
         model.addAttribute("totalCounselors", totalCounselors);
@@ -136,9 +108,6 @@ public class AdminController {
         return "admin/dashboard";
     }
 
-    /**
-     * Manual Trigger: Save current system state as a snapshot.
-     */
     @GetMapping("/analytics/snapshot")
     @Transactional
     public String saveSnapshot(HttpSession session) {
@@ -146,15 +115,13 @@ public class AdminController {
 
         try {
             SystemAnalytics snapshot = new SystemAnalytics();
-            
-            // Populate all the new fields we added to the Model
             long totalStudents = studentDAO.count();
             long totalCounselors = counselorDAO.count();
             
             snapshot.setTotalUsers((int) (totalStudents + totalCounselors));
             snapshot.setTotalStudents((int) totalStudents);
             snapshot.setTotalCounselors((int) totalCounselors);
-            snapshot.setActiveUsers(856); // Mock
+            snapshot.setActiveUsers(856); 
             
             snapshot.setTotalAppointments((int) appointmentDAO.count());
             snapshot.setPendingAppointments((int) appointmentDAO.countByStatus(Appointment.AppointmentStatus.PENDING));
@@ -162,7 +129,6 @@ public class AdminController {
             snapshot.setCancelledAppointments((int) appointmentDAO.countByStatus(Appointment.AppointmentStatus.CANCELLED));
             snapshot.setCompletedAppointments((int) appointmentDAO.countByStatus(Appointment.AppointmentStatus.COMPLETED));
             
-            // Mock module metrics
             snapshot.setAssessmentsTaken(3421);
             snapshot.setForumPosts(1089);
             snapshot.setContentViews(5420);
@@ -170,19 +136,14 @@ public class AdminController {
             snapshot.setRecordedAt(LocalDateTime.now());
             
             analyticsDAO.save(snapshot);
-            
             log.info("Analytics snapshot saved manually by {}", SessionHelper.getUserName(session));
             return "redirect:/admin/dashboard?success=snapshot";
-            
         } catch (Exception e) {
             log.error("Error saving analytics snapshot", e);
             return "redirect:/admin/dashboard?error=snapshot";
         }
     }
 
-    /**
-     * Detailed Analytics Page.
-     */
     @GetMapping("/analytics")
     public String analyticsPage(
             @RequestParam(defaultValue = "month") String view,
@@ -196,18 +157,11 @@ public class AdminController {
         model.addAttribute("currentView", view);
         
         List<SystemAnalytics> trendData;
-        
         switch (view) {
-            case "week":
-                trendData = analyticsDAO.findRecentSnapshots(7); 
-                break;
-            case "year":
-                trendData = analyticsDAO.findMonthlySnapshots(12); 
-                break;
+            case "week": trendData = analyticsDAO.findRecentSnapshots(7); break;
+            case "year": trendData = analyticsDAO.findMonthlySnapshots(12); break;
             case "month":
-            default:
-                trendData = analyticsDAO.findRecentSnapshots(30); 
-                break;
+            default: trendData = analyticsDAO.findRecentSnapshots(30); break;
         }
         
         model.addAttribute("analyticsData", trendData);
@@ -217,10 +171,59 @@ public class AdminController {
         return "admin/analytics";
     }
 
+    // ✅ NEW ENDPOINT: Counselor Performance
+    @GetMapping("/counselor-performance")
+    public String counselorPerformance(HttpSession session, Model model) {
+        if (!isAdmin(session)) return "redirect:/login";
+        
+        model.addAttribute("role", "admin");
+        model.addAttribute("user", SessionHelper.getUserName(session));
+        
+        try {
+            List<Counselor> allCounselors = counselorDAO.findAll();
+            List<CounselorStats> performanceList = new ArrayList<>();
+            
+            for (Counselor counselor : allCounselors) {
+                CounselorStats stats = new CounselorStats(counselor.getId(), counselor.getName());
+                
+                // Get appointments for this counselor
+                // Note: Ideally we'd use a more efficient DAO method for stats, but this works for now
+                List<Appointment> appointments = appointmentDAO.findByCounselor(counselor);
+                
+                stats.setTotalAppointments(appointments.size());
+                
+                long pending = appointments.stream()
+                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING).count();
+                long confirmed = appointments.stream()
+                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED).count();
+                long denied = appointments.stream()
+                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CANCELLED && a.getDenialReason() != null).count();
+                
+                stats.setPendingAppointments(pending);
+                stats.setConfirmedAppointments(confirmed);
+                stats.setDeniedAppointments(denied);
+                stats.calculateApprovalRate();
+                
+                performanceList.add(stats);
+            }
+            
+            // Sort by total appointments (descending)
+            performanceList.sort((a, b) -> Long.compare(b.getTotalAppointments(), a.getTotalAppointments()));
+            
+            model.addAttribute("counselorStats", performanceList);
+            log.info("Counselor performance page accessed by {}", SessionHelper.getUserName(session));
+            
+        } catch (Exception e) {
+            log.error("Error loading counselor performance", e);
+            model.addAttribute("error", "Failed to load performance data");
+        }
+        
+        return "admin/counselor-performance";
+    }
+
     @GetMapping("/profile")
     public String profile(HttpSession session, Model model) {
         if (!isAdmin(session)) return "redirect:/login";
-        
         model.addAttribute("role", "admin");
         model.addAttribute("user", SessionHelper.getUserName(session));
         return "admin/profile";
@@ -229,7 +232,6 @@ public class AdminController {
     @GetMapping("/forum-moderation")
     public String forumModeration(HttpSession session, Model model) {
         if (!isAdmin(session)) return "redirect:/login";
-        
         model.addAttribute("role", "admin");
         model.addAttribute("user", SessionHelper.getUserName(session));
         return "admin/forum-moderation";

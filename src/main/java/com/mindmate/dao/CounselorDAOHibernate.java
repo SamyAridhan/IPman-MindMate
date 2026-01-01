@@ -1,4 +1,3 @@
-// src/main/java/com/mindmate/dao/CounselorDAOHibernate.java
 package com.mindmate.dao;
 
 import com.mindmate.model.Counselor;
@@ -86,11 +85,24 @@ public class CounselorDAOHibernate implements CounselorDAO {
         return query.getResultList();
     }
 
-    // ✅ Added Implementation
     @Override
     public long count() {
         TypedQuery<Long> query = entityManager.createQuery(
             "SELECT COUNT(c) FROM Counselor c", Long.class);
         return query.getSingleResult();
+    }
+
+    // ✅ NEW IMPLEMENTATION
+    @Override
+    public List<Counselor> findTopCounselorsByAppointments(int limit) {
+        // This query counts appointments per counselor and orders by count
+        TypedQuery<Counselor> query = entityManager.createQuery(
+            "SELECT a.counselor FROM Appointment a " +
+            "WHERE a.counselor IS NOT NULL " +
+            "GROUP BY a.counselor " +
+            "ORDER BY COUNT(a) DESC",
+            Counselor.class);
+        query.setMaxResults(limit);
+        return query.getResultList();
     }
 }
