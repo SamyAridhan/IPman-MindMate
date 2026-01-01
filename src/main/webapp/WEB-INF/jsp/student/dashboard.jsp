@@ -298,26 +298,63 @@
                 <div class="space-y-3">
                     <c:choose>
                         <c:when test="${not empty bookedAppointments}">
-                            <!-- Display Booked Appointments -->
-                            <c:forEach var="appointment" items="${bookedAppointments}" begin="0" end="1">
-                                <div class="session-card pink-accent">
+                            <c:forEach var="appointment" items="${bookedAppointments}">
+                                <div class="session-card p-4 rounded-lg border border-border mb-3 hover:shadow-md transition-shadow">
+                                    
                                     <div class="flex items-center justify-between mb-2">
                                         <h4 class="font-medium text-foreground">${appointment.sessionType}</h4>
-                                        <span class="badge-outline-blue flex items-center gap-1">
-                                            <i data-lucide="clock" class="w-3 h-3"></i>
-                                            ${appointment.time}
-                                        </span>
+                                        <c:choose>
+                                            <c:when test="${appointment.status == 'CONFIRMED'}">
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                                                    Confirmed
+                                                </span>
+                                            </c:when>
+                                            <c:when test="${appointment.status == 'PENDING'}">
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                                    Pending
+                                                </span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                                    ${appointment.status}
+                                                </span>
+                                            </c:otherwise>
+                                        </c:choose>
                                     </div>
-                                    <p class="text-sm text-muted-foreground mb-1">with ${appointment.counselorName}</p>
-                                    <p class="text-xs text-muted-foreground">${appointment.date}</p>
-                                    <div class="flex space-x-2 mt-2">
-                                        <button class="text-xs px-2 py-1 border border-border rounded-md hover:bg-secondary transition-colors">
-                                            Reschedule
-                                        </button>
+
+                                    <div class="text-sm text-muted-foreground space-y-1 mb-3">
+                                        <div class="flex items-center">
+                                            <i data-lucide="user" class="w-3 h-3 mr-2"></i>
+                                            <span>with ${appointment.counselorName}</span>
+                                        </div>
+                                        <div class="flex items-center gap-4">
+                                            <span class="flex items-center">
+                                                <i data-lucide="calendar" class="w-3 h-3 mr-1"></i>
+                                                ${appointment.date}
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
+                                                ${appointment.time}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-2">
+                                        <%-- Show Join button ONLY if Confirmed --%>
+                                        <c:if test="${appointment.status == 'CONFIRMED'}">
+                                            <a href="/student/telehealth/join/${appointment.id}" 
+                                               class="flex-1 inline-flex justify-center items-center text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+                                                <i data-lucide="video" class="w-3 h-3 mr-1"></i>
+                                                Join
+                                            </a>
+                                        </c:if>
                                         
-                                        <form action="/student/telehealth/cancel" method="post" style="display:inline;">
+                                        <%-- Cancel Button with Confirmation --%>
+                                        <form action="/student/telehealth/cancel" method="post" class="flex-1">
                                             <input type="hidden" name="appointmentId" value="${appointment.id}" />
-                                            <button type="submit" class="text-xs px-2 py-1 border border-border rounded-md hover:bg-secondary transition-colors text-red-500 hover:text-red-700">
+                                            <button type="submit" 
+                                                    onclick="return confirm('Are you sure you want to cancel this appointment?');"
+                                                    class="w-full inline-flex justify-center items-center text-xs px-3 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors">
                                                 Cancel
                                             </button>
                                         </form>
@@ -326,7 +363,6 @@
                             </c:forEach>
                         </c:when>
                         <c:otherwise>
-                            <!-- No Appointments -->
                             <div class="text-center py-8 text-muted-foreground">
                                 <i data-lucide="calendar" class="w-8 h-8 mx-auto mb-2 text-muted-foreground/50"></i>
                                 <p>No upcoming sessions</p>
@@ -334,9 +370,9 @@
                         </c:otherwise>
                     </c:choose>
             
-                    <a href="/student/telehealth" class="block w-full bg-primary text-primary-foreground text-center px-4 py-2 rounded-md hover:opacity-90 transition-opacity font-medium">
+                    <a href="/student/telehealth" class="block w-full bg-secondary text-secondary-foreground text-center px-4 py-2 rounded-md hover:opacity-90 transition-opacity font-medium mt-2">
                         <span class="flex items-center justify-center gap-2">
-                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            <i data-lucide="plus" class="w-4 h-4"></i>
                             Book New Session
                         </span>
                     </a>
