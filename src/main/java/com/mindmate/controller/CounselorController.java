@@ -1,4 +1,3 @@
-//src/main/java/com/mindmate/controller/CounselorController.java
 package com.mindmate.controller;
 
 import com.mindmate.dao.AppointmentDAO;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/counselor")
@@ -52,6 +52,7 @@ public class CounselorController {
     }
 
     @GetMapping("/dashboard")
+    @Transactional // ✅ Keep session open for lazy loading
     public String showDashboard(Model model, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
         if (counselor == null) return "redirect:/login";
@@ -59,8 +60,15 @@ public class CounselorController {
         model.addAttribute("role", "counselor");
         model.addAttribute("user", SessionHelper.getUserName(session));
 
-        // ✅ IMPROVED: Use DB Query instead of loading ALL appointments
+        // Use DB Query instead of loading ALL appointments
         List<Appointment> myAppointments = appointmentDAO.findByCounselor(counselor);
+
+        // Force initialize Student data for all loaded appointments
+        for (Appointment apt : myAppointments) {
+            if (apt.getStudent() != null) {
+                apt.getStudent().getName(); // Touches the proxy to load data
+            }
+        }
 
         // Stats
         LocalDate today = LocalDate.now();
@@ -70,34 +78,64 @@ public class CounselorController {
         model.addAttribute("todayCount", todayCount);
         model.addAttribute("pendingCount", pendingCount);
         
-        model.addAttribute("todayAppointments", appointmentDAO.findByCounselorAndDate(counselor, today));
+        // Fetch Today's Specific List
+        List<Appointment> todayAppointments = appointmentDAO.findByCounselorAndDate(counselor, today);
+        // Force initialize Student data for today's list
+        for (Appointment apt : todayAppointments) {
+            if (apt.getStudent() != null) {
+                apt.getStudent().getName();
+            }
+        }
+        model.addAttribute("todayAppointments", todayAppointments);
         
-        // Use stream just to limit the pending list for dashboard view
-        model.addAttribute("pendingAppointments", myAppointments.stream()
+        // Filter pending list for view
+        List<Appointment> pendingList = myAppointments.stream()
                 .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING)
                 .limit(3)
-                .toList()); // Java 16+ or use .collect(Collectors.toList())
+                .collect(Collectors.toList());
+        
+        model.addAttribute("pendingAppointments", pendingList);
 
         return "counselor/dashboard";
     }
 
     @GetMapping("/schedule")
-    public String showSchedule(Model model, HttpSession session) {
+    @Transactional // ✅ Keep session open for lazy loading
+    public String showSchedule(Model model, HttpSession session, 
+                               @RequestParam(required = false) String date) { // ✅ NEW: Date param
+        
         Counselor counselor = getLoggedInCounselor(session);
         if (counselor == null) return "redirect:/login";
 
         model.addAttribute("role", "counselor");
 
-        // ✅ IMPROVED: Fetch exactly what we need
+        // 1. Determine Date (Selected or Today)
+        LocalDate selectedDate;
+        if (date != null && !date.isEmpty()) {
+            selectedDate = LocalDate.parse(date);
+        } else {
+            selectedDate = LocalDate.now();
+        }
+
+        // 2. Fetch Pending (Always show all pending)
         List<Appointment> pendingAppointments = appointmentDAO.findByCounselorAndStatus(
                 counselor, Appointment.AppointmentStatus.PENDING);
 
-        List<Appointment> todayAppointments = appointmentDAO.findByCounselorAndDate(
-                counselor, LocalDate.now());
+        // 3. Fetch Selected Date Appointments
+        List<Appointment> dailyAppointments = appointmentDAO.findByCounselorAndDate(
+                counselor, selectedDate);
+
+        // Force initialize Student data
+        for (Appointment apt : pendingAppointments) {
+            if (apt.getStudent() != null) apt.getStudent().getName();
+        }
+        for (Appointment apt : dailyAppointments) {
+            if (apt.getStudent() != null) apt.getStudent().getName();
+        }
 
         model.addAttribute("pendingAppointments", pendingAppointments);
-        model.addAttribute("todayAppointments", todayAppointments);
-        model.addAttribute("selectedDate", LocalDate.now().toString());
+        model.addAttribute("todayAppointments", dailyAppointments); // Reusing variable name for JSP compatibility
+        model.addAttribute("selectedDate", selectedDate); // ✅ Pass the date object
 
         return "counselor/schedule";
     }
@@ -111,7 +149,7 @@ public class CounselorController {
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
             
-            // ✅ Validation: Exists + Belongs to this counselor + Is Pending
+            // Validation: Exists + Belongs to this counselor + Is Pending
             if (apt != null && 
                 apt.getCounselor() != null && 
                 apt.getCounselor().getId().equals(counselor.getId()) &&
@@ -131,7 +169,7 @@ public class CounselorController {
     @Transactional
     public String denyAppointment(
             @RequestParam Long appointmentId, 
-            @RequestParam(required = false) String reason, // ✅ NEW: Reason param
+            @RequestParam(required = false) String reason, 
             HttpSession session) {
         
         Counselor counselor = getLoggedInCounselor(session);
@@ -140,13 +178,14 @@ public class CounselorController {
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
             
-            // ✅ Validation
+            // Validation
             if (apt != null && 
                 apt.getCounselor() != null && 
                 apt.getCounselor().getId().equals(counselor.getId()) &&
                 apt.getStatus() == Appointment.AppointmentStatus.PENDING) {
                 
-                apt.setStatus(Appointment.AppointmentStatus.CANCELLED);
+                // ✅ FIXED: Set status to DENIED (not CANCELLED) to match logic
+                apt.setStatus(Appointment.AppointmentStatus.DENIED);
                 apt.setDenialReason(reason != null ? reason : "No reason provided");
                 appointmentDAO.update(apt);
                 log.info("Counselor {} denied Appointment {}", counselor.getId(), appointmentId);

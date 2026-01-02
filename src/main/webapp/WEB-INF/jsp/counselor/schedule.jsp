@@ -19,7 +19,7 @@
             <i data-lucide="info" class="h-5 w-5 text-blue-600 mt-0.5"></i>
             <div>
                 <h3 class="text-sm font-medium text-blue-800">Appointment Denied</h3>
-                <p class="text-sm text-blue-700 mt-1">The appointment has been cancelled. The student will be notified with your reason.</p>
+                <p class="text-sm text-blue-700 mt-1">The appointment has been denied. The student will be notified with your reason.</p>
             </div>
         </div>
     </c:if>
@@ -75,11 +75,16 @@
                             <div class="p-2 text-muted-foreground/50">29</div>
                             <div class="p-2 text-muted-foreground/50">30</div>
                             <div class="p-2 text-muted-foreground/50">31</div>
-                            <div class="p-2 hover:bg-secondary rounded cursor-pointer">1</div>
-                            <div class="p-2 bg-primary text-primary-foreground rounded cursor-pointer">2</div>
-                            <div class="p-2 hover:bg-secondary rounded cursor-pointer">3</div>
-                            <c:forEach begin="4" end="31" var="day">
-                                <div class="p-2 hover:bg-secondary rounded cursor-pointer">${day}</div>
+
+                            <c:forEach begin="1" end="31" var="day">
+                                <c:set var="dayStr" value="${day < 10 ? '0' : ''}${day}" />
+                                <c:set var="fullDate" value="2026-01-${dayStr}" />
+                                
+                                <div onclick="selectDate('${fullDate}')" 
+                                     class="p-2 rounded cursor-pointer transition-colors
+                                     ${selectedDate.toString() == fullDate ? 'bg-primary text-primary-foreground font-bold' : 'hover:bg-secondary'}">
+                                    ${day}
+                                </div>
                             </c:forEach>
                         </div>
                     </div>
@@ -161,7 +166,14 @@
                 <div class="p-6 border-b border-border">
                     <h2 class="text-xl font-semibold text-foreground flex items-center">
                         <i data-lucide="calendar" class="w-5 h-5 mr-2 text-primary"></i>
-                        Today's Appointments
+                        <c:choose>
+                            <c:when test="${selectedDate.equals(java.time.LocalDate.now())}">
+                                Today's Appointments
+                            </c:when>
+                            <c:otherwise>
+                                Appointments for ${selectedDate}
+                            </c:otherwise>
+                        </c:choose>
                     </h2>
                 </div>
                 <div class="p-6">
@@ -169,7 +181,7 @@
                         <c:when test="${empty todayAppointments}">
                             <div class="text-center py-8 text-muted-foreground">
                                 <i data-lucide="calendar" class="w-12 h-12 mx-auto mb-2 text-muted-foreground/50"></i>
-                                <p>No appointments scheduled for today</p>
+                                <p>No appointments scheduled for this date</p>
                             </div>
                         </c:when>
                         <c:otherwise>
@@ -180,6 +192,7 @@
                                             <c:when test="${apt.status == 'CONFIRMED'}">bg-success/10 border-success/20</c:when>
                                             <c:when test="${apt.status == 'PENDING'}">bg-info/10 border-info/20</c:when>
                                             <c:when test="${apt.status == 'CANCELLED'}">bg-destructive/10 border-destructive/20</c:when>
+                                            <c:when test="${apt.status == 'DENIED'}">bg-destructive/10 border-destructive/20</c:when>
                                             <c:otherwise>bg-muted border-border</c:otherwise>
                                         </c:choose>
                                     </c:set>
@@ -198,7 +211,10 @@
                                                             <span class="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>
                                                         </c:when>
                                                         <c:when test="${apt.status == 'CANCELLED'}">
-                                                            <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Cancelled</span>
+                                                            <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Cancelled by Student</span>
+                                                        </c:when>
+                                                        <c:when test="${apt.status == 'DENIED'}">
+                                                            <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Denied</span>
                                                         </c:when>
                                                     </c:choose>
                                                 </div>
@@ -211,6 +227,11 @@
                                                 <c:if test="${not empty apt.notes}">
                                                     <p class="text-sm text-muted-foreground mt-2 p-2 bg-muted rounded">
                                                         <strong>Notes:</strong> ${apt.notes}
+                                                    </p>
+                                                </c:if>
+                                                <c:if test="${apt.status == 'DENIED' && not empty apt.denialReason}">
+                                                    <p class="text-sm text-red-600 mt-2 p-2 bg-red-50 rounded border border-red-100">
+                                                        <strong>Denial Reason:</strong> ${apt.denialReason}
                                                     </p>
                                                 </c:if>
                                             </div>
@@ -281,7 +302,13 @@
 </div>
 
 <script>
-// ✅ FIXED FUNCTION: Accepts the button element instead of raw params
+// Function to handle calendar clicks
+function selectDate(dateString) {
+    // Redirects the page with the selected date as a query parameter
+    window.location.href = '/counselor/schedule?date=' + dateString;
+}
+
+// Accepts the button element instead of raw params
 function openDenyModal(button) {
     const appointmentId = button.getAttribute('data-id');
     const studentName = button.getAttribute('data-student');
@@ -291,7 +318,7 @@ function openDenyModal(button) {
     document.getElementById('deny-appointment-id').value = appointmentId;
     document.getElementById('deny-student-name').textContent = studentName;
     document.getElementById('deny-datetime').textContent = date + ' at ' + time;
-    document.getElementById('denial-reason').value = ''; // Clear previous input
+    document.getElementById('denial-reason').value = ''; 
     
     document.getElementById('deny-modal').classList.remove('hidden');
     document.body.style.overflow = 'hidden';

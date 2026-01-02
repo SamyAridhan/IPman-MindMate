@@ -1,3 +1,4 @@
+// src/main/java/com/mindmate/model/Appointment.java
 package com.mindmate.model;
 
 import jakarta.persistence.*;
@@ -7,7 +8,7 @@ import java.time.LocalTime;
 
 /**
  * Entity representing a telehealth counseling appointment.
- * Updates: Fixed LazyInitializationException by prioritizing stored string.
+ * Updates: Reverted variable name to 'denialReason' to match other controllers.
  */
 @Entity
 @Table(name = "appointments")
@@ -21,12 +22,10 @@ public class Appointment {
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    // ✅ NEW: Store counselor as entity (The "System" side logic)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "counselor_id")
     private Counselor counselor;
 
-    // ✅ DEPRECATED: Kept for performance & legacy frontend compatibility
     @Column(name = "counselor_name")
     private String counselorName;
 
@@ -43,15 +42,13 @@ public class Appointment {
     @Column(nullable = false)
     private AppointmentStatus status = AppointmentStatus.PENDING;
 
-    // ✅ NEW: Student's notes/reason for booking
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    // ✅ NEW: Counselor's reason for denial
+    // ✅ REVERTED: Back to 'denialReason' to avoid breaking other controllers
     @Column(name = "denial_reason", columnDefinition = "TEXT")
     private String denialReason;
 
-    // ✅ NEW: Audit trails
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -59,7 +56,7 @@ public class Appointment {
     private LocalDateTime updatedAt;
 
     // ============================================
-    // LIFECYCLE CALLBACKS (Auto-timestamps)
+    // LIFECYCLE CALLBACKS
     // ============================================
     @PrePersist
     protected void onCreate() {
@@ -76,10 +73,15 @@ public class Appointment {
     // ENUMS
     // ============================================
     public enum AppointmentStatus {
-        PENDING,    // Waiting for counselor approval
-        CONFIRMED,  // Approved by counselor
-        CANCELLED,  // Cancelled by student or counselor
-        COMPLETED   // Session finished
+        PENDING,        
+        CONFIRMED,      
+        CANCELLED,      
+        COMPLETED,      
+        
+        // ✅ Kept these necessary statuses
+        DENIED,         
+        REJECTED,       
+        ACKNOWLEDGED    
     }
 
     // ============================================
@@ -90,7 +92,6 @@ public class Appointment {
     public Appointment(Student student, Counselor counselor, LocalDate date, LocalTime time, String sessionType) {
         this.student = student;
         this.counselor = counselor;
-        // Sync name immediately upon creation
         this.counselorName = (counselor != null) ? counselor.getName() : null; 
         this.date = date;
         this.time = time;
@@ -108,25 +109,15 @@ public class Appointment {
     public void setStudent(Student student) { this.student = student; }
 
     public Counselor getCounselor() { return counselor; }
-    
     public void setCounselor(Counselor counselor) {
         this.counselor = counselor;
-        // Automatically sync the string name when the entity is set
         if (counselor != null) {
             this.counselorName = counselor.getName();
         }
     }
 
-    public String getCounselorName() {
-        // ✅ CRITICAL FIX: Always return the stored string.
-        // Accessing 'counselor.getName()' here triggers a database call.
-        // If the session is closed (e.g. inside JSP), that call crashes the app.
-        return this.counselorName;
-    }
-
-    public void setCounselorName(String counselorName) {
-        this.counselorName = counselorName;
-    }
+    public String getCounselorName() { return this.counselorName; }
+    public void setCounselorName(String counselorName) { this.counselorName = counselorName; }
 
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
@@ -143,6 +134,7 @@ public class Appointment {
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
 
+    // ✅ REVERTED GETTERS/SETTERS
     public String getDenialReason() { return denialReason; }
     public void setDenialReason(String denialReason) { this.denialReason = denialReason; }
 

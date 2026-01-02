@@ -1,4 +1,3 @@
-//src/main/java/com/mindmate/controller/StudentController.java
 package com.mindmate.controller;
 
 import com.mindmate.dao.AppointmentDAO;
@@ -7,7 +6,7 @@ import com.mindmate.dao.StudentDAO;
 import com.mindmate.model.Appointment;
 import com.mindmate.model.Counselor;
 import com.mindmate.model.Student;
-import com.mindmate.util.SessionHelper; // ✅ Keep using your Helper
+import com.mindmate.util.SessionHelper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,9 +40,6 @@ public class StudentController {
     @Autowired
     private StudentDAO studentDAO;
 
-    /**
-     * Helper to get full Student entity from Session
-     */
     private Student getLoggedInStudent(HttpSession session) {
         Long userId = SessionHelper.getUserId(session);
         if (userId == null || !"student".equals(SessionHelper.getRole(session))) {
@@ -60,8 +56,8 @@ public class StudentController {
         model.addAttribute("role", "student");
         model.addAttribute("user", SessionHelper.getUserName(session));
         
-        // ✅ Existing logic is fine here
-        List<Appointment> appointments = appointmentDAO.findByStudentOrderByDateDesc(student);
+        // ✅ FIXED: Use Ascending order so upcoming appointments appear first
+        List<Appointment> appointments = appointmentDAO.findByStudentOrderByDateAscTimeAsc(student);
         model.addAttribute("bookedAppointments", appointments);
         
         return "student/dashboard";
@@ -70,7 +66,6 @@ public class StudentController {
     @GetMapping("/library")
     public String contentLibrary(Model model, HttpSession session) {
         if (getLoggedInStudent(session) == null) return "redirect:/login";
-        
         model.addAttribute("role", "student");
         return "student/content-library";
     }
@@ -78,15 +73,10 @@ public class StudentController {
     @GetMapping("/telehealth")
     public String showBookingPage(Model model, HttpSession session) {
         if (getLoggedInStudent(session) == null) return "redirect:/login";
-
         model.addAttribute("role", "student");
-        
         List<Counselor> counselors = counselorDAO.findAll();
         model.addAttribute("counselors", counselors);
-        
-        // ✅ NEW: Pass current date for calendar frontend
         model.addAttribute("currentDate", LocalDate.now());
-        
         return "student/telehealth-book";
     }
 
@@ -97,38 +87,33 @@ public class StudentController {
             @RequestParam("date") String dateStr,
             @RequestParam("time") String timeStr,
             @RequestParam("sessionType") String sessionType,
-            @RequestParam(value = "notes", required = false) String notes, // ✅ NEW: Notes
+            @RequestParam(value = "notes", required = false) String notes,
             HttpSession session) {
         
         Student student = getLoggedInStudent(session);
         if (student == null) return "redirect:/login?error=notloggedin";
         
         try {
-            // 1. Retrieve Entities
             Counselor counselor = counselorDAO.findById(counselorId);
             if (counselor == null) return "redirect:/student/telehealth?error=system";
 
-            // 2. Parse Date/Time
             LocalDate date = LocalDate.parse(dateStr, DATE_FORMATTER);
             LocalTime time = LocalTime.parse(timeStr);
 
-            // 3. Validation: Past Date
             if (date.isBefore(LocalDate.now())) {
                 log.warn("Student {} tried booking in past", student.getId());
                 return "redirect:/student/telehealth?error=invaliddate";
             }
 
-            // 4. Validation: Double Booking (The "System" Logic)
             if (appointmentDAO.existsByCounselorAndDateAndTime(counselor, date, time)) {
                 log.warn("Slot unavailable for Counselor {}", counselorId);
                 return "redirect:/student/telehealth?error=unavailable";
             }
 
-            // 5. Create Appointment
             Appointment appointment = new Appointment();
             appointment.setStudent(student);
-            appointment.setCounselor(counselor); // ✅ Link Entity
-            appointment.setCounselorName(counselor.getName()); // ✅ Backwards compatibility
+            appointment.setCounselor(counselor);
+            appointment.setCounselorName(counselor.getName());
             appointment.setDate(date);
             appointment.setTime(time);
             appointment.setSessionType(sessionType);
@@ -136,7 +121,6 @@ public class StudentController {
             appointment.setStatus(Appointment.AppointmentStatus.PENDING);
             
             appointmentDAO.save(appointment);
-            
             log.info("Appointment booked: ID {}", appointment.getId());
             return "redirect:/student/dashboard?success=true";
             
@@ -158,21 +142,42 @@ public class StudentController {
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
             
-            // ✅ Validation: Exists + Owned by Student + Not already cancelled
             if (apt != null && 
                 apt.getStudent().getId().equals(student.getId()) &&
                 apt.getStatus() != Appointment.AppointmentStatus.CANCELLED) {
                 
-                // Logic: Prefer marking CANCELLED over deleting record
                 apt.setStatus(Appointment.AppointmentStatus.CANCELLED);
                 appointmentDAO.update(apt);
-                
                 return "redirect:/student/dashboard?success=cancelled";
             }
         } catch (Exception e) {
             log.error("Cancellation error", e);
         }
         return "redirect:/student/dashboard?error=cantcancel";
+    }
+
+    @PostMapping("/telehealth/acknowledge")
+    @Transactional
+    public String acknowledgeAppointment(@RequestParam("appointmentId") Long appointmentId, HttpSession session) {
+        Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
+
+        try {
+            Appointment apt = appointmentDAO.findById(appointmentId);
+            
+            if (apt != null && 
+                apt.getStudent().getId().equals(student.getId()) &&
+                (apt.getStatus() == Appointment.AppointmentStatus.DENIED || 
+                 apt.getStatus() == Appointment.AppointmentStatus.REJECTED)) {
+                
+                apt.setStatus(Appointment.AppointmentStatus.ACKNOWLEDGED);
+                appointmentDAO.update(apt);
+                return "redirect:/student/dashboard?success=acknowledged";
+            }
+        } catch (Exception e) {
+            log.error("Error acknowledging appointment", e);
+        }
+        return "redirect:/student/dashboard?error=failed";
     }
 
     @GetMapping("/profile")
@@ -185,7 +190,6 @@ public class StudentController {
         return "student/profile";
     }
 
-    // ✅ NEW: AJAX Endpoint for Time Slots (Integrated from Service)
     @GetMapping("/telehealth/available-slots")
     @ResponseBody
     public List<String> getAvailableSlots(
@@ -200,19 +204,16 @@ public class StudentController {
             Counselor counselor = counselorDAO.findById(counselorId);
             LocalDate targetDate = LocalDate.parse(date, DATE_FORMATTER);
 
-            // Logic: Default 9 AM - 5 PM schedule
             LocalTime start = LocalTime.of(9, 0);
             LocalTime end = LocalTime.of(17, 0);
 
             while (start.isBefore(end)) {
-                // Check database if this specific slot is taken
                 if (!appointmentDAO.existsByCounselorAndDateAndTime(counselor, targetDate, start)) {
-                    // Logic: If today, don't show past hours
                     if (!targetDate.equals(LocalDate.now()) || start.isAfter(LocalTime.now())) {
                         availableSlots.add(start.toString());
                     }
                 }
-                start = start.plusHours(1); // 60 min sessions
+                start = start.plusHours(1);
             }
         } catch (Exception e) {
             log.error("Slot fetch error", e);

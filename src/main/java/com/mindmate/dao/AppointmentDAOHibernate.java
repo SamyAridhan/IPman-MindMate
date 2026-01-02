@@ -13,10 +13,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-/**
- * Hibernate implementation of AppointmentDAO.
- * Handles database operations including new Counselor-specific queries.
- */
 @Repository
 @Transactional
 public class AppointmentDAOHibernate implements AppointmentDAO {
@@ -24,7 +20,6 @@ public class AppointmentDAOHibernate implements AppointmentDAO {
     @PersistenceContext
     private EntityManager entityManager;
 
-    // ✅ EXISTING METHODS
     @Override
     public void save(Appointment appointment) {
         entityManager.persist(appointment);
@@ -73,6 +68,16 @@ public class AppointmentDAOHibernate implements AppointmentDAO {
         return query.getResultList();
     }
 
+    // ✅ NEW IMPLEMENTATION: Ascending Order for Dashboard
+    @Override
+    public List<Appointment> findByStudentOrderByDateAscTimeAsc(Student student) {
+        TypedQuery<Appointment> query = entityManager.createQuery(
+            "SELECT a FROM Appointment a WHERE a.student = :student ORDER BY a.date ASC, a.time ASC", 
+            Appointment.class);
+        query.setParameter("student", student);
+        return query.getResultList();
+    }
+
     @Override
     public boolean existsById(Long id) {
         TypedQuery<Long> query = entityManager.createQuery(
@@ -88,7 +93,7 @@ public class AppointmentDAOHibernate implements AppointmentDAO {
         return query.getSingleResult();
     }
 
-    // ✅ NEW IMPLEMENTATIONS
+    // ✅ COUNSELOR IMPLEMENTATIONS
 
     @Override
     public List<Appointment> findByCounselor(Counselor counselor) {
@@ -121,7 +126,6 @@ public class AppointmentDAOHibernate implements AppointmentDAO {
 
     @Override
     public boolean existsByCounselorAndDateAndTime(Counselor counselor, LocalDate date, LocalTime time) {
-        // Smart Logic: Don't count "CANCELLED" appointments as taken slots
         TypedQuery<Long> query = entityManager.createQuery(
             "SELECT COUNT(a) FROM Appointment a WHERE a.counselor = :counselor " +
             "AND a.date = :date AND a.time = :time AND a.status != :cancelledStatus", 

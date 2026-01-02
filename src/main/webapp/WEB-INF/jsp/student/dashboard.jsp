@@ -3,13 +3,11 @@
 <jsp:include page="../common/header.jsp" />
 
 <div class="container mx-auto px-4 py-8">
-    <!-- Welcome Section -->
     <div class="mb-8 fade-in">
         <h1 class="text-3xl font-bold text-foreground mb-2">Welcome back, ${sessionScope.userName != null ? sessionScope.userName : 'Student'}!</h1>
         <p class="text-muted-foreground">How are you feeling today?</p>
     </div>
 
-    <!-- Quick Start Card -->
     <div class="quick-start-card p-6 rounded-lg shadow-sm mb-8 fade-in">
         <div class="flex items-center justify-between">
             <div>
@@ -24,14 +22,12 @@
         </div>
     </div>
 
-    <!-- New in Learning Hub -->
     <div class="bg-card p-6 rounded-lg shadow-sm border border-border mb-8 fade-in">
         <div class="flex items-center mb-4">
             <i data-lucide="book-open" class="w-5 h-5 mr-2 text-success-foreground"></i>
             <h2 class="text-xl font-semibold text-foreground">New in the Learning Hub</h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Learning Item 1 -->
             <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
                 <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">article</span>
                 <h4 class="font-semibold text-foreground mt-2 mb-1">Stress Management 101</h4>
@@ -40,7 +36,6 @@
                     Learn more →
                 </a>
             </div>
-            <!-- Learning Item 2 -->
             <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
                 <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">video</span>
                 <h4 class="font-semibold text-foreground mt-2 mb-1">Mindfulness Meditation Guide</h4>
@@ -49,7 +44,6 @@
                     Learn more →
                 </a>
             </div>
-            <!-- Learning Item 3 -->
             <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
                 <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">article</span>
                 <h4 class="font-semibold text-foreground mt-2 mb-1">Sleep Hygiene</h4>
@@ -62,10 +56,8 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Left Column (2/3 width) -->
         <div class="lg:col-span-2 space-y-6">
             
-            <!-- Progress Dashboard -->
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
@@ -79,7 +71,6 @@
                     </select>
                 </div>
 
-                <!-- Weekly Mood Tracker -->
                 <div class="mb-6">
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="font-medium text-foreground">Weekly Mood Tracker</h4>
@@ -117,7 +108,6 @@
                     </div>
                 </div>
 
-                <!-- Activity Progress -->
                 <div>
                     <h4 class="font-medium text-foreground mb-4">Activity Progress</h4>
                     <div class="space-y-4">
@@ -173,7 +163,6 @@
                 </div>
             </div>
 
-            <!-- AI Recommendations -->
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-semibold text-foreground">AI Recommendations</h2>
@@ -191,7 +180,6 @@
                 </div>
 
                 <div class="space-y-4">
-                    <!-- Recommendation 1 -->
                     <a href="/student/recommendation?id=mindfulness-beginners"
                         class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
                         <div class="flex items-start justify-between">
@@ -221,7 +209,6 @@
                         </div>
                     </a>
 
-                    <!-- Recommendation 2 -->
                     <a href="/student/recommendation?id=sleep-hygiene-tips"
                         class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
                         <div class="flex items-start justify-between">
@@ -251,9 +238,8 @@
                         </div>
                     </a>
 
-                    <!-- Recommendation 3 -->
                     <a href="/student/recommendation?id=breathing-exercises-quick"
-                     class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
+                      class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-2">
@@ -285,10 +271,8 @@
 
         </div>
 
-        <!-- Right Column (1/3 width) -->
         <div class="space-y-6">
             
-            <!-- Upcoming Sessions -->
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <div class="flex items-center mb-4">
                     <i data-lucide="calendar" class="w-5 h-5 mr-2 text-primary"></i>
@@ -299,67 +283,99 @@
                     <c:choose>
                         <c:when test="${not empty bookedAppointments}">
                             <c:forEach var="appointment" items="${bookedAppointments}">
-                                <div class="session-card p-4 rounded-lg border border-border mb-3 hover:shadow-md transition-shadow">
-                                    
-                                    <div class="flex items-center justify-between mb-2">
-                                        <h4 class="font-medium text-foreground">${appointment.sessionType}</h4>
-                                        <c:choose>
-                                            <c:when test="${appointment.status == 'CONFIRMED'}">
-                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
-                                                    Confirmed
-                                                </span>
-                                            </c:when>
-                                            <c:when test="${appointment.status == 'PENDING'}">
-                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
-                                                    Pending
-                                                </span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                                    ${appointment.status}
-                                                </span>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </div>
-
-                                    <div class="text-sm text-muted-foreground space-y-1 mb-3">
-                                        <div class="flex items-center">
-                                            <i data-lucide="user" class="w-3 h-3 mr-2"></i>
-                                            <span>with ${appointment.counselorName}</span>
-                                        </div>
-                                        <div class="flex items-center gap-4">
-                                            <span class="flex items-center">
-                                                <i data-lucide="calendar" class="w-3 h-3 mr-1"></i>
-                                                ${appointment.date}
-                                            </span>
-                                            <span class="flex items-center">
-                                                <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
-                                                ${appointment.time}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex gap-2">
-                                        <%-- Show Join button ONLY if Confirmed --%>
-                                        <c:if test="${appointment.status == 'CONFIRMED'}">
-                                            <a href="/student/telehealth/join/${appointment.id}" 
-                                               class="flex-1 inline-flex justify-center items-center text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
-                                                <i data-lucide="video" class="w-3 h-3 mr-1"></i>
-                                                Join
-                                            </a>
-                                        </c:if>
+                                <%-- ✅ FILTER: Hide Completed AND Acknowledged --%>
+                                <c:if test="${appointment.status != 'COMPLETED' && appointment.status != 'ACKNOWLEDGED'}">
+                                
+                                    <div class="session-card p-4 rounded-lg border border-border mb-3 hover:shadow-md transition-shadow">
                                         
-                                        <%-- Cancel Button with Confirmation --%>
-                                        <form action="/student/telehealth/cancel" method="post" class="flex-1">
-                                            <input type="hidden" name="appointmentId" value="${appointment.id}" />
-                                            <button type="submit" 
-                                                    onclick="return confirm('Are you sure you want to cancel this appointment?');"
-                                                    class="w-full inline-flex justify-center items-center text-xs px-3 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors">
-                                                Cancel
-                                            </button>
-                                        </form>
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="font-medium text-foreground">${appointment.sessionType}</h4>
+                                            <c:choose>
+                                                <c:when test="${appointment.status == 'CONFIRMED'}">
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                                                        Confirmed
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${appointment.status == 'PENDING'}">
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                                        Pending
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${appointment.status == 'DENIED' || appointment.status == 'REJECTED'}">
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                                                        Denied
+                                                    </span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                                        ${appointment.status}
+                                                    </span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
+
+                                        <%-- Display Rejection Reason if applicable (Using denialReason) --%>
+                                        <c:if test="${(appointment.status == 'DENIED' || appointment.status == 'REJECTED') && not empty appointment.denialReason}">
+                                            <div class="text-xs text-red-600 bg-red-50 p-2 rounded mb-3 border border-red-100">
+                                                <span class="font-semibold">Reason:</span> ${appointment.denialReason}
+                                            </div>
+                                        </c:if>
+
+                                        <div class="text-sm text-muted-foreground space-y-1 mb-3">
+                                            <div class="flex items-center">
+                                                <i data-lucide="user" class="w-3 h-3 mr-2"></i>
+                                                <span>with ${appointment.counselorName}</span>
+                                            </div>
+                                            <div class="flex items-center gap-4">
+                                                <span class="flex items-center">
+                                                    <i data-lucide="calendar" class="w-3 h-3 mr-1"></i>
+                                                    ${appointment.date}
+                                                </span>
+                                                <span class="flex items-center">
+                                                    <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
+                                                    ${appointment.time}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex gap-2">
+                                            <%-- ACTION BUTTONS LOGIC --%>
+                                            
+                                            <%-- 1. JOIN (Confirmed only) --%>
+                                            <c:if test="${appointment.status == 'CONFIRMED'}">
+                                                <a href="/student/telehealth/join/${appointment.id}" 
+                                                   class="flex-1 inline-flex justify-center items-center text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+                                                    <i data-lucide="video" class="w-3 h-3 mr-1"></i>
+                                                    Join
+                                                </a>
+                                            </c:if>
+                                            
+                                            <%-- 2. CANCEL (Pending or Confirmed only) --%>
+                                            <c:if test="${appointment.status == 'PENDING' || appointment.status == 'CONFIRMED'}">
+                                                <form action="/student/telehealth/cancel" method="post" class="flex-1">
+                                                    <input type="hidden" name="appointmentId" value="${appointment.id}" />
+                                                    <button type="submit" 
+                                                            onclick="return confirm('Are you sure you want to cancel this appointment?');"
+                                                            class="w-full inline-flex justify-center items-center text-xs px-3 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors">
+                                                        Cancel
+                                                    </button>
+                                                </form>
+                                            </c:if>
+
+                                            <%-- 3. NOTED/DISMISS (Denied only) --%>
+                                            <c:if test="${appointment.status == 'DENIED' || appointment.status == 'REJECTED'}">
+                                                <form action="/student/telehealth/acknowledge" method="post" class="w-full">
+                                                    <input type="hidden" name="appointmentId" value="${appointment.id}" />
+                                                    <button type="submit" 
+                                                            class="w-full inline-flex justify-center items-center text-xs px-3 py-1.5 bg-secondary text-secondary-foreground border border-input rounded-md hover:bg-secondary/80 transition-colors">
+                                                        <i data-lucide="check" class="w-3 h-3 mr-1"></i>
+                                                        Noted (Remove)
+                                                    </button>
+                                                </form>
+                                            </c:if>
+                                        </div>
                                     </div>
-                                </div>
+                                </c:if> <%-- End of Filter for Completed/Acknowledged --%>
                             </c:forEach>
                         </c:when>
                         <c:otherwise>
@@ -369,7 +385,7 @@
                             </div>
                         </c:otherwise>
                     </c:choose>
-            
+
                     <a href="/student/telehealth" class="block w-full bg-secondary text-secondary-foreground text-center px-4 py-2 rounded-md hover:opacity-90 transition-opacity font-medium mt-2">
                         <span class="flex items-center justify-center gap-2">
                             <i data-lucide="plus" class="w-4 h-4"></i>
@@ -379,7 +395,6 @@
                 </div>
             </div>
 
-            <!-- Notifications -->
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <div class="flex items-center mb-4">
                     <i data-lucide="bell" class="w-5 h-5 mr-2 text-primary"></i>
@@ -402,7 +417,6 @@
                 </div>
             </div>
 
-            <!-- Quick Actions -->
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <h2 class="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
                 <div class="space-y-2">
@@ -425,6 +439,5 @@
     </div>
 </div>
 
-<!-- Student-Only Chatbot Widget -->
 <jsp:include page="chatbot-widget.jsp" /> 
 <jsp:include page="../common/footer.jsp" />
