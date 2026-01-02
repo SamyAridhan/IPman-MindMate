@@ -8,7 +8,6 @@
         <p class="text-muted-foreground">Schedule your appointment with a counselor</p>
     </div>
 
-    <!-- Error Messages -->
     <c:if test="${param.error == 'unavailable'}">
         <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
             <i data-lucide="alert-circle" class="h-5 w-5 text-red-600 mt-0.5"></i>
@@ -41,7 +40,6 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- Left Column - Counselor Selection -->
         <div class="lg:col-span-1">
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                 <div class="flex items-center mb-4">
@@ -98,18 +96,15 @@
             </div>
         </div>
 
-        <!-- Middle Column - Date & Session Type -->
         <div class="lg:col-span-1">
             <div class="space-y-6">
                 
-                <!-- Simple Calendar -->
                 <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                     <div class="flex items-center mb-4">
                         <i data-lucide="calendar" class="w-5 h-5 mr-2 text-success"></i>
                         <h2 class="text-xl font-semibold text-foreground">Select Date</h2>
                     </div>
                     
-                    <!-- Month Header -->
                     <div class="flex items-center justify-between mb-4">
                         <button type="button" id="prev-month" class="p-1 hover:bg-secondary rounded">
                             <i data-lucide="chevron-left" class="w-5 h-5"></i>
@@ -120,7 +115,6 @@
                         </button>
                     </div>
 
-                    <!-- Calendar Grid -->
                     <div class="grid grid-cols-7 gap-1 text-center text-sm mb-2">
                         <div class="text-muted-foreground font-medium p-2">Su</div>
                         <div class="text-muted-foreground font-medium p-2">Mo</div>
@@ -132,11 +126,9 @@
                     </div>
                     
                     <div id="calendar-days" class="grid grid-cols-7 gap-1 text-center text-sm">
-                        <!-- Days will be populated by JavaScript -->
-                    </div>
+                        </div>
                 </div>
 
-                <!-- Session Type -->
                 <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                     <h2 class="text-xl font-semibold text-foreground mb-4">Session Type</h2>
                     <select id="session-type" class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background">
@@ -150,7 +142,6 @@
             </div>
         </div>
 
-        <!-- Right Column - Time Slots & Booking -->
         <div class="lg:col-span-1">
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                 <div class="flex items-center mb-2">
@@ -160,32 +151,26 @@
                 <p class="text-sm text-muted-foreground mb-4" id="selected-date-display">Please select a date</p>
 
                 <div id="time-slots-container">
-                    <!-- Default: No counselor selected -->
                     <div class="text-center py-8 text-muted-foreground" id="no-counselor-message">
                         <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto mb-2 text-muted-foreground/50"></i>
                         <p>Please select a counselor first</p>
                     </div>
 
-                    <!-- Loading State -->
                     <div class="hidden text-center py-8" id="loading-slots">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                         <p class="text-sm text-muted-foreground">Loading available times...</p>
                     </div>
 
-                    <!-- No Slots Available -->
                     <div class="hidden text-center py-8 text-muted-foreground" id="no-slots-message">
                         <i data-lucide="calendar-x" class="w-8 h-8 mx-auto mb-2 text-muted-foreground/50"></i>
                         <p>No available time slots for this date</p>
                         <p class="text-xs mt-1">Please try another date</p>
                     </div>
 
-                    <!-- Time Slots List -->
                     <div class="space-y-3 hidden" id="time-slots-list">
-                        <!-- Slots will be populated by AJAX -->
-                    </div>
+                        </div>
                 </div>
 
-                <!-- Booking Summary -->
                 <div class="mt-6 pt-6 border-t hidden" id="booking-summary">
                     <div class="bg-muted p-4 rounded-lg mb-4">
                         <h4 class="font-semibold mb-2">Booking Summary</h4>
@@ -212,7 +197,6 @@
     </div>
 </div>
 
-<!-- Confirmation Modal -->
 <div id="confirmation-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-card rounded-lg shadow-xl w-full max-w-md transform transition-all">
         <div class="p-6 border-b border-border">
@@ -437,8 +421,7 @@ function fetchAvailableSlots() {
         year: 'numeric' 
     });
     
-    const url = `/student/telehealth/available-slots?counselorId=${selectedCounselor.id}&date=${encodeURIComponent(dateStr)}`;
-    
+const url = '/student/telehealth/available-slots?counselorId=' + selectedCounselor.id + '&date=' + encodeURIComponent(dateStr);    
     console.log('Fetching slots from:', url);
     
     fetch(url)
@@ -454,34 +437,32 @@ function fetchAvailableSlots() {
         });
 }
 
+// ============================================
+// FIXED: DISPLAY TIME SLOTS
+// ============================================
 function displayTimeSlots(slots) {
     const container = document.getElementById('time-slots-list');
     container.innerHTML = '';
-    
     document.getElementById('loading-slots').classList.add('hidden');
-    
-    if (slots.length === 0) {
+
+    if (!slots || slots.length === 0) {
         document.getElementById('no-slots-message').classList.remove('hidden');
         return;
     }
-    
-    // Show slots
+
     document.getElementById('time-slots-list').classList.remove('hidden');
-    
+
     slots.forEach(timeStr => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors';
         button.dataset.time = timeStr;
         
-        const icon = document.createElement('i');
-        icon.setAttribute('data-lucide', 'clock');
-        icon.className = 'w-4 h-4 mr-2';
-        
-        const text = document.createTextNode(formatTime(timeStr));
-        
-        button.appendChild(icon);
-        button.appendChild(text);
+        // ✅ FIXED: Use string concatenation (+) instead of template literals
+button.innerHTML = `
+    <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
+    <span>` + formatTime(timeStr) + `</span>
+`;
         
         button.addEventListener('click', function() {
             selectTimeSlot(this);
@@ -489,16 +470,20 @@ function displayTimeSlots(slots) {
         
         container.appendChild(button);
     });
-    
+
     lucide.createIcons();
 }
 
 function formatTime(timeStr) {
-    const [hours, minutes] = timeStr.split(':');
-    const hour = parseInt(hours);
+    // ✅ Handle both "HH:mm" and "HH:mm:ss" formats
+    const parts = timeStr.split(':');
+    const hour = parseInt(parts[0]);
+    const minutes = parts[1] || '00';
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const hour12 = hour % 12 || 12;
-    return `${hour12}:${minutes} ${ampm}`;
+    
+    // ✅ FIX: Use simple quotes and + instead of backticks
+    return hour12 + ":" + minutes + " " + ampm;
 }
 
 function selectTimeSlot(element) {
@@ -522,8 +507,20 @@ function selectTimeSlot(element) {
 // ============================================
 // SESSION TYPE SELECTION
 // ============================================
+// ============================================
+// SESSION TYPE SELECTION (FIXED)
+// ============================================
 function setupSessionTypeSelection() {
-    document.getElementById('session-type').addEventListener('change', function() {
+    const sessionSelect = document.getElementById('session-type');
+
+    // 1. Check if browser auto-filled the value on reload
+    if (sessionSelect.value) {
+        selectedSessionType = sessionSelect.value;
+        console.log('Restored session type:', selectedSessionType);
+    }
+
+    // 2. Listen for user changes
+    sessionSelect.addEventListener('change', function() {
         selectedSessionType = this.value;
         console.log('Session type selected:', selectedSessionType);
         updateSummary();

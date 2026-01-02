@@ -7,7 +7,7 @@ import java.time.LocalTime;
 
 /**
  * Entity representing a telehealth counseling appointment.
- * Updates: Added Counselor entity link, audit timestamps, and notes.
+ * Updates: Fixed LazyInitializationException by prioritizing stored string.
  */
 @Entity
 @Table(name = "appointments")
@@ -26,7 +26,7 @@ public class Appointment {
     @JoinColumn(name = "counselor_id")
     private Counselor counselor;
 
-    // ✅ DEPRECATED: Kept to prevent breaking legacy frontend/logic
+    // ✅ DEPRECATED: Kept for performance & legacy frontend compatibility
     @Column(name = "counselor_name")
     private String counselorName;
 
@@ -90,7 +90,7 @@ public class Appointment {
     public Appointment(Student student, Counselor counselor, LocalDate date, LocalTime time, String sessionType) {
         this.student = student;
         this.counselor = counselor;
-        // Logic: specific check to ensure name is synced if counselor exists
+        // Sync name immediately upon creation
         this.counselorName = (counselor != null) ? counselor.getName() : null; 
         this.date = date;
         this.time = time;
@@ -108,15 +108,20 @@ public class Appointment {
     public void setStudent(Student student) { this.student = student; }
 
     public Counselor getCounselor() { return counselor; }
+    
     public void setCounselor(Counselor counselor) {
         this.counselor = counselor;
-        // Keep counselorName in sync for backward compatibility
-        this.counselorName = (counselor != null) ? counselor.getName() : null;
+        // Automatically sync the string name when the entity is set
+        if (counselor != null) {
+            this.counselorName = counselor.getName();
+        }
     }
 
     public String getCounselorName() {
-        // Smart Getter: Prefer entity name if the relationship exists
-        return (counselor != null) ? counselor.getName() : counselorName;
+        // ✅ CRITICAL FIX: Always return the stored string.
+        // Accessing 'counselor.getName()' here triggers a database call.
+        // If the session is closed (e.g. inside JSP), that call crashes the app.
+        return this.counselorName;
     }
 
     public void setCounselorName(String counselorName) {
