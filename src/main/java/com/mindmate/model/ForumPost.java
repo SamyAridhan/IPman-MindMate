@@ -42,8 +42,11 @@ public class ForumPost {
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("createdAt ASC")
-    private Set<ForumReply> repliesList = new LinkedHashSet<>(); // Changed to Set
+    private Set<ForumReply> repliesList = new java.util.LinkedHashSet<>(); // Changed to Set
 
+
+    @Transient // This tells Hibernate NOT to look for a column named totalReplies
+    private long totalReplies;
     public ForumPost() {
     }
 
@@ -111,5 +114,7 @@ public class ForumPost {
         this.repliesList = repliesList; 
     }
 
+    public long getTotalReplies() { return totalReplies; }
+    public void setTotalReplies(long totalReplies) { this.totalReplies = totalReplies; }
     
 }

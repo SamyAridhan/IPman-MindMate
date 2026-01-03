@@ -26,8 +26,10 @@ public class ForumDAOHibernate implements ForumDAO {
     @Override
 public List<ForumPost> getAllPosts(String sortBy, String searchQuery) {
     try (Session session = sessionFactory.openSession()) {
-        // Use SELECT DISTINCT to prevent duplicates from the LEFT JOIN FETCH
-        StringBuilder hql = new StringBuilder("SELECT DISTINCT p FROM ForumPost p LEFT JOIN FETCH p.repliesList ");
+        // HQL: Select the post and a subquery count of all replies associated with it
+        StringBuilder hql = new StringBuilder(
+            "SELECT p, (SELECT count(r) FROM ForumReply r WHERE r.post = p) FROM ForumPost p "
+        );
         
         boolean hasSearch = (searchQuery != null && !searchQuery.isEmpty());
         
@@ -35,19 +37,34 @@ public List<ForumPost> getAllPosts(String sortBy, String searchQuery) {
             hql.append(" WHERE (lower(p.title) LIKE :search OR lower(p.content) LIKE :search)");
         }
         
+        // Sorting logic remains the same
         switch (sortBy) {
             case "popular": hql.append(" ORDER BY p.likes DESC"); break;
             case "helpful": hql.append(" ORDER BY p.helpfulCount DESC"); break;
-            // ✅ Fix: Changed p.createdAt to p.timestamp to match your ForumPost model
             default: hql.append(" ORDER BY p.timestamp DESC"); break; 
         }
 
-        Query<ForumPost> query = session.createQuery(hql.toString(), ForumPost.class);
+        // We use Object[] because the query returns [ForumPost, Long]
+        Query<Object[]> query = session.createQuery(hql.toString(), Object[].class);
+        
         if (hasSearch) {
             query.setParameter("search", "%" + searchQuery.toLowerCase() + "%");
         }
         
-        return query.list();
+        List<Object[]> results = query.list();
+        List<ForumPost> posts = new java.util.ArrayList<>();
+
+        for (Object[] row : results) {
+            ForumPost p = (ForumPost) row[0];
+            // row[1] contains the result of the COUNT() subquery
+            long count = (Long) row[1]; 
+            
+            // Set the count into the transient field in your model
+            p.setTotalReplies(count); 
+            posts.add(p);
+        }
+        
+        return posts;
     }
 }
 

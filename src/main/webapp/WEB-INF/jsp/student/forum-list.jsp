@@ -27,9 +27,8 @@
             Support Categories
         </h2>
         <div class="space-y-1">
-            <%-- Total Posts Count for All Topics --%>
-            <c:set var="totalCount" value="0" />
-            <c:forEach var="c" items="${forumCategories}"><c:set var="totalCount" value="${totalCount + c.count}" /></c:forEach>
+            <%-- Total Posts Count for All Topics - Use the 'all' category count directly --%>
+<c:set var="totalCount" value="${forumCategories[0].count}" />
 
             <a href="${pageContext.request.contextPath}/student/forum" 
                class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
@@ -156,7 +155,7 @@
                                         </div>
                                         <div class="flex items-center">
                                             <i data-lucide="message-circle" class="w-4 h-4 mr-1"></i>
-                                            <span>${post.replies} responses</span>
+                                            <span>${post.totalReplies} responses</span>
                                         </div>
                                     </div>
 

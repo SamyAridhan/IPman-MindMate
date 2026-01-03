@@ -13,8 +13,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,81 +31,100 @@ public class ForumController {
     private StudentDAO studentDAO;
 
     @GetMapping("/forum")
-public String forumList(
-    @RequestParam(value = "sortBy", defaultValue = "recent") String sortBy,
-    @RequestParam(value = "searchQuery", required = false) String searchQuery,
-    @RequestParam(value = "category", required = false) String categoryFilter, 
-    Model model,
-    HttpSession session
-) {
-    if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
-        return "redirect:/login";
-    }
-
-    // 1. Fetch posts from DAO (DISTINCT in DAO handles duplicates)
-    List<ForumPost> posts = forumDAO.getAllPosts(sortBy, searchQuery);
-
-    // 2. Filter the current view by category if selected
-    if (categoryFilter != null && !categoryFilter.isEmpty() && !"all".equalsIgnoreCase(categoryFilter)) {
-        posts = posts.stream()
-                .filter(p -> categoryFilter.equalsIgnoreCase(p.getCategory()))
-                .collect(Collectors.toList());
-    }
-
-    // 3. Get all posts once to calculate sidebar counts (distinct ensures 1:1 post count)
-    List<ForumPost> allPostsRaw = forumDAO.getAllPosts("recent", null);
-    List<ForumPost> allPosts = allPostsRaw.stream().distinct().collect(Collectors.toList());
+    public String forumList(
+        @RequestParam(value = "sortBy", defaultValue = "recent") String sortBy,
+        @RequestParam(value = "searchQuery", required = false) String searchQuery,
+        @RequestParam(value = "category", required = false) String categoryFilter, 
+        Model model,
+        HttpSession session
+    ) {
+        if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
+            return "redirect:/login";
+        }
     
-    // --- FUZZY COUNTING LOGIC ---
-    Map<String, Long> counts = new HashMap<>();
-    List<String> validNames = Arrays.asList(
-        "General Support", "Anxiety Support", "Depression Support", 
-        "Stress Management", "Sleep Issues", "Relationships", "Academic Pressure"
-    );
-    
-    // Initialize all with 0
-    validNames.forEach(name -> counts.put(name, 0L));
-
-    for (ForumPost p : allPosts) {
-        if (p.getCategory() == null) continue;
+        // 1. Fetch all posts (for deduplication and counting)
+        List<ForumPost> rawAllPosts = forumDAO.getAllPosts(sortBy, searchQuery);
         
-        String postCat = p.getCategory().toLowerCase().trim();
-        for (String officialName : validNames) {
-            String officialLower = officialName.toLowerCase();
-            if (officialLower.contains(postCat) || postCat.contains(officialLower)) {
-                counts.put(officialName, counts.get(officialName) + 1);
-                break; 
+        // ✅ DEBUG: Print raw count
+        System.out.println("🔍 DEBUG: rawAllPosts size = " + rawAllPosts.size());
+        
+        // 2. ✅ DEDUPLICATE using LinkedHashMap to preserve order and ensure uniqueness by ID
+        Map<Integer, ForumPost> uniquePostsMap = new LinkedHashMap<>();
+        for (ForumPost p : rawAllPosts) {
+            uniquePostsMap.put(p.getId(), p);
+        }
+        
+        // ✅ DEBUG: Print deduplicated count
+        System.out.println("🔍 DEBUG: uniquePostsMap size = " + uniquePostsMap.size());
+        
+        // 3. Convert back to list for filtering
+        List<ForumPost> allUniquePosts = new ArrayList<>(uniquePostsMap.values());
+        
+        // 4. Filter by category if selected
+        List<ForumPost> posts = allUniquePosts;
+        if (categoryFilter != null && !categoryFilter.isEmpty() && !"all".equalsIgnoreCase(categoryFilter)) {
+            posts = allUniquePosts.stream()
+                    .filter(p -> categoryFilter.equalsIgnoreCase(p.getCategory()))
+                    .collect(Collectors.toList());
+        }
+    
+        // 5. Calculate category counts from ALL unique posts (not filtered by search)
+        Map<String, Long> counts = calculateCategoryCounts(allUniquePosts);
+    
+        // 6. Map categories for the Sidebar
+        List<Map<String, Object>> forumCategories = Arrays.asList(
+            createCategoryMap("all", "All Topics", (long) allUniquePosts.size(), "bg-gray-100 text-gray-800"),
+            createCategoryMap("General Support", "General Support", counts.get("General Support"), "bg-green-100 text-green-800"),
+            createCategoryMap("Anxiety Support", "Anxiety Support", counts.get("Anxiety Support"), "bg-purple-100 text-purple-800"),
+            createCategoryMap("Depression Support", "Depression Support", counts.get("Depression Support"), "bg-blue-100 text-blue-800"),
+            createCategoryMap("Stress Management", "Stress Management", counts.get("Stress Management"), "bg-orange-100 text-orange-800"),
+            createCategoryMap("Sleep Issues", "Sleep Issues", counts.get("Sleep Issues"), "bg-indigo-100 text-indigo-800"),
+            createCategoryMap("Relationships", "Relationships", counts.get("Relationships"), "bg-pink-100 text-pink-800"),
+            createCategoryMap("Academic Pressure", "Academic Pressure", counts.get("Academic Pressure"), "bg-yellow-100 text-yellow-800")
+        );
+    
+        // 7. Urgent posts
+        List<ForumPost> urgentPosts = allUniquePosts.stream()
+                .filter(p -> "Academic Pressure".equalsIgnoreCase(p.getCategory()) || p.isFlagged()) 
+                .limit(3)
+                .collect(Collectors.toList());
+    
+        model.addAttribute("posts", posts);
+        model.addAttribute("forumCategories", forumCategories);
+        model.addAttribute("urgentPosts", urgentPosts);
+        model.addAttribute("currentSort", sortBy);
+        model.addAttribute("currentSearch", searchQuery);
+        model.addAttribute("selectedCategory", categoryFilter); 
+        
+        return "student/forum-list";
+    }
+
+    // ✅ NEW: Helper method to calculate category counts
+    private Map<String, Long> calculateCategoryCounts(List<ForumPost> posts) {
+        Map<String, Long> counts = new HashMap<>();
+        List<String> validNames = Arrays.asList(
+            "General Support", "Anxiety Support", "Depression Support", 
+            "Stress Management", "Sleep Issues", "Relationships", "Academic Pressure"
+        );
+        
+        // Initialize counts at 0
+        validNames.forEach(name -> counts.put(name, 0L));
+    
+        for (ForumPost p : posts) {
+            if (p.getCategory() == null) continue;
+            
+            String postCat = p.getCategory().toLowerCase().trim();
+            for (String officialName : validNames) {
+                String officialLower = officialName.toLowerCase();
+                if (officialLower.contains(postCat) || postCat.contains(officialLower)) {
+                    counts.put(officialName, counts.get(officialName) + 1);
+                    break; 
+                }
             }
         }
+        
+        return counts;
     }
-
-    // 4. Map categories for the Sidebar
-    List<Map<String, Object>> forumCategories = Arrays.asList(
-        createCategoryMap("all", "All Topics", (long) allPosts.size(), "bg-gray-100 text-gray-800"),
-        createCategoryMap("General Support", "General Support", counts.get("General Support"), "bg-green-100 text-green-800"),
-        createCategoryMap("Anxiety Support", "Anxiety Support", counts.get("Anxiety Support"), "bg-purple-100 text-purple-800"),
-        createCategoryMap("Depression Support", "Depression Support", counts.get("Depression Support"), "bg-blue-100 text-blue-800"),
-        createCategoryMap("Stress Management", "Stress Management", counts.get("Stress Management"), "bg-orange-100 text-orange-800"),
-        createCategoryMap("Sleep Issues", "Sleep Issues", counts.get("Sleep Issues"), "bg-indigo-100 text-indigo-800"),
-        createCategoryMap("Relationships", "Relationships", counts.get("Relationships"), "bg-pink-100 text-pink-800"),
-        createCategoryMap("Academic Pressure", "Academic Pressure", counts.get("Academic Pressure"), "bg-yellow-100 text-yellow-800")
-    );
-
-    // 5. Urgent posts (OP's or Flagged)
-    List<ForumPost> urgentPosts = allPosts.stream()
-            .filter(p -> "Academic Pressure".equalsIgnoreCase(p.getCategory()) || p.isFlagged()) 
-            .limit(3)
-            .collect(Collectors.toList());
-
-    model.addAttribute("posts", posts);
-    model.addAttribute("forumCategories", forumCategories);
-    model.addAttribute("urgentPosts", urgentPosts);
-    model.addAttribute("currentSort", sortBy);
-    model.addAttribute("currentSearch", searchQuery);
-    model.addAttribute("selectedCategory", categoryFilter); 
-    
-    return "student/forum-list";
-}
 
     private Map<String, Object> createCategoryMap(String id, String name, Long count, String color) {
         return Map.of("id", id, "name", name, "count", count, "color", color);
