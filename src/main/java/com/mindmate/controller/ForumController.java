@@ -13,12 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -42,25 +37,22 @@ public class ForumController {
             return "redirect:/login";
         }
     
-        // 1. Fetch all posts (for deduplication and counting)
-        List<ForumPost> rawAllPosts = forumDAO.getAllPosts(sortBy, searchQuery);
+        // Get current User ID for shading logic
+        Long loggedInUserIdLong = SessionHelper.getUserId(session);
+        Integer currentUserId = (loggedInUserIdLong != null) ? loggedInUserIdLong.intValue() : null;
+
+        // 1. Fetch posts (Pass currentUserId to DAO to handle shading booleans)
+        List<ForumPost> rawAllPosts = forumDAO.getAllPosts(sortBy, searchQuery, currentUserId);
         
-        // ✅ DEBUG: Print raw count
-        System.out.println("🔍 DEBUG: rawAllPosts size = " + rawAllPosts.size());
-        
-        // 2. ✅ DEDUPLICATE using LinkedHashMap to preserve order and ensure uniqueness by ID
+        // 2. DEDUPLICATE (Preserve order)
         Map<Integer, ForumPost> uniquePostsMap = new LinkedHashMap<>();
         for (ForumPost p : rawAllPosts) {
             uniquePostsMap.put(p.getId(), p);
         }
         
-        // ✅ DEBUG: Print deduplicated count
-        System.out.println("🔍 DEBUG: uniquePostsMap size = " + uniquePostsMap.size());
-        
-        // 3. Convert back to list for filtering
         List<ForumPost> allUniquePosts = new ArrayList<>(uniquePostsMap.values());
         
-        // 4. Filter by category if selected
+        // 3. Filter by category
         List<ForumPost> posts = allUniquePosts;
         if (categoryFilter != null && !categoryFilter.isEmpty() && !"all".equalsIgnoreCase(categoryFilter)) {
             posts = allUniquePosts.stream()
@@ -68,10 +60,10 @@ public class ForumController {
                     .collect(Collectors.toList());
         }
     
-        // 5. Calculate category counts from ALL unique posts (not filtered by search)
+        // 4. Calculate category counts
         Map<String, Long> counts = calculateCategoryCounts(allUniquePosts);
     
-        // 6. Map categories for the Sidebar
+        // 5. Map categories for Sidebar
         List<Map<String, Object>> forumCategories = Arrays.asList(
             createCategoryMap("all", "All Topics", (long) allUniquePosts.size(), "bg-gray-100 text-gray-800"),
             createCategoryMap("General Support", "General Support", counts.get("General Support"), "bg-green-100 text-green-800"),
@@ -83,15 +75,8 @@ public class ForumController {
             createCategoryMap("Academic Pressure", "Academic Pressure", counts.get("Academic Pressure"), "bg-yellow-100 text-yellow-800")
         );
     
-        // 7. Urgent posts
-        List<ForumPost> urgentPosts = allUniquePosts.stream()
-                .filter(p -> "Academic Pressure".equalsIgnoreCase(p.getCategory()) || p.isFlagged()) 
-                .limit(3)
-                .collect(Collectors.toList());
-    
         model.addAttribute("posts", posts);
         model.addAttribute("forumCategories", forumCategories);
-        model.addAttribute("urgentPosts", urgentPosts);
         model.addAttribute("currentSort", sortBy);
         model.addAttribute("currentSearch", searchQuery);
         model.addAttribute("selectedCategory", categoryFilter); 
@@ -99,35 +84,130 @@ public class ForumController {
         return "student/forum-list";
     }
 
-    // ✅ NEW: Helper method to calculate category counts
+    @PostMapping("/forum/interact")
+    @ResponseBody
+    public Map<String, Object> recordInteraction(
+            @RequestParam("postId") int postId, 
+            @RequestParam("type") String type,
+            HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        // 1. Security Check: User must be logged in
+        Long userIdLong = SessionHelper.getUserId(session);
+        if (userIdLong == null) {
+            response.put("success", false);
+            response.put("error", "Not logged in");
+            return response;
+        }
+        int userId = userIdLong.intValue();
+
+        // 2. Fetch Post
+        ForumPost post = forumDAO.getPostById(postId);
+        if (post == null) {
+            response.put("success", false);
+            return response;
+        }
+
+        boolean isActive = false;
+        int newCount = 0;
+
+        // 3. Toggle Logic (Set ensures 1 user per 1 action)
+        if ("like".equals(type)) {
+            Set<Integer> likes = post.getLikedUserIds();
+            if (likes.contains(userId)) {
+                likes.remove(userId);
+                isActive = false;
+            } else {
+                likes.add(userId);
+                isActive = true;
+            }
+            post.setLikes(likes.size());
+            newCount = post.getLikes();
+        } 
+        else if ("helpful".equals(type)) {
+            Set<Integer> helpful = post.getHelpfulUserIds();
+            if (helpful.contains(userId)) {
+                helpful.remove(userId);
+                isActive = false;
+            } else {
+                helpful.add(userId);
+                isActive = true;
+            }
+            post.setHelpfulCount(helpful.size());
+            newCount = post.getHelpfulCount();
+        }
+
+        // 4. Save and return JSON
+        forumDAO.saveOrUpdate(post);
+        
+        response.put("success", true);
+        response.put("isActive", isActive);
+        response.put("newCount", newCount);
+        return response;
+    }
+
+    @PostMapping("/forum/flag")
+    @ResponseBody
+    public Map<String, Object> flagPost(@RequestParam("postId") int postId, HttpSession session) {
+        Long userIdLong = SessionHelper.getUserId(session);
+        if (userIdLong == null) return Map.of("success", false);
+        
+        ForumPost post = forumDAO.getPostById(postId);
+        if (post != null) {
+            post.getFlaggedUserIds().add(userIdLong.intValue());
+            post.setFlagged(true);
+            forumDAO.saveOrUpdate(post);
+            return Map.of("success", true);
+        }
+        return Map.of("success", false);
+    }
+
+    @GetMapping("/forum/thread")
+    public String forumThread(@RequestParam("id") int id, Model model, HttpSession session) {
+        if (!SessionHelper.isLoggedIn(session)) return "redirect:/login";
+
+        ForumPost post = forumDAO.getPostById(id);
+        if (post == null) return "redirect:/student/forum?error=PostNotFound";
+
+        // Apply shading logic for the single thread view
+        Long userIdLong = SessionHelper.getUserId(session);
+        if (userIdLong != null) {
+            int uid = userIdLong.intValue();
+            post.setLikedByCurrentUser(post.getLikedUserIds().contains(uid));
+            post.setHelpfulByCurrentUser(post.getHelpfulUserIds().contains(uid));
+            post.setFlaggedByCurrentUser(post.getFlaggedUserIds().contains(uid));
+        }
+
+        model.addAttribute("post", post);
+        return "student/forum-thread"; 
+    }
+
+    // --- Helper Methods ---
+
     private Map<String, Long> calculateCategoryCounts(List<ForumPost> posts) {
         Map<String, Long> counts = new HashMap<>();
         List<String> validNames = Arrays.asList(
             "General Support", "Anxiety Support", "Depression Support", 
             "Stress Management", "Sleep Issues", "Relationships", "Academic Pressure"
         );
-        
-        // Initialize counts at 0
         validNames.forEach(name -> counts.put(name, 0L));
     
         for (ForumPost p : posts) {
             if (p.getCategory() == null) continue;
-            
             String postCat = p.getCategory().toLowerCase().trim();
             for (String officialName : validNames) {
-                String officialLower = officialName.toLowerCase();
-                if (officialLower.contains(postCat) || postCat.contains(officialLower)) {
+                if (officialName.toLowerCase().contains(postCat)) {
                     counts.put(officialName, counts.get(officialName) + 1);
                     break; 
                 }
             }
         }
-        
         return counts;
     }
 
     private Map<String, Object> createCategoryMap(String id, String name, Long count, String color) {
-        return Map.of("id", id, "name", name, "count", count, "color", color);
+        return Map.of("id", id, "name", name, "count", count != null ? count : 0L, "color", color);
     }
 
     @PostMapping("/forum/create")
@@ -139,61 +219,10 @@ public class ForumController {
         HttpSession session
     ) {
         if (!SessionHelper.isLoggedIn(session)) return "redirect:/login";
-    
-        String currentUser = SessionHelper.getUserName(session); 
-    
-        if (currentUser == null) {
-            Long userId = SessionHelper.getUserId(session);
-            if (userId != null) {
-                Student student = studentDAO.findById(userId);
-                if (student != null) {
-                    currentUser = student.getName();
-                }
-            }
-        }
-        
-        if (currentUser == null) currentUser = "Anonymous Member";
-    
-        boolean anonymousValue = (isAnonymous != null && isAnonymous);
-    
-        ForumPost newPost = new ForumPost(title, content, category, currentUser, anonymousValue);
+        String author = SessionHelper.getUserName(session);
+        ForumPost newPost = new ForumPost(title, content, category, author, (isAnonymous != null && isAnonymous));
         forumDAO.saveOrUpdate(newPost);
-    
         return "redirect:/student/forum";
-    }
-
-    @PostMapping("/forum/interact")
-    @ResponseBody
-    public Map<String, Object> recordInteraction(@RequestParam("postId") int postId, @RequestParam("type") String type) {
-        ForumPost post = forumDAO.getPostById(postId);
-        if (post == null) return Map.of("error", "Post not found");
-
-        if ("like".equals(type)) {
-            post.setLikes(post.getLikes() + 1);
-        } else if ("helpful".equals(type)) {
-            post.setHelpfulCount(post.getHelpfulCount() + 1);
-        }
-
-        forumDAO.saveOrUpdate(post);
-        return Map.of("likes", post.getLikes(), "helpfulCount", post.getHelpfulCount());
-    }
-
-    @GetMapping("/forum/thread")
-    public String forumThread(@RequestParam("id") int id, Model model, HttpSession session) {
-        if (!SessionHelper.isLoggedIn(session)) {
-            return "redirect:/login";
-        }
-
-        ForumPost post = forumDAO.getPostById(id);
-        
-        if (post == null) {
-            return "redirect:/student/forum?error=PostNotFound";
-        }
-
-        model.addAttribute("post", post);
-        model.addAttribute("role", "student");
-
-        return "student/forum-thread"; 
     }
 
     @PostMapping("/forum/thread/reply")
@@ -205,21 +234,11 @@ public class ForumController {
         HttpSession session
     ) {
         if (!SessionHelper.isLoggedIn(session)) return "redirect:/login";
-
-        String currentUser = SessionHelper.getUserName(session);
-        if (currentUser == null) {
-            Student student = studentDAO.findById(SessionHelper.getUserId(session));
-            currentUser = (student != null) ? student.getName() : "Unknown User";
-        }
-
+        String author = SessionHelper.getUserName(session);
         ForumPost post = forumDAO.getPostById(postId);
         ForumReply parent = (parentId != null) ? forumDAO.getReplyById(parentId) : null;
-        
-        boolean anonValue = (isAnonymous != null && isAnonymous);
-        ForumReply newReply = new ForumReply(content, currentUser, post, parent, anonValue);
-        
+        ForumReply newReply = new ForumReply(content, author, post, parent, (isAnonymous != null && isAnonymous));
         forumDAO.saveReply(newReply); 
-
         return "redirect:/student/forum/thread?id=" + postId;
     }
 }

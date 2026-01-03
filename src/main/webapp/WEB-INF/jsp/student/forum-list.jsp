@@ -20,62 +20,43 @@
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             
             <%-- SIDEBAR --%>
-<div class="lg:col-span-1 space-y-6">
-    <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
-        <h2 class="text-lg font-semibold text-foreground flex items-center mb-3 pb-3 border-b border-border/70">
-            <i data-lucide="handshake" class="w-5 h-5 mr-2 text-primary"></i>
-            Support Categories
-        </h2>
-        <div class="space-y-1">
-            <%-- Total Posts Count for All Topics - Use the 'all' category count directly --%>
-<c:set var="totalCount" value="${forumCategories[0].count}" />
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
+                    <h2 class="text-lg font-semibold text-foreground flex items-center mb-3 pb-3 border-b border-border/70">
+                        <i data-lucide="handshake" class="w-5 h-5 mr-2 text-primary"></i>
+                        Support Categories
+                    </h2>
+                    <div class="space-y-1">
+                        <c:set var="totalCount" value="${forumCategories[0].count}" />
 
-            <a href="${pageContext.request.contextPath}/student/forum" 
-               class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
-               ${empty param.category ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-secondary/50'}">
-                <span class="text-sm font-medium">All Topics</span>
-                <span class="text-[10px] font-bold">${totalCount}</span>
-            </a>
+                        <a href="${pageContext.request.contextPath}/student/forum" 
+                           class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
+                           ${empty param.category ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-secondary/50'}">
+                            <span class="text-sm font-medium">All Topics</span>
+                            <span class="text-[10px] font-bold">${totalCount}</span>
+                        </a>
 
-            <hr class="my-2 border-border/50" />
+                        <hr class="my-2 border-border/50" />
 
-            <c:set var="fixedCategories" value="General Support,Anxiety Support,Depression Support,Stress Management,Sleep Issues,Relationships,Academic Pressure" />
-            <c:forEach var="catName" items="${fixedCategories}">
-                <a href="?category=${catName}" 
-                   class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
-                   ${param.category eq catName ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-secondary/50'}">
-                    <span class="text-sm font-medium">${catName}</span>
-                    
-                    <%-- Find count or display 0 --%>
-                    <c:set var="foundCount" value="0" />
-                    <c:forEach var="dbCat" items="${forumCategories}">
-                        <c:if test="${dbCat.name eq catName}"><c:set var="foundCount" value="${dbCat.count}" /></c:if>
-                    </c:forEach>
-                    <span class="ml-2 px-2 py-0.5 text-[10px] rounded-full ${foundCount > 0 ? 'bg-secondary text-primary font-bold' : 'text-gray-400'}">
-                        ${foundCount}
-                    </span>
-                </a>
-            </c:forEach>
-        </div>
-    </div>
-                <%-- Urgent Support Card (Restored Styling) --%>
-                <c:if test="${not empty urgentPosts}">
-                    <div class="bg-card p-4 rounded-lg shadow-sm border border-red-200">
-                        <h2 class="text-lg font-semibold text-red-700 flex items-center mb-3 pb-3 border-b border-red-200/70">
-                            <i data-lucide="alert-triangle" class="w-5 h-5 mr-2"></i>
-                            Urgent Support Needed
-                        </h2>
-                        <div class="space-y-2">
-                            <c:forEach var="upost" items="${urgentPosts}" begin="0" end="2">
-                                <a href="/student/forum/thread?id=${upost.id}" class="block text-sm p-2 bg-red-50 rounded hover:bg-red-100 transition-colors">
-                                    <p class="font-medium truncate text-red-900">${upost.title}</p>
-                                    <p class="text-red-600 text-xs">${upost.anonymous ? 'Anonymous' : upost.author}</p>
-                                </a>
-                            </c:forEach>
-                        </div>
+                        <c:set var="fixedCategories" value="General Support,Anxiety Support,Depression Support,Stress Management,Sleep Issues,Relationships,Academic Pressure" />
+                        <c:forEach var="catName" items="${fixedCategories}">
+                            <a href="?category=${catName}" 
+                               class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
+                               ${param.category eq catName ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-secondary/50'}">
+                                <span class="text-sm font-medium">${catName}</span>
+                                
+                                <c:set var="foundCount" value="0" />
+                                <c:forEach var="dbCat" items="${forumCategories}">
+                                    <c:if test="${dbCat.name eq catName}"><c:set var="foundCount" value="${dbCat.count}" /></c:if>
+                                </c:forEach>
+                                <span class="ml-2 px-2 py-0.5 text-[10px] rounded-full ${foundCount > 0 ? 'bg-secondary text-primary font-bold' : 'text-gray-400'}">
+                                    ${foundCount}
+                                </span>
+                            </a>
+                        </c:forEach>
                     </div>
-                </c:if>
-                
+                </div>
+
                 <%-- Guidelines Card --%>
                 <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
                     <h2 class="text-lg font-semibold text-foreground mb-3 pb-3 border-b border-border/70">Peer Support Guidelines</h2>
@@ -91,7 +72,7 @@
             <div class="lg:col-span-3">
                 <%-- Search & Filters --%>
                 <div class="mb-6">
-                    <form method="GET" action="/student/forum">
+                    <form method="GET" action="${pageContext.request.contextPath}/student/forum">
                         <div class="flex gap-4 items-center">
                             <div class="relative flex-1">
                                 <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
@@ -113,16 +94,10 @@
                 <%-- POSTS LISTING --%>
                 <div class="space-y-4">
                     <c:forEach var="post" items="${posts}">
-                        <%-- Dynamic Border/BG based on Support Level --%>
-                        <c:set var="cardClass">
-                            <c:choose>
-                                <c:when test="${post.helpfulCount > 10}">border-green-300 bg-green-50/30</c:when>
-                                <c:when test="${post.flagged}">border-red-200 bg-red-50/20</c:when>
-                                <c:otherwise>border-border bg-card</c:otherwise>
-                            </c:choose>
-                        </c:set>
+                        <%-- Logic for Card Shading if Flagged --%>
+                        <c:set var="cardClass" value="${post.flaggedByCurrentUser ? 'bg-red-50/50 border-red-200' : 'bg-card border-border'}" />
 
-                        <a href="/student/forum/thread?id=${post.id}" class="block group">
+                        <a href="${pageContext.request.contextPath}/student/forum/thread?id=${post.id}" class="block group">
                             <div class="p-6 rounded-lg shadow-sm transition-all group-hover:shadow-md border ${cardClass}">
                                 
                                 <%-- Post Header --%>
@@ -159,23 +134,26 @@
                                         </div>
                                     </div>
 
-                                    <%-- Action Buttons --%>
+                                    <%-- Action Buttons (FIXED TRANSIT PROPERTY NAMES) --%>
                                     <div class="flex items-center space-x-2">
+                                        <%-- LIKE BUTTON --%>
                                         <button onclick="event.preventDefault(); recordInteraction('${post.id}', 'like', this)" 
-                                                class="flex items-center px-2 py-1 rounded hover:bg-red-50 hover:text-red-600 transition-colors">
-                                            <i data-lucide="heart" class="w-4 h-4 mr-1"></i> 
+                                                class="flex items-center px-2 py-1 rounded transition-colors ${post.likedByCurrentUser ? 'bg-red-100 text-red-600' : 'hover:bg-red-50 hover:text-red-600 text-gray-500'}">
+                                            <i data-lucide="heart" class="w-4 h-4 mr-1 ${post.likedByCurrentUser ? 'fill-current' : ''}"></i> 
                                             <span id="likes-count-${post.id}">${post.likes}</span>
                                         </button>
                                         
+                                        <%-- HELPFUL BUTTON --%>
                                         <button onclick="event.preventDefault(); recordInteraction('${post.id}', 'helpful', this)" 
-                                                class="flex items-center px-2 py-1 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                                class="flex items-center px-2 py-1 rounded transition-colors ${post.helpfulByCurrentUser ? 'bg-green-100 text-green-600' : 'hover:bg-blue-50 hover:text-blue-600 text-gray-500'}">
                                             <i data-lucide="award" class="w-4 h-4 mr-1"></i> 
                                             <span id="helpful-count-${post.id}">${post.helpfulCount}</span>
                                         </button>
 
-                                        <button id="flag-button-${post.id}" onclick="event.preventDefault(); flagPost('${post.id}', this)" 
-                                                class="p-1 rounded transition-colors ${post.flagged ? 'text-red-600 bg-red-50' : 'text-gray-400 hover:bg-red-50 hover:text-red-600'}">
-                                            <i data-lucide="flag" class="w-4 h-4"></i>
+                                        <%-- FLAG BUTTON --%>
+                                        <button onclick="event.preventDefault(); flagPost('${post.id}', this)" 
+                                                class="p-1 rounded transition-colors ${post.flaggedByCurrentUser ? 'text-red-600 bg-red-100' : 'text-gray-400 hover:bg-red-50 hover:text-red-600'}">
+                                            <i data-lucide="flag" class="w-4 h-4 ${post.flaggedByCurrentUser ? 'fill-current' : ''}"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -198,7 +176,6 @@
 
 <jsp:include page="new-post-modal.jsp" />
 
-<%-- SCRIPTS (Keep same as before) --%>
 <script>
     const postModal = document.getElementById('new-post-modal');
     function openNewPostModal() { postModal?.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
@@ -206,22 +183,43 @@
 
     function recordInteraction(postId, type, btn) {
         btn.disabled = true;
-        fetch('/student/forum/interact', {
+        fetch('${pageContext.request.contextPath}/student/forum/interact', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `postId=`+postId+`&type=`+type
         })
         .then(r => r.json())
         .then(data => {
-            if(data.likes !== undefined) document.getElementById(`likes-count-`+postId).textContent = data.likes;
-            if(data.helpfulCount !== undefined) document.getElementById(`helpful-count-`+postId).textContent = data.helpfulCount;
+            if (data.success) {
+                // Update text count
+                const countSpan = type === 'like' ? 
+                    document.getElementById(`likes-count-`+postId) : 
+                    document.getElementById(`helpful-count-`+postId);
+                countSpan.textContent = data.newCount;
+
+                // Handle visual shading toggle
+                const icon = btn.querySelector('i');
+                if (type === 'like') {
+                    btn.classList.toggle('bg-red-100', data.isActive);
+                    btn.classList.toggle('text-red-600', data.isActive);
+                    btn.classList.toggle('text-gray-500', !data.isActive);
+                    icon.classList.toggle('fill-current', data.isActive);
+                } else if (type === 'helpful') {
+                    btn.classList.toggle('bg-green-100', data.isActive);
+                    btn.classList.toggle('text-green-600', data.isActive);
+                    btn.classList.toggle('text-gray-500', !data.isActive);
+                }
+            }
         })
-        .finally(() => btn.disabled = false);
+        .finally(() => {
+            btn.disabled = false;
+            if (window.lucide) lucide.createIcons();
+        });
     }
 
     function flagPost(postId, btn) {
         if (!confirm("Flag this content for review?")) return;
-        fetch('/student/forum/flag', {
+        fetch('${pageContext.request.contextPath}/student/forum/flag', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `postId=`+postId
@@ -229,7 +227,10 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                btn.classList.add('text-red-600', 'bg-red-50');
+                btn.classList.add('text-red-600', 'bg-red-100');
+                btn.querySelector('i').classList.add('fill-current');
+                // Shade the entire card
+                btn.closest('.p-6').classList.add('bg-red-50/50', 'border-red-200');
                 alert('Thank you. Our moderators will review this post.');
             }
         });

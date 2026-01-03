@@ -6,7 +6,7 @@ import com.mindmate.model.ForumReply;
 import java.util.List;
 
 public interface ForumDAO {
-    List<ForumPost> getAllPosts(String sortBy, String searchQuery);
+    List<ForumPost> getAllPosts(String sortBy, String searchQuery, Integer currentUserId);
     ForumPost getPostById(int id);
     void saveOrUpdate(ForumPost post);
     void flagPost(int postId);

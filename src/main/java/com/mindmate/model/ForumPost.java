@@ -2,8 +2,8 @@ package com.mindmate.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 @Entity
@@ -23,7 +23,6 @@ public class ForumPost {
     private String category;
     private String author;
 
-    // ✅ NEW ATTRIBUTE
     @Column(name = "is_anonymous")
     private boolean isAnonymous = false; 
 
@@ -42,15 +41,45 @@ public class ForumPost {
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("createdAt ASC")
-    private Set<ForumReply> repliesList = new java.util.LinkedHashSet<>(); // Changed to Set
+    private Set<ForumReply> repliesList = new LinkedHashSet<>();
 
-
-    @Transient // This tells Hibernate NOT to look for a column named totalReplies
+    @Transient 
     private long totalReplies;
+
+    // ✅ AUTOMATIC JOIN TABLES (For Group Coordination)
+    // Hibernate will create these tables automatically for your teammates.
+    // Using a Set ensures a user can only be in the list once (1 like per user).
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "post_likes", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "user_id")
+    private Set<Integer> likedUserIds = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "post_helpful", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "user_id")
+    private Set<Integer> helpfulUserIds = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "post_flags", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "user_id")
+    private Set<Integer> flaggedUserIds = new HashSet<>();
+
+    // ✅ TRANSIENT FIELDS FOR JSP SHADING
+    @Transient
+    private boolean likedByCurrentUser = false;
+    
+    @Transient
+    private boolean helpfulByCurrentUser = false;
+
+    @Transient
+    private boolean flaggedByCurrentUser = false;
+
+    // --- Constructors ---
     public ForumPost() {
+        this.timestamp = LocalDateTime.now();
     }
 
-    // Updated Constructor to include anonymity choice
     public ForumPost(String title, String content, String category, String author, boolean isAnonymous) {
         this.title = title;
         this.content = content;
@@ -60,7 +89,7 @@ public class ForumPost {
         this.timestamp = LocalDateTime.now();
     }
 
-    // --- Getters and Setters (Same as yours) ---
+    // --- Standard Getters and Setters ---
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
@@ -78,6 +107,7 @@ public class ForumPost {
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+
     public int getLikes() { return likes; }
     public void setLikes(int likes) { this.likes = likes; }
 
@@ -90,31 +120,52 @@ public class ForumPost {
     public boolean isFlagged() { return isFlagged; }
     public void setFlagged(boolean isFlagged) { this.isFlagged = isFlagged; }
 
-    // ✅ Getter and Setter for isAnonymous
-    public boolean isAnonymous() {
-        return isAnonymous;
-    }
-    
-    public void setAnonymous(boolean anonymous) {
-        isAnonymous = anonymous;
-    }
+    public boolean isAnonymous() { return isAnonymous; }
+    public void setAnonymous(boolean anonymous) { isAnonymous = anonymous; }
 
-    // ✅ ADD GETTER/SETTER AT THE END
-    public int getReplies() {
-        return replies;
-    }
-    
-    public void setReplies(int replies) {
-        this.replies = replies;
-    }
-    public Set<ForumReply> getRepliesList() { 
-        return repliesList; 
-    }
-    public void setRepliesList(Set<ForumReply> repliesList) { 
-        this.repliesList = repliesList; 
-    }
+    public int getReplies() { return replies; }
+    public void setReplies(int replies) { this.replies = replies; }
+
+    public Set<ForumReply> getRepliesList() { return repliesList; }
+    public void setRepliesList(Set<ForumReply> repliesList) { this.repliesList = repliesList; }
 
     public long getTotalReplies() { return totalReplies; }
     public void setTotalReplies(long totalReplies) { this.totalReplies = totalReplies; }
+
+    // --- ✅ Getters/Setters for Collections (Logic) ---
+
+    public Set<Integer> getLikedUserIds() { return likedUserIds; }
+    public void setLikedUserIds(Set<Integer> likedUserIds) { this.likedUserIds = likedUserIds; }
+
+    public Set<Integer> getHelpfulUserIds() { return helpfulUserIds; }
+    public void setHelpfulUserIds(Set<Integer> helpfulUserIds) { this.helpfulUserIds = helpfulUserIds; }
+
+    public Set<Integer> getFlaggedUserIds() { return flaggedUserIds; }
+    public void setFlaggedUserIds(Set<Integer> flaggedUserIds) { this.flaggedUserIds = flaggedUserIds; }
+
+    // --- ✅ Getters/Setters for Transient UI Shading ---
     
+    // Change the getter names to start with "get" instead of "is" 
+// This is the most reliable way to make JSP/EL find them.
+
+public boolean getLikedByCurrentUser() { 
+    return likedByCurrentUser; 
+}
+public void setLikedByCurrentUser(boolean likedByCurrentUser) { 
+    this.likedByCurrentUser = likedByCurrentUser; 
+}
+
+public boolean getHelpfulByCurrentUser() { 
+    return helpfulByCurrentUser; 
+}
+public void setHelpfulByCurrentUser(boolean helpfulByCurrentUser) { 
+    this.helpfulByCurrentUser = helpfulByCurrentUser; 
+}
+
+public boolean getFlaggedByCurrentUser() { 
+    return flaggedByCurrentUser; 
+}
+public void setFlaggedByCurrentUser(boolean flaggedByCurrentUser) { 
+    this.flaggedByCurrentUser = flaggedByCurrentUser; 
+}
 }
