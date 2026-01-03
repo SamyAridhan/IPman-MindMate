@@ -3,6 +3,8 @@ package com.mindmate.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 @Entity
 @Table(name = "forum_posts")
@@ -40,7 +42,7 @@ public class ForumPost {
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("createdAt ASC")
-    private List<ForumReply> repliesList;
+    private Set<ForumReply> repliesList = new LinkedHashSet<>(); // Changed to Set
 
     public ForumPost() {
     }
@@ -73,10 +75,6 @@ public class ForumPost {
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-
-    public int getReplies() { return replies; }
-    public void setReplies(int replies) { this.replies = replies; }
-
     public int getLikes() { return likes; }
     public void setLikes(int likes) { this.likes = likes; }
 
@@ -99,12 +97,19 @@ public class ForumPost {
     }
 
     // ✅ ADD GETTER/SETTER AT THE END
-    public List<ForumReply> getRepliesList() { 
-        return repliesList; 
+    public int getReplies() {
+        return replies;
     }
     
-    public void setRepliesList(List<ForumReply> repliesList) { 
+    public void setReplies(int replies) {
+        this.replies = replies;
+    }
+    public Set<ForumReply> getRepliesList() { 
+        return repliesList; 
+    }
+    public void setRepliesList(Set<ForumReply> repliesList) { 
         this.repliesList = repliesList; 
     }
+
     
 }

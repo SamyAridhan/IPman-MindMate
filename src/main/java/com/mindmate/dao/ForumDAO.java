@@ -1,6 +1,8 @@
 package com.mindmate.dao;
 
 import com.mindmate.model.ForumPost;
+import com.mindmate.model.ForumReply;
+
 import java.util.List;
 
 public interface ForumDAO {
@@ -8,4 +10,8 @@ public interface ForumDAO {
     ForumPost getPostById(int id);
     void saveOrUpdate(ForumPost post);
     void flagPost(int postId);
+    void saveReply(ForumReply reply);
+
+    // Inside src/main/java/com/mindmate/dao/ForumDAO.java
+    ForumReply getReplyById(int id);
 }

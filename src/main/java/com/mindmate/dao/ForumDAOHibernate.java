@@ -24,29 +24,32 @@ public class ForumDAOHibernate implements ForumDAO {
     }
 
     @Override
-    public List<ForumPost> getAllPosts(String sortBy, String searchQuery) {
-        // Use openSession() so you don't need the 'current_session_context' config
-        try (Session session = sessionFactory.openSession()) {
-            String hql = "FROM ForumPost p WHERE 1=1";
-            
-            if (searchQuery != null && !searchQuery.isEmpty()) {
-                hql += " AND (lower(p.title) LIKE :search OR lower(p.content) LIKE :search)";
-            }
-            
-            switch (sortBy) {
-                case "popular": hql += " ORDER BY p.likes DESC"; break;
-                case "active": hql += " ORDER BY p.replies DESC"; break;
-                case "helpful": hql += " ORDER BY p.helpfulCount DESC"; break;
-                default: hql += " ORDER BY p.timestamp DESC"; break;
-            }
-
-            Query<ForumPost> query = session.createQuery(hql, ForumPost.class);
-            if (searchQuery != null && !searchQuery.isEmpty()) {
-                query.setParameter("search", "%" + searchQuery.toLowerCase() + "%");
-            }
-            return query.list();
+public List<ForumPost> getAllPosts(String sortBy, String searchQuery) {
+    try (Session session = sessionFactory.openSession()) {
+        // Use SELECT DISTINCT to prevent duplicates from the LEFT JOIN FETCH
+        StringBuilder hql = new StringBuilder("SELECT DISTINCT p FROM ForumPost p LEFT JOIN FETCH p.repliesList ");
+        
+        boolean hasSearch = (searchQuery != null && !searchQuery.isEmpty());
+        
+        if (hasSearch) {
+            hql.append(" WHERE (lower(p.title) LIKE :search OR lower(p.content) LIKE :search)");
         }
+        
+        switch (sortBy) {
+            case "popular": hql.append(" ORDER BY p.likes DESC"); break;
+            case "helpful": hql.append(" ORDER BY p.helpfulCount DESC"); break;
+            // ✅ Fix: Changed p.createdAt to p.timestamp to match your ForumPost model
+            default: hql.append(" ORDER BY p.timestamp DESC"); break; 
+        }
+
+        Query<ForumPost> query = session.createQuery(hql.toString(), ForumPost.class);
+        if (hasSearch) {
+            query.setParameter("search", "%" + searchQuery.toLowerCase() + "%");
+        }
+        
+        return query.list();
     }
+}
 
     @Override
     public void saveOrUpdate(ForumPost post) {
@@ -73,18 +76,17 @@ public class ForumDAOHibernate implements ForumDAO {
     @Override
     public ForumPost getPostById(int id) {
         try (Session session = sessionFactory.openSession()) {
-            // We use HQL with "JOIN FETCH" to grab the replies while the session is open
-            String hql = "SELECT p FROM ForumPost p " +
-                        "LEFT JOIN FETCH p.repliesList " +
-                        "WHERE p.id = :id";
+            // Now that these are Sets, Hibernate can handle the double join
+            String hql = "SELECT DISTINCT p FROM ForumPost p " +
+                         "LEFT JOIN FETCH p.repliesList r " +
+                         "LEFT JOIN FETCH r.children " +
+                         "WHERE p.id = :id";
             
-            Query<ForumPost> query = session.createQuery(hql, ForumPost.class);
-            query.setParameter("id", id);
-            
-            return query.uniqueResult();
+            return session.createQuery(hql, ForumPost.class)
+                          .setParameter("id", id)
+                          .uniqueResult();
         }
     }
-
     @Override
     public void saveReply(ForumReply reply) {
         try (Session session = sessionFactory.openSession()) {
@@ -95,7 +97,7 @@ public class ForumDAOHibernate implements ForumDAO {
                 
                 // We also update the post's reply count
                 ForumPost post = reply.getPost();
-                post.setReplies(post.getReplies() + 1);
+                post.getRepliesList().add(reply);
                 session.merge(post);
                 
                 tx.commit();
@@ -103,6 +105,15 @@ public class ForumDAOHibernate implements ForumDAO {
                 if (tx != null) tx.rollback();
                 throw e;
             }
+        }
+    }
+
+    // Inside src/main/java/com/mindmate/dao/ForumDAOHibernate.java
+    @Override
+    public ForumReply getReplyById(int id) {
+        try (Session session = sessionFactory.openSession()) {
+            // We use session.get to find the reply by its primary key
+            return session.get(ForumReply.class, id);
         }
     }
 }

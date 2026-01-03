@@ -20,31 +20,45 @@
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             
             <%-- SIDEBAR --%>
-            <div class="lg:col-span-1 space-y-6">
-                <%-- Category Card --%>
-                <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
-                    <h2 class="text-lg font-semibold text-foreground flex items-center mb-3 pb-3 border-b border-border/70">
-                        <i data-lucide="handshake" class="w-5 h-5 mr-2"></i>
-                        Support Categories
-                    </h2>
-                    <div class="space-y-2">
-                        <c:forEach var="category" items="${forumCategories}">
-                            <a href="?category=${category.id}" 
-                                class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
-                                    <c:choose>
-                                        <c:when test="${param.category eq category.id}">bg-primary text-primary-foreground shadow-sm</c:when>
-                                        <c:otherwise>text-foreground hover:bg-gray-100</c:otherwise>
-                                    </c:choose>
-                                ">
-                                <span class="text-sm font-medium">${category.name}</span>
-                                <c:if test="${category.count > 0}">
-                                    <span class="ml-2 px-2 py-0.5 text-xs rounded-full ${category.color}">${category.count}</span>
-                                </c:if>
-                            </a>
-                        </c:forEach>
-                    </div>
-                </div>
+<div class="lg:col-span-1 space-y-6">
+    <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
+        <h2 class="text-lg font-semibold text-foreground flex items-center mb-3 pb-3 border-b border-border/70">
+            <i data-lucide="handshake" class="w-5 h-5 mr-2 text-primary"></i>
+            Support Categories
+        </h2>
+        <div class="space-y-1">
+            <%-- Total Posts Count for All Topics --%>
+            <c:set var="totalCount" value="0" />
+            <c:forEach var="c" items="${forumCategories}"><c:set var="totalCount" value="${totalCount + c.count}" /></c:forEach>
 
+            <a href="${pageContext.request.contextPath}/student/forum" 
+               class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
+               ${empty param.category ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-secondary/50'}">
+                <span class="text-sm font-medium">All Topics</span>
+                <span class="text-[10px] font-bold">${totalCount}</span>
+            </a>
+
+            <hr class="my-2 border-border/50" />
+
+            <c:set var="fixedCategories" value="General Support,Anxiety Support,Depression Support,Stress Management,Sleep Issues,Relationships,Academic Pressure" />
+            <c:forEach var="catName" items="${fixedCategories}">
+                <a href="?category=${catName}" 
+                   class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
+                   ${param.category eq catName ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-secondary/50'}">
+                    <span class="text-sm font-medium">${catName}</span>
+                    
+                    <%-- Find count or display 0 --%>
+                    <c:set var="foundCount" value="0" />
+                    <c:forEach var="dbCat" items="${forumCategories}">
+                        <c:if test="${dbCat.name eq catName}"><c:set var="foundCount" value="${dbCat.count}" /></c:if>
+                    </c:forEach>
+                    <span class="ml-2 px-2 py-0.5 text-[10px] rounded-full ${foundCount > 0 ? 'bg-secondary text-primary font-bold' : 'text-gray-400'}">
+                        ${foundCount}
+                    </span>
+                </a>
+            </c:forEach>
+        </div>
+    </div>
                 <%-- Urgent Support Card (Restored Styling) --%>
                 <c:if test="${not empty urgentPosts}">
                     <div class="bg-card p-4 rounded-lg shadow-sm border border-red-200">

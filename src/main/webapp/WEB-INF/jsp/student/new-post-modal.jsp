@@ -22,13 +22,13 @@
                 <label for="support-category" class="text-sm font-medium text-foreground block">Support Category</label>
                 <select id="support-category" name="category" 
                     class="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition appearance-none">
-                    <option value="General" selected>General Support</option>
-                    <option value="Anxiety">Anxiety Support</option>
-                    <option value="Depression">Depression Support</option>
-                    <option value="Stress">Stress Management</option>
-                    <option value="Sleep">Sleep Issues</option>
+                    <option value="General Support" selected>General Support</option>
+                    <option value="Anxiety Support">Anxiety Support</option>
+                    <option value="Depression Support">Depression Support</option>
+                    <option value="Stress Management">Stress Management</option>
+                    <option value="Sleep Issues">Sleep Issues</option>
                     <option value="Relationships">Relationships</option>
-                    <option value="Academic">Academic Pressure</option>
+                    <option value="Academic Pressure">Academic Pressure</option>
                 </select>
             </div>
             
