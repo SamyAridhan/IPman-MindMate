@@ -33,7 +33,7 @@ public class CounselorController {
     @Autowired
     private CounselorDAO counselorDAO;
 
-    // Static Content Store (Kept from your original code)
+    // Static Content Store
     private static final Map<Long, Content> CONTENT_STORE = new LinkedHashMap<>();
     private static final AtomicLong CONTENT_ID_COUNTER = new AtomicLong(1);
 
@@ -52,7 +52,7 @@ public class CounselorController {
     }
 
     @GetMapping("/dashboard")
-    @Transactional // ✅ Keep session open for lazy loading
+    @Transactional
     public String showDashboard(Model model, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
         if (counselor == null) return "redirect:/login";
@@ -60,56 +60,49 @@ public class CounselorController {
         model.addAttribute("role", "counselor");
         model.addAttribute("user", SessionHelper.getUserName(session));
 
-        // Use DB Query instead of loading ALL appointments
-        List<Appointment> myAppointments = appointmentDAO.findByCounselor(counselor);
-
-        // Force initialize Student data for all loaded appointments
-        for (Appointment apt : myAppointments) {
-            if (apt.getStudent() != null) {
-                apt.getStudent().getName(); // Touches the proxy to load data
-            }
-        }
-
-        // Stats
+        // 1. Fetch Today's Date
         LocalDate today = LocalDate.now();
-        long todayCount = myAppointments.stream().filter(a -> a.getDate().isEqual(today)).count();
-        long pendingCount = myAppointments.stream().filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING).count();
 
-        model.addAttribute("todayCount", todayCount);
-        model.addAttribute("pendingCount", pendingCount);
-        
-        // Fetch Today's Specific List
-        List<Appointment> todayAppointments = appointmentDAO.findByCounselorAndDate(counselor, today);
-        // Force initialize Student data for today's list
-        for (Appointment apt : todayAppointments) {
-            if (apt.getStudent() != null) {
-                apt.getStudent().getName();
-            }
-        }
-        model.addAttribute("todayAppointments", todayAppointments);
-        
-        // Filter pending list for view
-        List<Appointment> pendingList = myAppointments.stream()
-                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING)
-                .limit(3)
+        // 2. Fetch Raw List for Today
+        List<Appointment> allToday = appointmentDAO.findByCounselorAndDate(counselor, today);
+
+        // 3. ✅ FILTER: Only show Upcoming/Actionable (Confirmed or Pending)
+        // We exclude Cancelled, Denied, Acknowledged, and Completed from the Dashboard view
+        List<Appointment> actionableToday = allToday.stream()
+                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED || 
+                             a.getStatus() == Appointment.AppointmentStatus.PENDING)
                 .collect(Collectors.toList());
+
+        // Force initialize Student data
+        for (Appointment apt : actionableToday) {
+            if (apt.getStudent() != null) apt.getStudent().getName();
+        }
+
+        // 4. Update Metrics to match the filtered view
+        // "Today's Appointments" count now reflects only what is on the user's plate
+        model.addAttribute("todayCount", actionableToday.size());
         
-        model.addAttribute("pendingAppointments", pendingList);
+        // "Pending Requests" (Global count, not just today)
+        // Using findByCounselorAndStatus to get the accurate count for this specific counselor
+        List<Appointment> allPending = appointmentDAO.findByCounselorAndStatus(counselor, Appointment.AppointmentStatus.PENDING);
+        model.addAttribute("pendingCount", allPending.size());
+
+        model.addAttribute("todayAppointments", actionableToday);
 
         return "counselor/dashboard";
     }
 
     @GetMapping("/schedule")
-    @Transactional // ✅ Keep session open for lazy loading
+    @Transactional
     public String showSchedule(Model model, HttpSession session, 
-                               @RequestParam(required = false) String date) { // ✅ NEW: Date param
+                               @RequestParam(required = false) String date) {
         
         Counselor counselor = getLoggedInCounselor(session);
         if (counselor == null) return "redirect:/login";
 
         model.addAttribute("role", "counselor");
 
-        // 1. Determine Date (Selected or Today)
+        // 1. Determine Date
         LocalDate selectedDate;
         if (date != null && !date.isEmpty()) {
             selectedDate = LocalDate.parse(date);
@@ -117,15 +110,15 @@ public class CounselorController {
             selectedDate = LocalDate.now();
         }
 
-        // 2. Fetch Pending (Always show all pending)
+        // 2. Fetch Pending (Global)
         List<Appointment> pendingAppointments = appointmentDAO.findByCounselorAndStatus(
                 counselor, Appointment.AppointmentStatus.PENDING);
 
-        // 3. Fetch Selected Date Appointments
+        // 3. Fetch Selected Date Appointments (ALL Statuses shown here for history)
         List<Appointment> dailyAppointments = appointmentDAO.findByCounselorAndDate(
                 counselor, selectedDate);
 
-        // Force initialize Student data
+        // Force initialize
         for (Appointment apt : pendingAppointments) {
             if (apt.getStudent() != null) apt.getStudent().getName();
         }
@@ -134,8 +127,8 @@ public class CounselorController {
         }
 
         model.addAttribute("pendingAppointments", pendingAppointments);
-        model.addAttribute("todayAppointments", dailyAppointments); // Reusing variable name for JSP compatibility
-        model.addAttribute("selectedDate", selectedDate); // ✅ Pass the date object
+        model.addAttribute("todayAppointments", dailyAppointments);
+        model.addAttribute("selectedDate", selectedDate);
 
         return "counselor/schedule";
     }
@@ -149,7 +142,6 @@ public class CounselorController {
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
             
-            // Validation: Exists + Belongs to this counselor + Is Pending
             if (apt != null && 
                 apt.getCounselor() != null && 
                 apt.getCounselor().getId().equals(counselor.getId()) &&
@@ -162,7 +154,9 @@ public class CounselorController {
         } catch (Exception e) {
             log.error("Error approving appointment", e);
         }
-        return "redirect:/counselor/schedule";
+        // Redirect back to the referring page (Dashboard or Schedule) if possible, or default to schedule
+        // For simplicity, let's redirect to schedule as it handles dates better
+        return "redirect:/counselor/schedule"; 
     }
 
     @PostMapping("/appointment/deny")
@@ -178,13 +172,11 @@ public class CounselorController {
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
             
-            // Validation
             if (apt != null && 
                 apt.getCounselor() != null && 
                 apt.getCounselor().getId().equals(counselor.getId()) &&
                 apt.getStatus() == Appointment.AppointmentStatus.PENDING) {
                 
-                // ✅ FIXED: Set status to DENIED (not CANCELLED) to match logic
                 apt.setStatus(Appointment.AppointmentStatus.DENIED);
                 apt.setDenialReason(reason != null ? reason : "No reason provided");
                 appointmentDAO.update(apt);
@@ -197,7 +189,7 @@ public class CounselorController {
     }
 
     // ==========================================
-    // EXISTING CONTENT & PROFILE METHODS (UNCHANGED)
+    // CONTENT & PROFILE METHODS
     // ==========================================
 
     @GetMapping("/content")
