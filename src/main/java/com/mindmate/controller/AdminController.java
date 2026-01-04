@@ -6,14 +6,20 @@ import com.mindmate.util.SessionHelper; // ✅ Using Helper
 import com.mindmate.dao.StudentDAO;
 import com.mindmate.dao.AppointmentDAO;
 import com.mindmate.dao.SystemAnalyticsDAO;
+import com.mindmate.dao.ForumDAO;
+import com.mindmate.model.ForumPost;
 
 import jakarta.servlet.http.HttpSession;
+
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/admin")
@@ -27,6 +33,9 @@ public class AdminController {
 
     @Autowired
     private SystemAnalyticsDAO analyticsDAO;
+
+    @Autowired
+    private ForumDAO forumDAO;
 
     /**
      * Checks if current user is an authorized Admin.
@@ -87,8 +96,34 @@ public class AdminController {
     @GetMapping("/forum-moderation")
     public String forumModeration(HttpSession session, Model model) {
         if (!isAdmin(session)) return "redirect:/login";
+
+        List<ForumPost> flaggedPosts = forumDAO.getFlaggedPosts();
+        long totalPosts = forumDAO.getTotalPostCount();
         
-        model.addAttribute("role", "admin");
+        // We calculate "Approved" as Total - currently Flagged
+        long approvedCount = totalPosts - flaggedPosts.size();
+        
+        // Note: To track "Deleted" accurately, you'd need a separate table or metadata.
+        // For now, we pass the counts required for your new cards.
+        model.addAttribute("flaggedPosts", flaggedPosts);
+        model.addAttribute("flaggedCount", flaggedPosts.size());
+        model.addAttribute("approvedCount", approvedCount);
+        model.addAttribute("deletedCount", 0); // Placeholder or fetch from a 'logs' table
+        
         return "admin/forum-moderation";
+    }
+    
+    @PostMapping("/forum/approve")
+    public String approvePost(@RequestParam("postId") int postId, HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        forumDAO.unflagPost(postId);
+        return "redirect:/admin/forum-moderation?success=approved";
+    }
+    
+    @PostMapping("/forum/delete")
+    public String deletePost(@RequestParam("postId") int postId, HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        forumDAO.deletePost(postId);
+        return "redirect:/admin/forum-moderation?success=deleted";
     }
 }

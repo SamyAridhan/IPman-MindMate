@@ -46,10 +46,7 @@ public class ForumPost {
     @Transient 
     private long totalReplies;
 
-    // ✅ AUTOMATIC JOIN TABLES (For Group Coordination)
-    // Hibernate will create these tables automatically for your teammates.
-    // Using a Set ensures a user can only be in the list once (1 like per user).
-
+    // --- AUTOMATIC JOIN TABLES ---
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "post_likes", joinColumns = @JoinColumn(name = "post_id"))
     @Column(name = "user_id")
@@ -65,7 +62,10 @@ public class ForumPost {
     @Column(name = "user_id")
     private Set<Integer> flaggedUserIds = new HashSet<>();
 
-    // ✅ TRANSIENT FIELDS FOR JSP SHADING
+    // --- TRANSIENT FIELDS FOR UI LOGIC ---
+    @Transient
+    private boolean isOwner = false; // Added for Edit/Delete menu
+
     @Transient
     private boolean likedByCurrentUser = false;
     
@@ -132,8 +132,6 @@ public class ForumPost {
     public long getTotalReplies() { return totalReplies; }
     public void setTotalReplies(long totalReplies) { this.totalReplies = totalReplies; }
 
-    // --- ✅ Getters/Setters for Collections (Logic) ---
-
     public Set<Integer> getLikedUserIds() { return likedUserIds; }
     public void setLikedUserIds(Set<Integer> likedUserIds) { this.likedUserIds = likedUserIds; }
 
@@ -143,29 +141,17 @@ public class ForumPost {
     public Set<Integer> getFlaggedUserIds() { return flaggedUserIds; }
     public void setFlaggedUserIds(Set<Integer> flaggedUserIds) { this.flaggedUserIds = flaggedUserIds; }
 
-    // --- ✅ Getters/Setters for Transient UI Shading ---
-    
-    // Change the getter names to start with "get" instead of "is" 
-// This is the most reliable way to make JSP/EL find them.
+    // --- Transient Getters/Setters for JSP/EL compatibility ---
 
-public boolean getLikedByCurrentUser() { 
-    return likedByCurrentUser; 
-}
-public void setLikedByCurrentUser(boolean likedByCurrentUser) { 
-    this.likedByCurrentUser = likedByCurrentUser; 
-}
+    public boolean getIsOwner() { return isOwner; }
+    public void setIsOwner(boolean isOwner) { this.isOwner = isOwner; }
 
-public boolean getHelpfulByCurrentUser() { 
-    return helpfulByCurrentUser; 
-}
-public void setHelpfulByCurrentUser(boolean helpfulByCurrentUser) { 
-    this.helpfulByCurrentUser = helpfulByCurrentUser; 
-}
+    public boolean getLikedByCurrentUser() { return likedByCurrentUser; }
+    public void setLikedByCurrentUser(boolean likedByCurrentUser) { this.likedByCurrentUser = likedByCurrentUser; }
 
-public boolean getFlaggedByCurrentUser() { 
-    return flaggedByCurrentUser; 
-}
-public void setFlaggedByCurrentUser(boolean flaggedByCurrentUser) { 
-    this.flaggedByCurrentUser = flaggedByCurrentUser; 
-}
+    public boolean getHelpfulByCurrentUser() { return helpfulByCurrentUser; }
+    public void setHelpfulByCurrentUser(boolean helpfulByCurrentUser) { this.helpfulByCurrentUser = helpfulByCurrentUser; }
+
+    public boolean getFlaggedByCurrentUser() { return flaggedByCurrentUser; }
+    public void setFlaggedByCurrentUser(boolean flaggedByCurrentUser) { this.flaggedByCurrentUser = flaggedByCurrentUser; }
 }

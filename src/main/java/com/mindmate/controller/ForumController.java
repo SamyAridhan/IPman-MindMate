@@ -4,7 +4,6 @@ import com.mindmate.dao.ForumDAO;
 import com.mindmate.dao.StudentDAO;
 import com.mindmate.model.ForumPost;
 import com.mindmate.model.ForumReply;
-import com.mindmate.model.Student;
 import com.mindmate.util.SessionHelper;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,7 @@ public class ForumController {
 
     @Autowired
     private ForumDAO forumDAO;
+    
     @Autowired
     private StudentDAO studentDAO;
 
@@ -30,6 +30,7 @@ public class ForumController {
         @RequestParam(value = "sortBy", defaultValue = "recent") String sortBy,
         @RequestParam(value = "searchQuery", required = false) String searchQuery,
         @RequestParam(value = "category", required = false) String categoryFilter, 
+        @RequestParam(value = "view", required = false) String view, // Added for My Posts
         Model model,
         HttpSession session
     ) {
@@ -37,25 +38,38 @@ public class ForumController {
             return "redirect:/login";
         }
     
-        // Get current User ID for shading logic
+        // Get current User Info
         Long loggedInUserIdLong = SessionHelper.getUserId(session);
         Integer currentUserId = (loggedInUserIdLong != null) ? loggedInUserIdLong.intValue() : null;
+        String currentUserName = SessionHelper.getUserName(session);
 
-        // 1. Fetch posts (Pass currentUserId to DAO to handle shading booleans)
+        // 1. Fetch posts
         List<ForumPost> rawAllPosts = forumDAO.getAllPosts(sortBy, searchQuery, currentUserId);
         
-        // 2. DEDUPLICATE (Preserve order)
+        // 2. DEDUPLICATE & Mark Ownership
         Map<Integer, ForumPost> uniquePostsMap = new LinkedHashMap<>();
         for (ForumPost p : rawAllPosts) {
+            // Check if current user owns this post
+            if (p.getAuthor() != null && p.getAuthor().equals(currentUserName)) {
+                p.setIsOwner(true);
+            }
             uniquePostsMap.put(p.getId(), p);
         }
         
         List<ForumPost> allUniquePosts = new ArrayList<>(uniquePostsMap.values());
         
-        // 3. Filter by category
+        // 3. Filter Logic
         List<ForumPost> posts = allUniquePosts;
-        if (categoryFilter != null && !categoryFilter.isEmpty() && !"all".equalsIgnoreCase(categoryFilter)) {
-            posts = allUniquePosts.stream()
+
+        // View filter (My Posts vs All)
+        if ("my-posts".equals(view)) {
+            posts = posts.stream()
+                    .filter(p -> p.getAuthor() != null && p.getAuthor().equals(currentUserName))
+                    .collect(Collectors.toList());
+        } 
+        // Category filter (Only if not in "My Posts" view)
+        else if (categoryFilter != null && !categoryFilter.isEmpty() && !"all".equalsIgnoreCase(categoryFilter)) {
+            posts = posts.stream()
                     .filter(p -> categoryFilter.equalsIgnoreCase(p.getCategory()))
                     .collect(Collectors.toList());
         }
@@ -84,6 +98,30 @@ public class ForumController {
         return "student/forum-list";
     }
 
+    @PostMapping("/forum/delete")
+    @ResponseBody
+    public Map<String, Object> deletePost(@RequestParam("postId") int postId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        String currentUserName = SessionHelper.getUserName(session);
+
+        ForumPost post = forumDAO.getPostById(postId);
+        
+        // Security check: Only author can delete
+        if (post != null && post.getAuthor().equals(currentUserName)) {
+            try {
+                forumDAO.deletePost(postId);
+                response.put("success", true);
+            } catch (Exception e) {
+                response.put("success", false);
+                response.put("error", e.getMessage());
+            }
+        } else {
+            response.put("success", false);
+            response.put("error", "Unauthorized");
+        }
+        return response;
+    }
+
     @PostMapping("/forum/interact")
     @ResponseBody
     public Map<String, Object> recordInteraction(
@@ -92,17 +130,13 @@ public class ForumController {
             HttpSession session) {
         
         Map<String, Object> response = new HashMap<>();
-        
-        // 1. Security Check: User must be logged in
         Long userIdLong = SessionHelper.getUserId(session);
         if (userIdLong == null) {
             response.put("success", false);
-            response.put("error", "Not logged in");
             return response;
         }
         int userId = userIdLong.intValue();
 
-        // 2. Fetch Post
         ForumPost post = forumDAO.getPostById(postId);
         if (post == null) {
             response.put("success", false);
@@ -112,7 +146,6 @@ public class ForumController {
         boolean isActive = false;
         int newCount = 0;
 
-        // 3. Toggle Logic (Set ensures 1 user per 1 action)
         if ("like".equals(type)) {
             Set<Integer> likes = post.getLikedUserIds();
             if (likes.contains(userId)) {
@@ -138,7 +171,6 @@ public class ForumController {
             newCount = post.getHelpfulCount();
         }
 
-        // 4. Save and return JSON
         forumDAO.saveOrUpdate(post);
         
         response.put("success", true);
@@ -170,20 +202,24 @@ public class ForumController {
         ForumPost post = forumDAO.getPostById(id);
         if (post == null) return "redirect:/student/forum?error=PostNotFound";
 
-        // Apply shading logic for the single thread view
         Long userIdLong = SessionHelper.getUserId(session);
+        String currentUserName = SessionHelper.getUserName(session);
+
         if (userIdLong != null) {
             int uid = userIdLong.intValue();
             post.setLikedByCurrentUser(post.getLikedUserIds().contains(uid));
             post.setHelpfulByCurrentUser(post.getHelpfulUserIds().contains(uid));
             post.setFlaggedByCurrentUser(post.getFlaggedUserIds().contains(uid));
+            
+            // Mark ownership for single thread view as well
+            if (post.getAuthor().equals(currentUserName)) {
+                post.setIsOwner(true);
+            }
         }
 
         model.addAttribute("post", post);
         return "student/forum-thread"; 
     }
-
-    // --- Helper Methods ---
 
     private Map<String, Long> calculateCategoryCounts(List<ForumPost> posts) {
         Map<String, Long> counts = new HashMap<>();
@@ -195,9 +231,9 @@ public class ForumController {
     
         for (ForumPost p : posts) {
             if (p.getCategory() == null) continue;
-            String postCat = p.getCategory().toLowerCase().trim();
+            String postCat = p.getCategory().trim();
             for (String officialName : validNames) {
-                if (officialName.toLowerCase().contains(postCat)) {
+                if (officialName.equalsIgnoreCase(postCat)) {
                     counts.put(officialName, counts.get(officialName) + 1);
                     break; 
                 }
@@ -240,5 +276,36 @@ public class ForumController {
         ForumReply newReply = new ForumReply(content, author, post, parent, (isAnonymous != null && isAnonymous));
         forumDAO.saveReply(newReply); 
         return "redirect:/student/forum/thread?id=" + postId;
+    }
+
+    // NEW: Fetch post data for the edit modal
+    @GetMapping("/forum/get")
+    @ResponseBody
+    public ForumPost getPostJson(@RequestParam("postId") int postId) {
+        return forumDAO.getPostById(postId);
+    }
+
+    // NEW: Handle the actual update
+    @PostMapping("/forum/update")
+    public String updatePost(
+        @RequestParam("postId") int postId,
+        @RequestParam("title") String title,
+        @RequestParam("story") String content,
+        @RequestParam("category") String category,
+        @RequestParam(value = "anonymous", required = false) Boolean isAnonymous,
+        HttpSession session
+    ) {
+        String currentUserName = SessionHelper.getUserName(session);
+        ForumPost existingPost = forumDAO.getPostById(postId);
+
+        // Security check: Only author can update
+        if (existingPost != null && existingPost.getAuthor().equals(currentUserName)) {
+            existingPost.setTitle(title);
+            existingPost.setContent(content);
+            existingPost.setCategory(category);
+            existingPost.setAnonymous(isAnonymous != null && isAnonymous);
+            forumDAO.saveOrUpdate(existingPost);
+        }
+        return "redirect:/student/forum";
     }
 }

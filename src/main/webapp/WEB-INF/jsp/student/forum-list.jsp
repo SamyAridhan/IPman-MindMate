@@ -6,14 +6,36 @@
     <%-- HEADER SECTION --%>
     <div class="flex items-center justify-between mb-2 border-b pb-4">
         <div>
-            <h1 class="text-3xl font-bold text-foreground mb-2">Peer Support Forum</h1>
-            <p class="text-gray-600 mt-1">Safe, anonymous community support • Join discussions, share experiences, and find support.</p>
+            <h1 class="text-3xl font-bold text-foreground mb-2">
+                <c:choose>
+                    <c:when test="${param.view eq 'my-posts'}">My Contributions</c:when>
+                    <c:otherwise>Peer Support Forum</c:otherwise>
+                </c:choose>
+            </h1>
+            <p class="text-gray-600 mt-1">Safe, anonymous community support • Share experiences and find support.</p>
         </div>
         
-        <button onclick="openNewPostModal()" class="flex items-center bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-semibold shadow-md transition-all active:scale-95">
-            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-            Share or Ask for Support
-        </button>
+        <div class="flex gap-3">
+            <c:choose>
+                <c:when test="${param.view eq 'my-posts'}">
+                    <a href="${pageContext.request.contextPath}/student/forum" class="flex items-center bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-lg font-semibold shadow-sm transition-all active:scale-95">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+                        Back to Feed
+                    </a>
+                </c:when>
+                <c:otherwise>
+                    <a href="?view=my-posts" class="flex items-center bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-lg font-semibold shadow-sm transition-all active:scale-95">
+                        <i data-lucide="user-square-2" class="w-4 h-4 mr-2"></i>
+                        My Posts
+                    </a>
+                </c:otherwise>
+            </c:choose>
+
+            <button onclick="openNewPostModal()" class="flex items-center bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-semibold shadow-md transition-all active:scale-95">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Share or Ask for Support
+            </button>
+        </div>
     </div>
 
     <div class="w-full">
@@ -28,7 +50,6 @@
                     </h2>
                     <div class="space-y-1">
                         <c:set var="totalCount" value="${forumCategories[0].count}" />
-
                         <a href="${pageContext.request.contextPath}/student/forum" 
                            class="flex items-center w-full justify-between p-2 rounded-lg transition-colors 
                            ${empty param.category ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-secondary/50'}">
@@ -57,7 +78,6 @@
                     </div>
                 </div>
 
-                <%-- Guidelines Card --%>
                 <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
                     <h2 class="text-lg font-semibold text-foreground mb-3 pb-3 border-b border-border/70">Peer Support Guidelines</h2>
                     <div class="space-y-2 text-sm text-gray-600 italic">
@@ -94,74 +114,95 @@
                 <%-- POSTS LISTING --%>
                 <div class="space-y-4">
                     <c:forEach var="post" items="${posts}">
-                        <%-- Logic for Card Shading if Flagged --%>
                         <c:set var="cardClass" value="${post.flaggedByCurrentUser ? 'bg-red-50/50 border-red-200' : 'bg-card border-border'}" />
 
-                        <a href="${pageContext.request.contextPath}/student/forum/thread?id=${post.id}" class="block group">
-                            <div class="p-6 rounded-lg shadow-sm transition-all group-hover:shadow-md border ${cardClass}">
-                                
-                                <%-- Post Header --%>
-                                <div class="flex justify-between items-start mb-3">
-                                    <div class="flex items-center space-x-2 flex-wrap">
-                                        <span class="text-xs px-2 py-0.5 rounded-full border border-gray-300 text-gray-700 bg-white">${post.category}</span>
-                                        <c:if test="${post.helpfulCount > 5}">
-                                            <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">Highly Helpful</span>
-                                        </c:if>
-                                        <c:if test="${post.flagged}">
-                                            <span class="text-xs px-2 py-0.5 rounded-full bg-red-600 text-white font-medium">Under Review</span>
-                                        </c:if>
+                        <%-- Post Card Wrapper --%>
+                        <div class="block group relative">
+                            <a href="${pageContext.request.contextPath}/student/forum/thread?id=${post.id}" class="block">
+                                <div class="p-6 rounded-lg shadow-sm transition-all group-hover:shadow-md border ${cardClass}">
+                                    
+                                    <%-- Post Header --%>
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center space-x-2 flex-wrap">
+                                            <span class="text-xs px-2 py-0.5 rounded-full border border-gray-300 text-gray-700 bg-white">${post.category}</span>
+                                            <c:if test="${post.helpfulCount > 5}">
+                                                <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">Highly Helpful</span>
+                                            </c:if>
+                                            <c:if test="${post.flagged}">
+                                                <span class="text-xs px-2 py-0.5 rounded-full bg-red-600 text-white font-medium">Under Review</span>
+                                            </c:if>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3">
+                                            <div class="flex items-center text-xs text-gray-500">
+                                                <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
+                                                <span class="timestamp-el" data-timestamp="${post.timestamp}">${post.timestamp}</span>
+                                            </div>
+
+                                            <%-- 3-DOT MENU FOR OWNERS --%>
+                                            <c:if test="${post.isOwner}">
+                                                <div class="relative dropdown-container">
+                                                    <button onclick="event.preventDefault(); event.stopPropagation(); toggleDropdown('${post.id}')" 
+                                                            class="p-1 hover:bg-gray-200 rounded-full transition-colors relative z-20">
+                                                        <i data-lucide="more-vertical" class="w-5 h-5 text-gray-500"></i>
+                                                    </button>
+                                                    
+                                                    <div id="dropdown-${post.id}" class="hidden absolute right-0 mt-1 w-32 bg-white border border-border rounded-md shadow-xl z-30">
+                                                        <div class="py-1">
+                                                            <button onclick="event.preventDefault(); event.stopPropagation(); editPost('${post.id}')" 
+                                                                    class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left">
+                                                                <i data-lucide="pencil" class="w-3 h-3 mr-2"></i> Edit
+                                                            </button>
+                                                            <button onclick="event.preventDefault(); event.stopPropagation(); deletePost('${post.id}')" 
+                                                                    class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left">
+                                                                <i data-lucide="trash-2" class="w-3 h-3 mr-2"></i> Delete
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </c:if>
+                                        </div>
                                     </div>
-                                    <%-- To this: --%>
-                                    <div class="flex items-center text-xs text-gray-500">
-                                        <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
-                                        <span class="timestamp-el" data-timestamp="${post.timestamp}">
-                                            ${post.timestamp}
-                                        </span>
+
+                                    <%-- Title & Content --%>
+                                    <h3 class="font-semibold text-lg mb-2 text-foreground group-hover:text-primary transition-colors">${post.title}</h3>
+                                    <p class="text-gray-700 mb-4 line-clamp-2">${post.content}</p>
+
+                                    <%-- Footer Actions --%>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                            <div class="flex items-center">
+                                                <i data-lucide="user" class="w-4 h-4 mr-1"></i>
+                                                <span class="${post.anonymous ? 'italic text-gray-400' : ''}">${post.anonymous ? 'Anonymous' : post.author}</span>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <i data-lucide="message-circle" class="w-4 h-4 mr-1"></i>
+                                                <span>${post.totalReplies} responses</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-2">
+                                            <button onclick="event.preventDefault(); recordInteraction('${post.id}', 'like', this)" 
+                                                    class="flex items-center px-2 py-1 rounded transition-colors ${post.likedByCurrentUser ? 'bg-red-100 text-red-600' : 'hover:bg-red-50 hover:text-red-600 text-gray-500'}">
+                                                <i data-lucide="heart" class="w-4 h-4 mr-1 ${post.likedByCurrentUser ? 'fill-current' : ''}"></i> 
+                                                <span id="likes-count-${post.id}">${post.likes}</span>
+                                            </button>
+                                            
+                                            <button onclick="event.preventDefault(); recordInteraction('${post.id}', 'helpful', this)" 
+                                                    class="flex items-center px-2 py-1 rounded transition-colors ${post.helpfulByCurrentUser ? 'bg-green-100 text-green-600' : 'hover:bg-blue-50 hover:text-blue-600 text-gray-500'}">
+                                                <i data-lucide="award" class="w-4 h-4 mr-1"></i> 
+                                                <span id="helpful-count-${post.id}">${post.helpfulCount}</span>
+                                            </button>
+
+                                            <button onclick="event.preventDefault(); flagPost('${post.id}', this)" 
+                                                    class="p-1 rounded transition-colors ${post.flaggedByCurrentUser ? 'text-red-600 bg-red-100' : 'text-gray-400 hover:bg-red-50 hover:text-red-600'}">
+                                                <i data-lucide="flag" class="w-4 h-4 ${post.flaggedByCurrentUser ? 'fill-current' : ''}"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <%-- Title & Content --%>
-                                <h3 class="font-semibold text-lg mb-2 text-foreground group-hover:text-primary transition-colors">${post.title}</h3>
-                                <p class="text-gray-700 mb-4 line-clamp-2">${post.content}</p>
-
-                                <%-- Footer --%>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
-                                        <div class="flex items-center">
-                                            <i data-lucide="user" class="w-4 h-4 mr-1"></i>
-                                            <span class="${post.anonymous ? 'italic text-gray-400' : ''}">${post.anonymous ? 'Anonymous' : post.author}</span>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <i data-lucide="message-circle" class="w-4 h-4 mr-1"></i>
-                                            <span>${post.totalReplies} responses</span>
-                                        </div>
-                                    </div>
-
-                                    <%-- Action Buttons (FIXED TRANSIT PROPERTY NAMES) --%>
-                                    <div class="flex items-center space-x-2">
-                                        <%-- LIKE BUTTON --%>
-                                        <button onclick="event.preventDefault(); recordInteraction('${post.id}', 'like', this)" 
-                                                class="flex items-center px-2 py-1 rounded transition-colors ${post.likedByCurrentUser ? 'bg-red-100 text-red-600' : 'hover:bg-red-50 hover:text-red-600 text-gray-500'}">
-                                            <i data-lucide="heart" class="w-4 h-4 mr-1 ${post.likedByCurrentUser ? 'fill-current' : ''}"></i> 
-                                            <span id="likes-count-${post.id}">${post.likes}</span>
-                                        </button>
-                                        
-                                        <%-- HELPFUL BUTTON --%>
-                                        <button onclick="event.preventDefault(); recordInteraction('${post.id}', 'helpful', this)" 
-                                                class="flex items-center px-2 py-1 rounded transition-colors ${post.helpfulByCurrentUser ? 'bg-green-100 text-green-600' : 'hover:bg-blue-50 hover:text-blue-600 text-gray-500'}">
-                                            <i data-lucide="award" class="w-4 h-4 mr-1"></i> 
-                                            <span id="helpful-count-${post.id}">${post.helpfulCount}</span>
-                                        </button>
-
-                                        <%-- FLAG BUTTON --%>
-                                        <button onclick="event.preventDefault(); flagPost('${post.id}', this)" 
-                                                class="p-1 rounded transition-colors ${post.flaggedByCurrentUser ? 'text-red-600 bg-red-100' : 'text-gray-400 hover:bg-red-50 hover:text-red-600'}">
-                                            <i data-lucide="flag" class="w-4 h-4 ${post.flaggedByCurrentUser ? 'fill-current' : ''}"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
+                            </a>
+                        </div>
                     </c:forEach>
 
                     <c:if test="${empty posts}">
@@ -184,6 +225,84 @@
     function openNewPostModal() { postModal?.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
     function closeNewPostModal() { postModal?.classList.add('hidden'); document.body.style.overflow = ''; }
 
+    // Dropdown Logic
+    function toggleDropdown(postId) {
+        document.querySelectorAll('[id^="dropdown-"]').forEach(el => {
+            if (el.id !== 'dropdown-' + postId) el.classList.add('hidden');
+        });
+        const dropdown = document.getElementById('dropdown-' + postId);
+        dropdown?.classList.toggle('hidden');
+    }
+
+    window.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown-container')) {
+            document.querySelectorAll('[id^="dropdown-"]').forEach(el => el.classList.add('hidden'));
+        }
+    });
+
+    // IMPORTANT: Update your openNewPostModal logic to reset the modal for "New Post" mode
+    function openNewPostModal() { 
+        postModal?.classList.remove('hidden'); 
+        document.body.style.overflow = 'hidden'; 
+    }
+
+    // Add a reset trigger when clicking the "Share or Ask" button
+    // Update the button in your HTML: 
+    // <button onclick="prepareNewPostModal()" ...>
+
+    // 1. Reset Modal for a New Post
+    function prepareNewPostModal() {
+        const form = document.getElementById('post-form');
+        form.reset(); // Clears text
+        
+        // Set to "Create" mode
+        document.getElementById('modal-post-id').value = "0";
+        document.getElementById('modal-title').innerText = "Share Your Experience or Ask for Support";
+        document.getElementById('modal-submit-btn').innerText = "Share with Community";
+        form.action = `${pageContext.request.contextPath}/student/forum/create`;
+        
+        openNewPostModal();
+    }
+
+    // 2. Populate Modal for Editing
+    function editPost(postId) {
+        fetch(`${pageContext.request.contextPath}/student/forum/get?postId=` + postId)
+            .then(response => response.json())
+            .then(post => {
+                const form = document.getElementById('post-form');
+                
+                // Fill Fields
+                document.getElementById('modal-post-id').value = post.id;
+                document.getElementById('post-title').value = post.title;
+                document.getElementById('post-story').value = post.content;
+                document.getElementById('support-category').value = post.category;
+                document.getElementById('post-anonymous').checked = post.anonymous;
+
+                // Set to "Update" mode
+                document.getElementById('modal-title').innerText = "Edit Your Post";
+                document.getElementById('modal-submit-btn').innerText = "Save Changes";
+                form.action = `${pageContext.request.contextPath}/student/forum/update`;
+
+                openNewPostModal();
+            })
+            .catch(err => alert("Error loading post data."));
+    }
+
+    function deletePost(postId) {
+        if (confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+            fetch(`${pageContext.request.contextPath}/student/forum/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `postId=` + postId
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) location.reload();
+                else alert("Error deleting post.");
+            });
+        }
+    }
+
     function recordInteraction(postId, type, btn) {
         btn.disabled = true;
         fetch('${pageContext.request.contextPath}/student/forum/interact', {
@@ -194,13 +313,11 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                // Update text count
                 const countSpan = type === 'like' ? 
                     document.getElementById(`likes-count-`+postId) : 
                     document.getElementById(`helpful-count-`+postId);
                 countSpan.textContent = data.newCount;
 
-                // Handle visual shading toggle
                 const icon = btn.querySelector('i');
                 if (type === 'like') {
                     btn.classList.toggle('bg-red-100', data.isActive);
@@ -232,29 +349,23 @@
             if (data.success) {
                 btn.classList.add('text-red-600', 'bg-red-100');
                 btn.querySelector('i').classList.add('fill-current');
-                // Shade the entire card
                 btn.closest('.p-6').classList.add('bg-red-50/50', 'border-red-200');
                 alert('Thank you. Our moderators will review this post.');
             }
         });
     }
 
-
-
     function updateAllTimestamps() {
-    document.querySelectorAll('.timestamp-el').forEach(el => {
-        const rawDate = el.getAttribute('data-timestamp');
-        if (rawDate) {
-            el.textContent = timeAgo(rawDate);
-        }
-    });
-}
+        document.querySelectorAll('.timestamp-el').forEach(el => {
+            const rawDate = el.getAttribute('data-timestamp');
+            if (rawDate) el.textContent = timeAgo(rawDate);
+        });
+    }
 
     function timeAgo(dateString) {
         const now = new Date();
         const past = new Date(dateString);
         const seconds = Math.floor((now - past) / 1000);
-
         const intervals = [
             { label: 'year', seconds: 31536000 },
             { label: 'month', seconds: 2592000 },
@@ -264,25 +375,16 @@
             { label: 'min', seconds: 60 },
             { label: 's', seconds: 1 }
         ];
-
-        for (let i = 0; i < intervals.length; i++) {
-            const interval = intervals[i];
+        for (let interval of intervals) {
             const count = Math.floor(seconds / interval.seconds);
-            if (count >= 1) {
-                return count + " " + interval.label + (count > 1 ? 's' : '') + " ago";
-            }
+            if (count >= 1) return count + " " + interval.label + (count > 1 ? 's' : '') + " ago";
         }
         return "just now";
     }
 
-    // 2. The Timer Logic
     window.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) lucide.createIcons();
-
-        // Run immediately on load
         updateAllTimestamps();
-
-        // Run every 60,000 milliseconds (1 minute)
         setInterval(updateAllTimestamps, 60000);
     });
 </script>

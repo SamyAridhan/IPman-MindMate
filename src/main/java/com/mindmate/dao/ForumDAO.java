@@ -14,4 +14,9 @@ public interface ForumDAO {
 
     // Inside src/main/java/com/mindmate/dao/ForumDAO.java
     ForumReply getReplyById(int id);
+    void deletePost(int postId);
+
+    List<ForumPost> getFlaggedPosts();
+    long getTotalPostCount();
+    void unflagPost(int postId); // This is the "Approve" action
 }
