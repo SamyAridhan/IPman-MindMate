@@ -2,9 +2,12 @@ package com.mindmate.dao;
 
 import com.mindmate.model.ForumPost;
 import com.mindmate.model.ForumReply;
+import com.mindmate.model.ModerationStats;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import java.util.Set; // Add this line
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
@@ -188,6 +191,99 @@ public class ForumDAOHibernate implements ForumDAO {
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             throw e;
+        }
+    }
+
+    // Inside ForumDAOHibernate
+// Increment logic for "Approved" stats
+public void incrementApprovedCount() {
+    Transaction tx = null;
+    try (Session session = sessionFactory.openSession()) {
+        tx = session.beginTransaction();
+        
+        // Fetch the single stats record (using a hardcoded ID like "global_stats")
+        ModerationStats stats = session.get(ModerationStats.class, "global_stats");
+        
+        if (stats == null) {
+            stats = new ModerationStats();
+            stats.setId("global_stats");
+        }
+        
+        stats.setApprovedCount(stats.getApprovedCount() + 1);
+        
+        // Use merge() instead of saveOrUpdate() to fix deprecation
+        session.merge(stats); 
+        
+        tx.commit();
+    } catch (Exception e) {
+        if (tx != null) tx.rollback();
+        e.printStackTrace();
+    }
+}
+
+    // Increment logic for "Deleted" stats
+    public void incrementDeletedCount() {
+        Transaction tx = null;
+        try (Session session = sessionFactory.openSession()) {
+            tx = session.beginTransaction();
+            
+            ModerationStats stats = session.get(ModerationStats.class, "global_stats");
+            
+            if (stats == null) {
+                stats = new ModerationStats();
+                stats.setId("global_stats");
+            }
+            
+            stats.setDeletedCount(stats.getDeletedCount() + 1);
+            
+            session.merge(stats); // Fixes deprecation
+            
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public ModerationStats getModerationStats() {
+        try (Session session = sessionFactory.openSession()) {
+            // Fetch the single stats record
+            ModerationStats stats = session.get(ModerationStats.class, "global_stats");
+            
+            // If it doesn't exist yet, return a new one with 0 counts so the JSP doesn't crash
+            if (stats == null) {
+                return new ModerationStats();
+            }
+            return stats;
+        }
+    }
+
+    @Override
+    public boolean toggleFlag(int postId, int userId) {
+        Transaction tx = null;
+        boolean isNowFlagged = false;
+        try (Session session = sessionFactory.openSession()) {
+            tx = session.beginTransaction();
+            ForumPost post = session.get(ForumPost.class, postId);
+            if (post != null) {
+                Set<Integer> flaggedUsers = post.getFlaggedUserIds();
+                if (flaggedUsers.contains(userId)) {
+                    flaggedUsers.remove(userId);
+                    isNowFlagged = false;
+                } else {
+                    flaggedUsers.add(userId);
+                    isNowFlagged = true;
+                }
+                // Update global status: flagged if the set is not empty
+                post.setFlagged(!flaggedUsers.isEmpty());
+                session.merge(post);
+            }
+            tx.commit();
+            return isNowFlagged;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            return false;
         }
     }
 }

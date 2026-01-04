@@ -185,14 +185,8 @@ public class ForumController {
         Long userIdLong = SessionHelper.getUserId(session);
         if (userIdLong == null) return Map.of("success", false);
         
-        ForumPost post = forumDAO.getPostById(postId);
-        if (post != null) {
-            post.getFlaggedUserIds().add(userIdLong.intValue());
-            post.setFlagged(true);
-            forumDAO.saveOrUpdate(post);
-            return Map.of("success", true);
-        }
-        return Map.of("success", false);
+        boolean isNowFlagged = forumDAO.toggleFlag(postId, userIdLong.intValue());
+        return Map.of("success", true, "isFlagged", isNowFlagged);
     }
 
     @GetMapping("/forum/thread")
@@ -282,7 +276,13 @@ public class ForumController {
     @GetMapping("/forum/get")
     @ResponseBody
     public ForumPost getPostJson(@RequestParam("postId") int postId) {
-        return forumDAO.getPostById(postId);
+        ForumPost post = forumDAO.getPostById(postId);
+        if (post != null) {
+            // IMPORTANT: Clear replies to avoid JSON nesting depth errors
+            post.setRepliesList(new HashSet<>()); 
+            // If your model has other circular references, null them out here
+        }
+        return post;
     }
 
     // NEW: Handle the actual update

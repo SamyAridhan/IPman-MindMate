@@ -4,124 +4,143 @@
 
 <jsp:include page="../common/header.jsp" />
 
+<style>
+    /* Prevent horizontal page scroll */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Force title to wrap if it's exceptionally long */
+    .title-link {
+        word-break: break-word;
+        display: block;
+        line-height: 1.4;
+    }
+    /* Ensure all cards have the exact same height and internal alignment */
+    .stat-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start; /* Aligns content to the top */
+        min-height: 120px;
+    }
+</style>
+
 <div class="min-h-screen bg-background">
-    <div class="container mx-auto px-4 py-2">
+    <div class="container mx-auto px-4 py-6">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-foreground mb-2">Forum Moderation</h1>
             <p class="text-muted-foreground">Review and moderate flagged forum posts</p>
         </div>
 
-        <%-- Updated Stats Cards --%>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <%-- STATS CARDS: Fixed with items-start to ensure top alignment across all 3 --%>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             
             <%-- Flagged Posts Card --%>
-            <div class="bg-card border rounded-lg shadow-sm">
-                <div class="p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-muted-foreground">Flagged Posts</p>
-                            <p class="text-3xl font-bold text-destructive">${flaggedCount}</p>
-                        </div>
-                        <i data-lucide="alert-triangle" class="w-8 h-8 text-destructive"></i>
+            <div class="bg-card border rounded-lg shadow-sm p-6 stat-card">
+                <div class="flex items-start justify-between w-full">
+                    <div>
+                        <p class="text-sm text-muted-foreground font-medium mb-1">Flagged Posts</p>
+                        <p class="text-3xl font-bold text-destructive">${flaggedCount}</p>
+                    </div>
+                    <div class="p-2 bg-destructive/10 rounded-lg">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 text-destructive"></i>
                     </div>
                 </div>
             </div>
 
             <%-- Approved Posts Card --%>
-            <div class="bg-card border rounded-lg shadow-sm">
-                <div class="p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-muted-foreground">Approved Posts</p>
-                            <p class="text-3xl font-bold text-success">${approvedCount}</p>
-                        </div>
-                        <i data-lucide="check-circle" class="w-8 h-8 text-success"></i>
+            <div class="bg-card border rounded-lg shadow-sm p-6 stat-card">
+                <div class="flex items-start justify-between w-full">
+                    <div>
+                        <p class="text-sm text-muted-foreground font-medium mb-1">Approved Posts</p>
+                        <p class="text-3xl font-bold text-green-600">${approvedCount}</p>
+                    </div>
+                    <div class="p-2 bg-green-50 rounded-lg">
+                        <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
                     </div>
                 </div>
             </div>
 
             <%-- Deleted Posts Card --%>
-            <div class="bg-card border rounded-lg shadow-sm">
-                <div class="p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-muted-foreground">Deleted Posts</p>
-                            <%-- This value should be passed from the controller or initialized to 0 --%>
-                            <p class="text-3xl font-bold text-muted-foreground">${deletedCount != null ? deletedCount : 0}</p>
-                        </div>
-                        <i data-lucide="trash-2" class="w-8 h-8 text-muted-foreground"></i>
+            <div class="bg-card border rounded-lg shadow-sm p-6 stat-card">
+                <div class="flex items-start justify-between w-full">
+                    <div>
+                        <p class="text-sm text-muted-foreground font-medium mb-1">Deleted Posts</p>
+                        <p class="text-3xl font-bold text-muted-foreground">${deletedCount}</p>
+                    </div>
+                    <div class="p-2 bg-muted rounded-lg">
+                        <i data-lucide="trash-2" class="w-6 h-6 text-muted-foreground"></i>
                     </div>
                 </div>
             </div>
         </div>
         
-        <hr class="mb-8"/>
-
         <div class="bg-card border rounded-lg shadow-sm">
-            <div class="p-6 border-b border-border">
+            <div class="p-6 border-b border-border bg-muted/10">
                 <h2 class="text-xl font-semibold text-foreground flex items-center">
-                    <i data-lucide="list" class="w-5 h-5 mr-2 text-primary"></i>
-                    Review Queue
+                    <i data-lucide="shield-alert" class="w-5 h-5 mr-2 text-primary"></i>
+                    Pending Moderation
                 </h2>
             </div>
 
-            <div class="p-6">
+            <div class="table-responsive">
                 <c:choose>
                     <c:when test="${empty flaggedPosts}">
-                        <div class="text-center py-12 text-muted-foreground">
-                            <i data-lucide="shield-check" class="w-12 h-12 mx-auto mb-4 text-success"></i>
-                            <p class="text-lg font-medium">All Clear!</p>
-                            <p class="text-sm">There are no flagged posts requiring review.</p>
+                        <div class="text-center py-20 text-muted-foreground">
+                            <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto mb-4 text-green-500/50"></i>
+                            <p class="text-lg font-medium">Moderation Queue Clear</p>
+                            <p class="text-sm">There are no flagged items to review at this time.</p>
                         </div>
                     </c:when>
                     <c:otherwise>
-                        <table class="min-w-full divide-y divide-border">
-                            <thead class="bg-secondary/50">
+                        <%-- Removed table-fixed to allow natural spacing, ensured all text-left --%>
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-secondary/30 border-b border-border">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-3/5">Post Title & Content</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Author</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider text-right">Actions</th>
+                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Post Title</th>
+                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Author</th>
+                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Date Reported</th>
+                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-border">
                                 <c:forEach var="post" items="${flaggedPosts}">
-                                    <tr class="hover:bg-muted/50 transition-colors">
-                                        <td class="px-6 py-4 align-top">
-                                            <div class="max-w-md">
-                                                <p class="font-semibold text-foreground mb-1">${post.title}</p>
-                                                <p class="text-sm text-muted-foreground line-clamp-3">${post.content}</p>
-                                            </div>
+                                    <tr class="hover:bg-muted/40 transition-colors">
+                                        <%-- 1. ONLY TITLE (Clickable) --%>
+                                        <td class="px-6 py-5">
+                                            <a href="${pageContext.request.contextPath}/admin/forum/view?postId=${post.id}" 
+                                               class="text-base font-semibold text-primary hover:text-primary/80 transition-colors title-link">
+                                                ${post.title}
+                                            </a>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap align-top text-muted-foreground text-sm">
-                                            <%-- Matches isAnonymous() getter --%>
+                                        
+                                        <td class="px-6 py-5 text-sm text-muted-foreground">
                                             <c:out value="${post.anonymous ? 'Anonymous' : post.author}"/>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap align-top text-muted-foreground text-sm">
-                                            <%-- Matches getTimestamp() getter --%>
+                                        
+                                        <td class="px-6 py-5 text-sm text-muted-foreground">
                                             <fmt:parseDate value="${post.timestamp}" pattern="yyyy-MM-dd'T'HH:mm" var="parsedDateTime" type="both" />
-                                            <fmt:formatDate value="${parsedDateTime}" pattern="dd MMM yyyy" />
+                                            <fmt:formatDate value="${parsedDateTime}" pattern="MMM dd, yyyy" />
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap align-top text-right">
-                                            <div class="flex justify-end space-x-2">
-                                                <%-- Approve Button --%>
-                                                <form method="POST" action="${pageContext.request.contextPath}/admin/forum/approve">
+                                        
+                                        <%-- 2. ACTIONS: Left aligned with the rest of the column data --%>
+                                        <td class="px-6 py-5">
+                                            <div class="flex items-center gap-3">
+                                                <form method="POST" action="${pageContext.request.contextPath}/admin/forum/approve" class="m-0">
                                                     <input type="hidden" name="postId" value="${post.id}"/>
-                                                    <button type="submit" 
-                                                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-success hover:bg-success/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success"
-                                                            onclick="return confirm('Approve this post? It will be visible to everyone and unflagged.');">
-                                                        <i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i>
+                                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold uppercase tracking-tight rounded transition-all">
+                                                        <i data-lucide="check" class="w-3 h-3 mr-1"></i>
                                                         Approve
                                                     </button>
                                                 </form>
                                                 
-                                                <%-- Delete Button --%>
-                                                <form method="POST" action="${pageContext.request.contextPath}/admin/forum/delete">
+                                                <form method="POST" action="${pageContext.request.contextPath}/admin/forum/delete" class="m-0">
                                                     <input type="hidden" name="postId" value="${post.id}"/>
                                                     <button type="submit" 
-                                                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-destructive hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-destructive"
-                                                            onclick="return confirm('Permanently delete this post? This cannot be undone.');">
-                                                        <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i>
+                                                            class="inline-flex items-center px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold uppercase tracking-tight rounded transition-all"
+                                                            onclick="return confirm('Delete this post permanently?');">
+                                                        <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>
                                                         Delete
                                                     </button>
                                                 </form>

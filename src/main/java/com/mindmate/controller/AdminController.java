@@ -8,6 +8,7 @@ import com.mindmate.dao.AppointmentDAO;
 import com.mindmate.dao.SystemAnalyticsDAO;
 import com.mindmate.dao.ForumDAO;
 import com.mindmate.model.ForumPost;
+import com.mindmate.model.ModerationStats;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -97,33 +98,63 @@ public class AdminController {
     public String forumModeration(HttpSession session, Model model) {
         if (!isAdmin(session)) return "redirect:/login";
 
+
+            // ✅ FIX: Set these so the header knows we are an admin
+        model.addAttribute("role", "admin");
+        model.addAttribute("user", SessionHelper.getUserName(session));
+
+        // 1. Fetch current flagged posts
         List<ForumPost> flaggedPosts = forumDAO.getFlaggedPosts();
-        long totalPosts = forumDAO.getTotalPostCount();
         
-        // We calculate "Approved" as Total - currently Flagged
-        long approvedCount = totalPosts - flaggedPosts.size();
+        // 2. Fetch the HISTORICAL stats from the moderation_stats table
+        ModerationStats stats = forumDAO.getModerationStats();
         
-        // Note: To track "Deleted" accurately, you'd need a separate table or metadata.
-        // For now, we pass the counts required for your new cards.
         model.addAttribute("flaggedPosts", flaggedPosts);
         model.addAttribute("flaggedCount", flaggedPosts.size());
-        model.addAttribute("approvedCount", approvedCount);
-        model.addAttribute("deletedCount", 0); // Placeholder or fetch from a 'logs' table
+        
+        // 3. Pass the actual database values to the JSP
+        model.addAttribute("approvedCount", stats.getApprovedCount());
+        model.addAttribute("deletedCount", stats.getDeletedCount());
         
         return "admin/forum-moderation";
     }
     
     @PostMapping("/forum/approve")
-    public String approvePost(@RequestParam("postId") int postId, HttpSession session) {
-        if (!isAdmin(session)) return "redirect:/login";
-        forumDAO.unflagPost(postId);
-        return "redirect:/admin/forum-moderation?success=approved";
+    public String approvePost(@RequestParam("postId") int postId) {
+
+        ForumPost post = forumDAO.getPostById(postId);
+        if (post != null) {
+            post.setFlagged(false);
+            post.getFlaggedUserIds().clear();
+            forumDAO.saveOrUpdate(post);
+            
+            // Persistent Increment
+            forumDAO.incrementApprovedCount(); 
+        }
+        return "redirect:/admin/forum-moderation";
     }
-    
+
     @PostMapping("/forum/delete")
-    public String deletePost(@RequestParam("postId") int postId, HttpSession session) {
-        if (!isAdmin(session)) return "redirect:/login";
+    public String deletePost(@RequestParam("postId") int postId) {
         forumDAO.deletePost(postId);
-        return "redirect:/admin/forum-moderation?success=deleted";
+        
+        // Persistent Increment
+        forumDAO.incrementDeletedCount(); 
+        return "redirect:/admin/forum-moderation";
+    }
+
+    @GetMapping("/forum/view")
+    public String viewFlaggedPost(@RequestParam("postId") int postId, HttpSession session, Model model) {
+        if (!isAdmin(session)) return "redirect:/login";
+
+        // ✅ FIX: Set these so the header knows we are an admin
+        model.addAttribute("role", "admin");
+        model.addAttribute("user", SessionHelper.getUserName(session));
+
+        ForumPost post = forumDAO.getPostById(postId);
+        if (post == null) return "redirect:/admin/forum-moderation";
+
+        model.addAttribute("post", post);
+        return "admin/forum-moderation-detail";
     }
 }

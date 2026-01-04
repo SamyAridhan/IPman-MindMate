@@ -31,7 +31,8 @@
                 </c:otherwise>
             </c:choose>
 
-            <button onclick="openNewPostModal()" class="flex items-center bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-semibold shadow-md transition-all active:scale-95">
+            <%-- Find this button in your HEADER SECTION --%>
+            <button onclick="prepareNewPostModal()" class="flex items-center bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-semibold shadow-md transition-all active:scale-95">
                 <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                 Share or Ask for Support
             </button>
@@ -219,7 +220,7 @@
 </div>
 
 <jsp:include page="new-post-modal.jsp" />
-
+<jsp:include page="chatbot-widget.jsp" /> 
 <script>
     const postModal = document.getElementById('new-post-modal');
     function openNewPostModal() { postModal?.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
@@ -251,42 +252,58 @@
     // <button onclick="prepareNewPostModal()" ...>
 
     // 1. Reset Modal for a New Post
-    function prepareNewPostModal() {
-        const form = document.getElementById('post-form');
-        form.reset(); // Clears text
-        
-        // Set to "Create" mode
-        document.getElementById('modal-post-id').value = "0";
-        document.getElementById('modal-title').innerText = "Share Your Experience or Ask for Support";
-        document.getElementById('modal-submit-btn').innerText = "Share with Community";
-        form.action = `${pageContext.request.contextPath}/student/forum/create`;
-        
-        openNewPostModal();
-    }
+function prepareNewPostModal() {
+    const form = document.getElementById('post-form');
+    if(!form) return;
+    
+    form.reset(); // Clears all inputs
+    
+    // Set UI to "Create" mode
+    document.getElementById('modal-post-id').value = "0";
+    document.getElementById('modal-title').innerText = "Share Your Experience or Ask for Support";
+    document.getElementById('modal-submit-btn').innerText = "Share with Community";
+    
+    // Set the action back to create
+    form.action = "${pageContext.request.contextPath}/student/forum/create";
+    
+    openNewPostModal();
+}
 
-    // 2. Populate Modal for Editing
-    function editPost(postId) {
-        fetch(`${pageContext.request.contextPath}/student/forum/get?postId=` + postId)
-            .then(response => response.json())
-            .then(post => {
-                const form = document.getElementById('post-form');
-                
-                // Fill Fields
-                document.getElementById('modal-post-id').value = post.id;
-                document.getElementById('post-title').value = post.title;
-                document.getElementById('post-story').value = post.content;
-                document.getElementById('support-category').value = post.category;
-                document.getElementById('post-anonymous').checked = post.anonymous;
+// 2. Populate Modal for Editing
+function editPost(postId) {
+    const getUrl = "${pageContext.request.contextPath}/student/forum/get?postId=" + postId;
+    
+    fetch(getUrl)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(post => {
+            const form = document.getElementById('post-form');
+            
+            // Fill Form Fields by ID
+            document.getElementById('modal-post-id').value = post.id;
+            document.getElementById('post-title').value = post.title;
+            document.getElementById('post-story').value = post.content;
+            document.getElementById('support-category').value = post.category;
+            
+            // Handle Checkbox
+            document.getElementById('post-anonymous').checked = post.anonymous;
 
-                // Set to "Update" mode
-                document.getElementById('modal-title').innerText = "Edit Your Post";
-                document.getElementById('modal-submit-btn').innerText = "Save Changes";
-                form.action = `${pageContext.request.contextPath}/student/forum/update`;
+            // Update UI to "Edit Mode"
+            document.getElementById('modal-title').innerText = "Edit Your Post";
+            document.getElementById('modal-submit-btn').innerText = "Save Changes";
+            
+            // Change form action to update
+            form.action = "${pageContext.request.contextPath}/student/forum/update";
 
-                openNewPostModal();
-            })
-            .catch(err => alert("Error loading post data."));
-    }
+            openNewPostModal();
+        })
+        .catch(err => {
+            console.error("Edit Error:", err);
+            alert("Error loading post data. Please try again.");
+        });
+}
 
     function deletePost(postId) {
         if (confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
@@ -338,23 +355,29 @@
     }
 
     function flagPost(postId, btn) {
-        if (!confirm("Flag this content for review?")) return;
         fetch('${pageContext.request.contextPath}/student/forum/flag', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `postId=`+postId
+            body: `postId=` + postId
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                btn.classList.add('text-red-600', 'bg-red-100');
-                btn.querySelector('i').classList.add('fill-current');
-                btn.closest('.p-6').classList.add('bg-red-50/50', 'border-red-200');
-                alert('Thank you. Our moderators will review this post.');
+                const icon = btn.querySelector('i');
+                const card = btn.closest('.p-6');
+                
+                // Toggle Visuals
+                btn.classList.toggle('text-red-600', data.isFlagged);
+                btn.classList.toggle('bg-red-100', data.isFlagged);
+                btn.classList.toggle('text-gray-400', !data.isFlagged);
+                icon.classList.toggle('fill-current', data.isFlagged);
+                
+                // Toggle Card Background
+                card.classList.toggle('bg-red-50/50', data.isFlagged);
+                card.classList.toggle('border-red-200', data.isFlagged);
             }
         });
     }
-
     function updateAllTimestamps() {
         document.querySelectorAll('.timestamp-el').forEach(el => {
             const rawDate = el.getAttribute('data-timestamp');

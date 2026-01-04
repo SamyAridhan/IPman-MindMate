@@ -1,7 +1,17 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="template" tagdir="/WEB-INF/tags" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <jsp:include page="../common/header.jsp" />
+
+<style>
+    /* Prevents long URLs or unbroken strings (like "aaaaa...") from breaking the layout */
+    .content-break {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        display: block;
+    }
+</style>
 
 <div class="container mx-auto px-4 py-6">
     <div class="space-y-6">
@@ -17,14 +27,16 @@
         <%-- MAIN POST CARD --%>
         <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
             <div class="mb-8 border-b border-border pb-6">
-                <div class="flex items-start justify-between mb-4">
-                    <div>
-                        <h1 class="text-3xl font-bold text-foreground mb-1">${post.title}</h1>
+                <div class="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4">
+                    <%-- min-w-0 is vital here to let the flex-child shrink for text wrapping --%>
+                    <div class="min-w-0 flex-1">
+                        <h1 class="text-3xl font-bold text-foreground mb-1 content-break">
+                            ${post.title}
+                        </h1>
                         <div class="flex items-center gap-2 text-sm text-muted-foreground">
                             <div class="bg-secondary p-1 rounded-full">
                                 <i data-lucide="user" class="h-3 w-3 text-primary"></i>
                             </div>
-                            <%-- Find this line and wrap the timestamp --%>
                             <span>
                                 Posted by: 
                                 <span class="${post.anonymous ? 'italic text-gray-400' : ''}">
@@ -34,24 +46,25 @@
                             </span>
                         </div>
                     </div>
-                    <span class="px-3 py-1 bg-secondary text-primary text-xs font-semibold rounded-full border border-primary/20">
+                    <span class="px-3 py-1 bg-secondary text-primary text-xs font-semibold rounded-full border border-primary/20 whitespace-nowrap">
                         ${post.category}
                     </span>
                 </div>
-                <p class="text-foreground leading-relaxed text-lg whitespace-pre-wrap">${post.content}</p>
+                
+                <%-- Wrapped the content in the content-break class --%>
+                <%-- Corrected: No spaces between tag and variable to prevent whitespace-pre-wrap from rendering them --%>
+                <div class="text-foreground leading-relaxed text-lg whitespace-pre-wrap content-break">${fn:trim(post.content)}</div>
             </div>
 
             <%-- REPLIES SECTION --%>
             <div class="space-y-6">
                 <h3 class="text-xl font-semibold text-foreground flex items-center gap-2">
                     <i data-lucide="message-square" class="h-5 w-5 text-primary"></i>
-                    <%-- Displaying total replies from your DAO count --%>
                     Replies (${post.repliesList.size()})
                 </h3>
                 
                 <div class="flex flex-col gap-6">
                     <c:forEach var="reply" items="${post.repliesList}">
-                        <%-- ONLY START WITH TOP-LEVEL COMMENTS. The tag handles the rest recursively. --%>
                         <c:if test="${empty reply.parentReply}">
                             <template:displayReply reply="${reply}" post="${post}" />
                         </c:if>
@@ -92,7 +105,6 @@
 <jsp:include page="chatbot-widget.jsp" /> 
 
 <script>
-    // 1. Time Calculation Logic
     function timeAgo(dateString) {
         const now = new Date();
         const past = new Date(dateString);
@@ -118,7 +130,6 @@
         return "just now";
     }
 
-    // 2. Function to update all elements on page
     function refreshTimestamps() {
         document.querySelectorAll('.timestamp-el').forEach(el => {
             const rawDate = el.getAttribute('data-timestamp');
@@ -140,11 +151,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) { lucide.createIcons(); }
-        
-        // Initial run
         refreshTimestamps();
-        
-        // Refresh every 60 seconds
         setInterval(refreshTimestamps, 60000);
     });
 </script>
