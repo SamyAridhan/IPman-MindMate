@@ -21,7 +21,12 @@
                     </c:otherwise>
                 </c:choose>
             </span>
-            <span class="text-[10px] text-muted-foreground">• ${reply.createdAt}</span>
+            <%-- NEW CODE --%>
+            <span class="text-[10px] text-muted-foreground">• 
+                <span class="timestamp-el" data-timestamp="${reply.createdAt}">
+                    ${reply.createdAt}
+                </span>
+            </span>
         </div>
         
         <p class="text-muted-foreground text-sm mb-3">${reply.content}</p>

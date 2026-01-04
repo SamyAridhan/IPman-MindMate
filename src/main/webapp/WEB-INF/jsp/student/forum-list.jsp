@@ -111,9 +111,12 @@
                                             <span class="text-xs px-2 py-0.5 rounded-full bg-red-600 text-white font-medium">Under Review</span>
                                         </c:if>
                                     </div>
+                                    <%-- To this: --%>
                                     <div class="flex items-center text-xs text-gray-500">
                                         <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
-                                        ${post.timestamp}
+                                        <span class="timestamp-el" data-timestamp="${post.timestamp}">
+                                            ${post.timestamp}
+                                        </span>
                                     </div>
                                 </div>
 
@@ -236,7 +239,52 @@
         });
     }
 
-    window.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+
+
+    function updateAllTimestamps() {
+    document.querySelectorAll('.timestamp-el').forEach(el => {
+        const rawDate = el.getAttribute('data-timestamp');
+        if (rawDate) {
+            el.textContent = timeAgo(rawDate);
+        }
+    });
+}
+
+    function timeAgo(dateString) {
+        const now = new Date();
+        const past = new Date(dateString);
+        const seconds = Math.floor((now - past) / 1000);
+
+        const intervals = [
+            { label: 'year', seconds: 31536000 },
+            { label: 'month', seconds: 2592000 },
+            { label: 'week', seconds: 604800 },
+            { label: 'day', seconds: 86400 },
+            { label: 'hr', seconds: 3600 },
+            { label: 'min', seconds: 60 },
+            { label: 's', seconds: 1 }
+        ];
+
+        for (let i = 0; i < intervals.length; i++) {
+            const interval = intervals[i];
+            const count = Math.floor(seconds / interval.seconds);
+            if (count >= 1) {
+                return count + " " + interval.label + (count > 1 ? 's' : '') + " ago";
+            }
+        }
+        return "just now";
+    }
+
+    // 2. The Timer Logic
+    window.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+
+        // Run immediately on load
+        updateAllTimestamps();
+
+        // Run every 60,000 milliseconds (1 minute)
+        setInterval(updateAllTimestamps, 60000);
+    });
 </script>
 
 <jsp:include page="../common/footer.jsp" />

@@ -24,12 +24,13 @@
                             <div class="bg-secondary p-1 rounded-full">
                                 <i data-lucide="user" class="h-3 w-3 text-primary"></i>
                             </div>
+                            <%-- Find this line and wrap the timestamp --%>
                             <span>
                                 Posted by: 
                                 <span class="${post.anonymous ? 'italic text-gray-400' : ''}">
                                     ${post.anonymous ? 'Anonymous' : post.author}
                                 </span> 
-                                • ${post.timestamp}
+                                • <span class="timestamp-el" data-timestamp="${post.timestamp}">${post.timestamp}</span>
                             </span>
                         </div>
                     </div>
@@ -91,6 +92,42 @@
 <jsp:include page="chatbot-widget.jsp" /> 
 
 <script>
+    // 1. Time Calculation Logic
+    function timeAgo(dateString) {
+        const now = new Date();
+        const past = new Date(dateString);
+        const seconds = Math.floor((now - past) / 1000);
+
+        const intervals = [
+            { label: 'year', seconds: 31536000 },
+            { label: 'month', seconds: 2592000 },
+            { label: 'week', seconds: 604800 },
+            { label: 'day', seconds: 86400 },
+            { label: 'hr', seconds: 3600 },
+            { label: 'min', seconds: 60 },
+            { label: 's', seconds: 1 }
+        ];
+
+        for (let i = 0; i < intervals.length; i++) {
+            const interval = intervals[i];
+            const count = Math.floor(seconds / interval.seconds);
+            if (count >= 1) {
+                return count + " " + interval.label + (count > 1 ? 's' : '') + " ago";
+            }
+        }
+        return "just now";
+    }
+
+    // 2. Function to update all elements on page
+    function refreshTimestamps() {
+        document.querySelectorAll('.timestamp-el').forEach(el => {
+            const rawDate = el.getAttribute('data-timestamp');
+            if (rawDate) {
+                el.textContent = timeAgo(rawDate);
+            }
+        });
+    }
+
     function toggleReplyForm(replyId) {
         const form = document.getElementById('reply-form-' + replyId);
         if (form) {
@@ -103,6 +140,12 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) { lucide.createIcons(); }
+        
+        // Initial run
+        refreshTimestamps();
+        
+        // Refresh every 60 seconds
+        setInterval(refreshTimestamps, 60000);
     });
 </script>
 
