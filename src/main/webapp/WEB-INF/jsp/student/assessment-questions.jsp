@@ -48,7 +48,7 @@
                                 Retake Assessment
                             </a>
                             <%-- Explore Resources button (Style: variant="default" using primary) --%>
-                            <a href="/student/resources" 
+                            <a href="/student/library" 
                                 class="bg-primary text-primary-foreground px-6 py-2.5 rounded-md hover:opacity-90 transition-opacity font-medium shadow-sm">
                                 Explore Resources
                             </a>

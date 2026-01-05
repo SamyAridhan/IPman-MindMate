@@ -1,10 +1,12 @@
 package com.mindmate.controller;
 
+import com.mindmate.dao.AssessmentDAO;
 import com.mindmate.dao.AppointmentDAO;
 import com.mindmate.dao.CounselorDAO;
 import com.mindmate.dao.StudentDAO;
 import com.mindmate.dao.EducationalContentDAO; // From Team Member
 import com.mindmate.dao.StudentProgressDAO;   // From Team Member
+import com.mindmate.model.Assessment;
 import com.mindmate.model.Appointment;
 import com.mindmate.model.Counselor;
 import com.mindmate.model.Student;
@@ -36,6 +38,9 @@ public class StudentController {
     private static final Logger log = LoggerFactory.getLogger(StudentController.class);
     // Explicit Locale ensures consistent parsing regardless of server settings
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH);
+
+    @Autowired
+    private AssessmentDAO assessmentDAO;
 
     @Autowired
     private AppointmentDAO appointmentDAO;
@@ -72,6 +77,18 @@ public class StudentController {
         // ✅ KEPT YOUR LOGIC: Using Ascending order for upcoming appointments
         List<Appointment> appointments = appointmentDAO.findByStudentOrderByDateAscTimeAsc(student);
         model.addAttribute("bookedAppointments", appointments);
+
+        // --- ✅ NEW ADDITION: Assessment History ---
+        // Fetch the list of past assessments for this student
+        List<Assessment> history = assessmentDAO.findByStudent(student);
+        model.addAttribute("assessmentHistory", history);
+        
+        Assessment latest = null;
+        if (history != null && !history.isEmpty()) {
+            // Since the list is sorted ASC (Oldest -> Newest), the last one is the latest
+            latest = history.get(history.size() - 1);
+        }
+        model.addAttribute("latestAssessment", latest);
         
         return "student/dashboard";
     }
