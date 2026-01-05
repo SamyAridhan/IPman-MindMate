@@ -2,8 +2,10 @@ package com.mindmate.controller;
 
 import com.mindmate.dao.AppointmentDAO;
 import com.mindmate.dao.CounselorDAO;
+import com.mindmate.dao.EducationalContentDAO;
+import com.mindmate.dao.StudentProgressDAO;
 import com.mindmate.model.Appointment;
-import com.mindmate.model.Content;
+import com.mindmate.model.EducationalContent;
 import com.mindmate.model.Counselor;
 import com.mindmate.util.SessionHelper; 
 
@@ -33,15 +35,12 @@ public class CounselorController {
     @Autowired
     private CounselorDAO counselorDAO;
 
-    // Static Content Store
-    private static final Map<Long, Content> CONTENT_STORE = new LinkedHashMap<>();
-    private static final AtomicLong CONTENT_ID_COUNTER = new AtomicLong(1);
+    // ✅ MERGED: Added Team Member's DAOs
+    @Autowired
+    private EducationalContentDAO educationalContentDAO;
 
-    static {
-        CONTENT_STORE.put(1L, new Content(1L, "Stress Management 101", "Article", "Learn effective stress-coping strategies", ""));
-        CONTENT_STORE.put(2L, new Content(2L, "Mindfulness Meditation", "Video", "15-minute guided meditation", ""));
-        CONTENT_ID_COUNTER.set(3);
-    }
+    @Autowired
+    private StudentProgressDAO studentProgressDAO;
 
     private Counselor getLoggedInCounselor(HttpSession session) {
         Long userId = SessionHelper.getUserId(session);
@@ -55,7 +54,8 @@ public class CounselorController {
     @Transactional
     public String showDashboard(Model model, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         model.addAttribute("role", "counselor");
         model.addAttribute("user", SessionHelper.getUserName(session));
@@ -95,7 +95,8 @@ public class CounselorController {
                                @RequestParam(required = false) String date) {
         
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         model.addAttribute("role", "counselor");
 
@@ -134,7 +135,8 @@ public class CounselorController {
     @Transactional
     public String approveAppointment(@RequestParam Long appointmentId, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
@@ -162,7 +164,8 @@ public class CounselorController {
             HttpSession session) {
         
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
@@ -183,7 +186,7 @@ public class CounselorController {
         return "redirect:/counselor/schedule";
     }
 
-    // ✅ NEW METHOD: Mark Appointment as Completed
+    // ✅ YOUR METHOD: Mark Appointment as Completed
     @PostMapping("/appointment/complete")
     @Transactional
     public String completeAppointment(@RequestParam Long appointmentId, HttpSession session) {
@@ -206,60 +209,83 @@ public class CounselorController {
         } catch (Exception e) {
             log.error("Error completing appointment", e);
         }
-        return "redirect:/counselor/schedule"; // Redirecting to schedule is safer for flow
+        // Redirecting to dashboard since that's where the "Today" list is most prominent
+        return "redirect:/counselor/dashboard"; 
     }
 
     // ==========================================
-    // CONTENT & PROFILE METHODS
+    // 📚 CONTENT MANAGEMENT (Team Member's Logic)
     // ==========================================
 
     @GetMapping("/content")
     public String manageContent(Model model, HttpSession session) {
-        if (getLoggedInCounselor(session) == null) return "redirect:/login";
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null)
+            return "redirect:/login";
 
         model.addAttribute("role", "counselor");
-        model.addAttribute("contents", new ArrayList<>(CONTENT_STORE.values()));
+        model.addAttribute("contents", educationalContentDAO.findAll());
         return "counselor/content-manager";
     }
 
     @PostMapping("/content/create")
+    @Transactional
     public String createOrUpdateContent(
             @RequestParam String title,
             @RequestParam String contentType,
             @RequestParam String description,
-            @RequestParam String content,
+            @RequestParam String content, // Matches articleContent or videoUrl from JSP
+            @RequestParam Integer points,
             @RequestParam(required = false) Long editingId,
             HttpSession session) {
-        
-        if (getLoggedInCounselor(session) == null) return "redirect:/login";
 
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null)
+            return "redirect:/login";
+
+        EducationalContent ec;
         if (editingId != null) {
-            Content existing = CONTENT_STORE.get(editingId);
-            if (existing != null) {
-                existing.setTitle(title);
-                existing.setType(contentType);
-                existing.setDescription(description);
-                existing.setContent(content);
-            }
+            ec = educationalContentDAO.findById(editingId);
         } else {
-            long id = CONTENT_ID_COUNTER.getAndIncrement();
-            Content c = new Content(id, title, contentType, description, content);
-            CONTENT_STORE.put(id, c);
+            ec = new EducationalContent();
+            ec.setAuthor(counselor);
         }
+
+        if (ec != null) {
+            ec.setTitle(title);
+            ec.setContentType(contentType);
+            ec.setDescription(description);
+            ec.setContentBody(content);
+            ec.setPointsValue(points);
+
+            if (editingId != null)
+                educationalContentDAO.update(ec);
+            else
+                educationalContentDAO.save(ec);
+        }
+
         return "redirect:/counselor/content";
     }
 
     @PostMapping("/content/delete")
+    @Transactional
     public String deleteContent(@RequestParam Long id, HttpSession session) {
-        if (getLoggedInCounselor(session) == null) return "redirect:/login";
-        CONTENT_STORE.remove(id);
+        if (getLoggedInCounselor(session) == null)
+            return "redirect:/login";
+
+        // Delete all student progress records for this content first
+        studentProgressDAO.deleteByContentId(id);
+        // Then delete the content
+        educationalContentDAO.delete(id);
+
         return "redirect:/counselor/content";
     }
 
     @GetMapping("/profile")
     public String profile(Model model, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         model.addAttribute("role", "counselor");
         model.addAttribute("counselor", counselor);

@@ -22,7 +22,7 @@ import java.util.Random;
  * Optimized for DEMO: Guarantees data for Today/Tomorrow for immediate testing.
  *
  * @author Samy (A23CS0246)
- * @version Phase 3.4 - Synced with Counselor Schedules
+ * @version Phase 3.5 - Fully Merged
  */
 @Configuration
 public class DataInitializer {
@@ -36,7 +36,8 @@ public class DataInitializer {
             StudentDAO studentDAO,
             CounselorAvailabilityDAO availabilityDAO,
             AppointmentDAO appointmentDAO,
-            SystemAnalyticsDAO analyticsDAO) {
+            SystemAnalyticsDAO analyticsDAO,
+            EducationalContentDAO educationalContentDAO) { // ✅ Merged: Added EducationalContentDAO
         
         return args -> {
             System.out.println("=== INITIALIZING MINDMATE TEST DATA ===");
@@ -151,20 +152,18 @@ public class DataInitializer {
                         .findFirst()
                         .orElse(students.get(0));
 
-                Counselor mainCounselor = counselors.get(0); // Sarah Johnson (Odd ID usually, check DB)
+                Counselor mainCounselor = counselors.get(0); // Sarah Johnson (Odd ID usually)
                 Counselor secondaryCounselor = counselors.get(1); // Michael Chen
 
                 // --- 1. DEMO SCENARIOS (Manually ensure these match the counselor's pattern) ---
-                // Assuming ID generation starts at 1 (Odd) -> Pattern A (8:30, 10:00...)
-                // Assuming ID generation continues to 2 (Even) -> Pattern B (9:00, 10:30...)
 
-                // A. TODAY: Confirmed (Using 14:00 for Odd / 14:30 for Even)
+                // A. TODAY: Confirmed
                 LocalTime timeA = (mainCounselor.getId() % 2 != 0) ? LocalTime.of(14, 0) : LocalTime.of(14, 30);
                 createAppointment(appointmentDAO, demoStudent, mainCounselor, 
                     today, timeA, "Video Call", 
                     Appointment.AppointmentStatus.CONFIRMED, "Looking forward to discussing my progress.", null);
 
-                // B. TOMORROW: Pending (Using 10:00 for Odd / 10:30 for Even)
+                // B. TOMORROW: Pending
                 LocalTime timeB = (mainCounselor.getId() % 2 != 0) ? LocalTime.of(10, 0) : LocalTime.of(10, 30);
                 createAppointment(appointmentDAO, demoStudent, mainCounselor, 
                     today.plusDays(1), timeB, "Chat Session", 
@@ -242,6 +241,53 @@ public class DataInitializer {
                 System.out.println("✅ Analytics trends seeded");
             }
 
+            // ==========================================
+            // 6. SEED EDUCATIONAL CONTENT (Team Member's Part)
+            // ==========================================
+            if (educationalContentDAO.findAll().isEmpty()) {
+                System.out.println("📚 Seeding educational content...");
+
+                Counselor counselor1 = counselorDAO.findByEmail("sarah.johnson@mindmate.com").orElse(null);
+                Counselor counselor2 = counselorDAO.findByEmail("michael.chen@mindmate.com").orElse(null);
+                Counselor counselor3 = counselorDAO.findByEmail("emily.rodriguez@mindmate.com").orElse(null);
+
+                if (counselor1 == null || counselor2 == null || counselor3 == null) {
+                    System.out.println("⚠️ Skipping educational content seeding because one or more counselors are missing.");
+                } else {
+                    List<EducationalContent> contents = List.of(
+                            buildContent("Mastering Academic Stress",
+                                    "Learn how to identify signs of burnout and manage your study load effectively.",
+                                    "<h1>Coping with Academic Pressure</h1><p>Academic stress is a common experience...</p>",
+                                    "Article", 50, counselor1),
+                            buildContent("Quick 5-Minute Grounding Exercise",
+                                    "A fast-acting video guide to help you find calm.",
+                                    "https://www.youtube.com/watch?v=inpok4MKVLM",
+                                    "Video", 25, counselor2),
+                            buildContent("The Science of Better Sleep",
+                                    "Why your brain needs rest and how to fix your sleep schedule.",
+                                    "<h2>The 10-3-2-1-0 Rule for Sleep</h2><p>Sleep hygiene is essential...</p>",
+                                    "Article", 40, counselor3),
+                            buildContent("Overcoming Social Anxiety",
+                                    "Tips for navigating social situations.",
+                                    "<h1>Navigating Social Spaces</h1><p>Social anxiety isn't just being shy...</p>",
+                                    "Article", 60, counselor1),
+                            buildContent("The Pomodoro Technique Explained",
+                                    "Watch how this simple timer method can double your productivity.",
+                                    "https://www.youtube.com/watch?v=mNBmG24djoY",
+                                    "Video", 30, counselor2),
+                            buildContent("Building Unshakeable Self-Confidence",
+                                    "How to stop the Inner Critic.",
+                                    "<h2>Quieting the Inner Critic</h2><p>Practice self-compassion...</p>",
+                                    "Article", 55, counselor3)
+                    );
+
+                    contents.forEach(educationalContentDAO::save);
+                    System.out.println("✅ Seeded " + contents.size() + " educational content records.");
+                }
+            } else {
+                System.out.println("✓ Educational content already exists.");
+            }
+
             System.out.println("=== DATA INITIALIZATION COMPLETE ===");
             System.out.println("");
             System.out.println("📌 TEST ACCOUNTS:");
@@ -269,6 +315,12 @@ public class DataInitializer {
     private void seedStudent(StudentDAO dao, String name, String email) {
         Student student = new Student(name, email);
         student.setPassword(PasswordUtil.hashPassword("student123"));
+        
+        // Initialize gamification fields (from Team Member's model)
+        student.setCurrentStreak(0);
+        student.setTotalPoints(0);
+        student.setLastCompletionDate(null);
+        
         dao.save(student);
     }
 
@@ -288,7 +340,6 @@ public class DataInitializer {
         dao.save(apt);
     }
 
-    // ✅ FIXED: Helper now respects the Odd/Even counselor ID timing logic
     private void seedRandomAppointments(AppointmentDAO dao, List<Student> students, List<Counselor> counselors,
                                         LocalDate startDate, LocalDate endDate, int count,
                                         Appointment.AppointmentStatus status, boolean isDenial) {
@@ -350,5 +401,17 @@ public class DataInitializer {
             dao.save(apt);
             created++;
         }
+    }
+
+    // Helper for Educational Content
+    private EducationalContent buildContent(String title, String description, String body, String type, int points, Counselor author) {
+        EducationalContent content = new EducationalContent();
+        content.setTitle(title);
+        content.setDescription(description);
+        content.setContentBody(body);
+        content.setContentType(type);
+        content.setPointsValue(points);
+        content.setAuthor(author);
+        return content;
     }
 }

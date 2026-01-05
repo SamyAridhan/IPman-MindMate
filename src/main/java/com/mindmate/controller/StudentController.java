@@ -3,9 +3,12 @@ package com.mindmate.controller;
 import com.mindmate.dao.AppointmentDAO;
 import com.mindmate.dao.CounselorDAO;
 import com.mindmate.dao.StudentDAO;
+import com.mindmate.dao.EducationalContentDAO; // From Team Member
+import com.mindmate.dao.StudentProgressDAO;   // From Team Member
 import com.mindmate.model.Appointment;
 import com.mindmate.model.Counselor;
 import com.mindmate.model.Student;
+import com.mindmate.model.EducationalContent; // From Team Member
 import com.mindmate.util.SessionHelper;
 
 import org.slf4j.Logger;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 public class StudentController {
 
     private static final Logger log = LoggerFactory.getLogger(StudentController.class);
+    // Explicit Locale ensures consistent parsing regardless of server settings
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH);
 
     @Autowired
@@ -41,6 +45,13 @@ public class StudentController {
 
     @Autowired
     private StudentDAO studentDAO;
+
+    // ✅ MERGED: Added Team Member's DAOs
+    @Autowired
+    private EducationalContentDAO contentDAO;
+
+    @Autowired
+    private StudentProgressDAO progressDAO;
 
     private Student getLoggedInStudent(HttpSession session) {
         Long userId = SessionHelper.getUserId(session);
@@ -58,18 +69,82 @@ public class StudentController {
         model.addAttribute("role", "student");
         model.addAttribute("user", SessionHelper.getUserName(session));
         
+        // ✅ KEPT YOUR LOGIC: Using Ascending order for upcoming appointments
         List<Appointment> appointments = appointmentDAO.findByStudentOrderByDateAscTimeAsc(student);
         model.addAttribute("bookedAppointments", appointments);
         
         return "student/dashboard";
     }
 
+    // ==========================================
+    // 📚 EDUCATIONAL CONTENT (Team Member's Logic)
+    // ==========================================
+
     @GetMapping("/library")
     public String contentLibrary(Model model, HttpSession session) {
-        if (getLoggedInStudent(session) == null) return "redirect:/login";
+        Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
+
         model.addAttribute("role", "student");
+        model.addAttribute("student", student);
+        
+        // ✅ MERGED: Loading modules and progress from Team Member's code
+        model.addAttribute("modules", contentDAO.findAll());
+        model.addAttribute("progressList", progressDAO.getProgressByStudent(student.getId()));
+
         return "student/content-library";
     }
+
+    @GetMapping("/view-module")
+    public String viewModule(@RequestParam Long id, Model model, HttpSession session) {
+        Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
+
+        EducationalContent content = contentDAO.findById(id);
+        boolean isDone = progressDAO.isModuleCompleted(student.getId(), id);
+
+        model.addAttribute("content", content);
+        model.addAttribute("isCompleted", isDone);
+        model.addAttribute("role", "student");
+
+        return "student/content-view";
+    }
+
+    @PostMapping("/content/complete")
+    @Transactional
+    public String completeModule(@RequestParam Long contentId, HttpSession session) {
+        Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
+
+        // Check if already completed to prevent double point awarding
+        if (!progressDAO.isModuleCompleted(student.getId(), contentId)) {
+            EducationalContent content = contentDAO.findById(contentId);
+
+            // Mark progress
+            progressDAO.markAsComplete(student.getId(), contentId);
+
+            // Update points and streak
+            studentDAO.updatePointsAndStreak(student.getId(), content.getPointsValue());
+        }
+
+        return "redirect:/student/view-module?id=" + contentId + "&completed=true";
+    }
+
+    @GetMapping("/progress")
+    public String myProgress(Model model, HttpSession session) {
+        Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
+
+        model.addAttribute("student", student);
+        model.addAttribute("completedModules", progressDAO.getProgressByStudent(student.getId()));
+        model.addAttribute("role", "student");
+
+        return "student/my-progress";
+    }
+
+    // ==========================================
+    // 🏥 TELEHEALTH (Your Robust Logic)
+    // ==========================================
 
     @GetMapping("/telehealth")
     public String showBookingPage(Model model, HttpSession session) {
@@ -77,6 +152,7 @@ public class StudentController {
         model.addAttribute("role", "student");
         List<Counselor> counselors = counselorDAO.findAll();
         model.addAttribute("counselors", counselors);
+        // ✅ KEPT YOUR LOGIC: Passing currentDate for JS validation
         model.addAttribute("currentDate", LocalDate.now());
         return "student/telehealth-book";
     }
@@ -96,32 +172,18 @@ public class StudentController {
             Counselor counselor = counselorDAO.findById(counselorId);
             LocalDate targetDate = LocalDate.parse(date, DATE_FORMATTER);
 
-            // ============================================================
-            // ✅ NEW LOGIC: Realistic Slots with Lunch Gap & Variations
-            // ============================================================
+            // ✅ KEPT YOUR LOGIC: Realistic Slots with Lunch Gap & Variations
             List<LocalTime> potentialSlots = new ArrayList<>();
 
             if (counselorId % 2 != 0) { 
-                // PATTERN A (Odd IDs): "Early Bird"
-                // 8:30 - 10:00
-                // 10:00 - 11:30
-                // 11:30 - 13:00 (Lunch starts at 13:00)
-                // --- LUNCH ---
-                // 14:00 - 15:30
-                // 15:30 - 17:00
+                // Pattern A (Odd IDs): "Early Bird"
                 potentialSlots.add(LocalTime.of(8, 30));
                 potentialSlots.add(LocalTime.of(10, 0));
                 potentialSlots.add(LocalTime.of(11, 30));
                 potentialSlots.add(LocalTime.of(14, 0));
                 potentialSlots.add(LocalTime.of(15, 30));
             } else {
-                // PATTERN B (Even IDs): "Standard"
-                // 9:00 - 10:30
-                // 10:30 - 12:00
-                // --- LUNCH GAP (12:00 - 14:30) --- 
-                // (We skip 12:00 because it ends at 13:30, cutting into lunch)
-                // 14:30 - 16:00
-                // 16:00 - 17:30
+                // Pattern B (Even IDs): "Standard"
                 potentialSlots.add(LocalTime.of(9, 0));
                 potentialSlots.add(LocalTime.of(10, 30));
                 potentialSlots.add(LocalTime.of(14, 30));
@@ -138,10 +200,7 @@ public class StudentController {
 
             // Process Slots
             for (LocalTime slot : potentialSlots) {
-                // 1. Check if already booked
                 if (!bookedTimes.contains(slot)) {
-                    // 2. Check if past time (Only for TODAY)
-                    // If targetDate is today, slot must be in the future
                     if (!targetDate.equals(LocalDate.now()) || slot.isAfter(LocalTime.now())) {
                         availableSlots.add(slot.toString());
                     }
@@ -179,7 +238,7 @@ public class StudentController {
                 return "redirect:/student/telehealth?error=invaliddate";
             }
 
-            // ROBUST CLASH CHECK
+            // ✅ KEPT YOUR LOGIC: Robust Clash Check
             List<Appointment> dayAppointments = appointmentDAO.findByCounselorAndDate(counselor, date);
             
             boolean slotTaken = dayAppointments.stream()
@@ -192,7 +251,6 @@ public class StudentController {
                 return "redirect:/student/telehealth?error=unavailable";
             }
 
-            // Proceed to Book
             Appointment appointment = new Appointment();
             appointment.setStudent(student);
             appointment.setCounselor(counselor);
@@ -216,7 +274,6 @@ public class StudentController {
         }
     }
 
-    // ... Other existing methods (Cancel, Acknowledge, Profile) remain unchanged ...
     @PostMapping("/telehealth/cancel")
     @Transactional
     public String cancelAppointment(@RequestParam("appointmentId") Long appointmentId, HttpSession session) {
@@ -225,8 +282,11 @@ public class StudentController {
 
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
-            if (apt != null && apt.getStudent().getId().equals(student.getId()) &&
+            
+            if (apt != null && 
+                apt.getStudent().getId().equals(student.getId()) &&
                 apt.getStatus() != Appointment.AppointmentStatus.CANCELLED) {
+                
                 apt.setStatus(Appointment.AppointmentStatus.CANCELLED);
                 appointmentDAO.update(apt);
                 return "redirect:/student/dashboard?success=cancelled";
@@ -245,9 +305,12 @@ public class StudentController {
 
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
-            if (apt != null && apt.getStudent().getId().equals(student.getId()) &&
+            
+            if (apt != null && 
+                apt.getStudent().getId().equals(student.getId()) &&
                 (apt.getStatus() == Appointment.AppointmentStatus.DENIED || 
                  apt.getStatus() == Appointment.AppointmentStatus.REJECTED)) {
+                
                 apt.setStatus(Appointment.AppointmentStatus.ACKNOWLEDGED);
                 appointmentDAO.update(apt);
                 return "redirect:/student/dashboard?success=acknowledged";
@@ -262,6 +325,7 @@ public class StudentController {
     public String profile(Model model, HttpSession session) {
         Student student = getLoggedInStudent(session);
         if (student == null) return "redirect:/login";
+
         model.addAttribute("role", "student");
         model.addAttribute("student", student);
         return "student/profile";
