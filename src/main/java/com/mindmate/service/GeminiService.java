@@ -9,66 +9,69 @@ import java.util.*;
 @Service
 public class GeminiService {
 
-    // Injected from application.properties
     @Value("${gemini.api.key}")
     private String apiKey;
 
-    private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=";
-
     /**
-     * Sends the user prompt to the Gemini API and returns the AI's text response.
+     * STABLE MODEL FOR MALAYSIA (JAN 2026):
+     * Using 'v1' stable endpoint and 'gemini-2.5-flash' model.
      */
+    private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=";
+
     public String generateResponse(String userPrompt) {
         try {
-            // Check if API key is missing
-            if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_ACTUAL_KEY")) {
-                return "System Error: Gemini API key is not configured in application.properties.";
+            if (apiKey == null || apiKey.isEmpty()) {
+                return "System Error: API key is missing in application.properties.";
             }
 
             RestTemplate restTemplate = new RestTemplate();
             String fullUrl = BASE_URL + apiKey;
 
-            // 1. Prepare the JSON request body
-            // Gemini API expects: { "contents": [ { "parts": [ { "text": "..." } ] } ] }
+            // 1. Prepare JSON Request Body
             Map<String, Object> requestBody = new HashMap<>();
-            Map<String, Object> content = new HashMap<>();
-            Map<String, String> part = new HashMap<>();
-            
-            part.put("text", userPrompt);
-            content.put("parts", Collections.singletonList(part));
-            requestBody.put("contents", Collections.singletonList(content));
+            List<Map<String, Object>> contents = new ArrayList<>();
+            Map<String, Object> contentMap = new HashMap<>();
+            List<Map<String, String>> parts = new ArrayList<>();
+            Map<String, String> textPart = new HashMap<>();
 
-            // 2. Set HTTP Headers
+            textPart.put("text", userPrompt);
+            parts.add(textPart);
+            contentMap.put("parts", parts);
+            contents.add(contentMap);
+            requestBody.put("contents", contents);
+
+            // 2. Set Headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            // 3. Execute the POST request
+            // 3. POST Request to Google
             ResponseEntity<Map> response = restTemplate.postForEntity(fullUrl, entity, Map.class);
+            
+            // Console Debugging
+            System.out.println("Gemini API Status: " + response.getStatusCode());
 
-            // 4. Parse and return the result
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 return extractTextFromGeminiResponse(response.getBody());
             } else {
-                return "The AI service returned an error. Please try again later.";
+                return "The AI is momentarily unavailable. Please try again.";
             }
 
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
+            System.err.println("Model ID Error: " + e.getResponseBodyAsString());
+            return "Configuration Error: Please ensure you are using 'gemini-2.5-flash' in BASE_URL.";
+        } catch (org.springframework.web.client.HttpClientErrorException.TooManyRequests e) {
+            return "You're sending messages too quickly. Please wait 60 seconds.";
         } catch (Exception e) {
-            System.err.println("Error calling Gemini API: " + e.getMessage());
             e.printStackTrace();
             return "I'm having trouble connecting to my brain right now. Please try again later.";
         }
     }
 
-    /**
-     * Navigates the complex JSON response from Google to find the generated text string.
-     */
     private String extractTextFromGeminiResponse(Map responseBody) {
         try {
-            // Response structure: candidates[0] -> content -> parts[0] -> text
             List<?> candidates = (List<?>) responseBody.get("candidates");
-            if (candidates == null || candidates.isEmpty()) return "No response generated.";
+            if (candidates == null || candidates.isEmpty()) return "I'm sorry, I cannot respond to that.";
 
             Map<?, ?> firstCandidate = (Map<?, ?>) candidates.get(0);
             Map<?, ?> content = (Map<?, ?>) firstCandidate.get("content");
@@ -77,7 +80,7 @@ public class GeminiService {
 
             return (String) firstPart.get("text");
         } catch (Exception e) {
-            return "I received a response, but I couldn't read the data format.";
+            return "Received an unexpected response format from the AI.";
         }
     }
 }

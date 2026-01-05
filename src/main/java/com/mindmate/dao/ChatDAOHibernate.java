@@ -17,13 +17,11 @@ public class ChatDAOHibernate implements ChatDAO {
     @Override
     @Transactional
     public void saveMessage(ChatMessage message) {
-        // entityManager.persist() takes the Java object and inserts it as a row in SQL
         entityManager.persist(message);
     }
 
     @Override
     public List<ChatMessage> getAllMessages() {
-        // HQL uses the Class Name (ChatMessage) not the table name
         String hql = "FROM ChatMessage c ORDER BY c.timestamp ASC";
         return entityManager.createQuery(hql, ChatMessage.class).getResultList();
     }
@@ -31,7 +29,25 @@ public class ChatDAOHibernate implements ChatDAO {
     @Override
     @Transactional
     public void clearHistory() {
-        // Useful if you want to allow students to delete their chat logs
         entityManager.createQuery("DELETE FROM ChatMessage").executeUpdate();
+    }
+
+    @Override
+    public List<ChatMessage> getMessagesBySession(String sessionId) {
+        return entityManager.createQuery(
+            "FROM ChatMessage m WHERE m.sessionId = :s ORDER BY m.timestamp ASC", ChatMessage.class)
+            .setParameter("s", sessionId)
+            .getResultList();
+    }
+    
+    @Override
+    public List<String> getUniqueSessionsByStudent(Long studentId) {
+        // FIX: We group by sessionId and order by the latest message in that session
+        // This ensures the most recent conversations appear at the top of your sidebar
+        return entityManager.createQuery(
+            "SELECT m.sessionId FROM ChatMessage m WHERE m.student.id = :id " +
+            "GROUP BY m.sessionId ORDER BY MAX(m.timestamp) DESC", String.class)
+            .setParameter("id", studentId)
+            .getResultList();
     }
 }
