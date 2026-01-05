@@ -37,7 +37,8 @@ public class DataInitializer {
             CounselorAvailabilityDAO availabilityDAO,
             AppointmentDAO appointmentDAO,
             SystemAnalyticsDAO analyticsDAO,
-            EducationalContentDAO educationalContentDAO) { // ✅ Merged: Added EducationalContentDAO
+            EducationalContentDAO educationalContentDAO,
+            AssessmentDAO assessmentDAO) { // ✅ Merged: Added EducationalContentDAO
         
         return args -> {
             System.out.println("=== INITIALIZING MINDMATE TEST DATA ===");
@@ -286,6 +287,39 @@ public class DataInitializer {
                 }
             } else {
                 System.out.println("✓ Educational content already exists.");
+            }
+
+            // ==========================================
+            // 7. SEED ASSESSMENTS (For Demo Student)
+            // ==========================================
+            if (assessmentDAO.findAll().isEmpty()) {
+                System.out.println("📝 Seeding Assessments...");
+
+                Student demoStudent = studentDAO.findByEmail("demo@student.mindmate.com").orElse(null);
+                
+                if (demoStudent != null) {
+                    // 1. Severe (High Risk) - Last week
+                    Assessment a1 = new Assessment(demoStudent, 14);
+                    a1.setResultCategory("Severe"); 
+                    a1.setTakenAt(LocalDateTime.now().minusDays(7));
+                    assessmentDAO.save(a1);
+
+                    // 2. Moderate Risk - 3 days ago
+                    Assessment a2 = new Assessment(demoStudent, 12);
+                    a2.setResultCategory("Moderate");
+                    a2.setTakenAt(LocalDateTime.now().minusDays(3));
+                    assessmentDAO.save(a2);
+
+                    // 3. Minimal Risk - Today
+                    Assessment a3 = new Assessment(demoStudent, 4);
+                    a3.setResultCategory("Minimal");
+                    a3.setTakenAt(LocalDateTime.now().minusHours(2));
+                    assessmentDAO.save(a3);
+                    
+                    System.out.println("✅ Seeded 3 assessments for Demo Student.");
+                }
+            } else {
+                 System.out.println("✓ Assessments already exist.");
             }
 
             System.out.println("=== DATA INITIALIZATION COMPLETE ===");
