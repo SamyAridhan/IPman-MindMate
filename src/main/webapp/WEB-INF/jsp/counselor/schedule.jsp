@@ -4,7 +4,6 @@
 
 <div class="container mx-auto px-4 py-8">
     
-    <%-- ✅ FIX: Added 'flash-message' class to target specific alerts only --%>
     <c:if test="${param.success == 'approved'}">
         <div class="flash-message bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start gap-3">
             <i data-lucide="check-circle-2" class="h-5 w-5 text-green-600 mt-0.5"></i>
@@ -192,21 +191,11 @@
                                     <%-- 1. DETERMINE CARD COLOR --%>
                                     <c:set var="statusColor">
                                         <c:choose>
-                                            <%-- Confirmed = Green --%>
                                             <c:when test="${apt.status == 'CONFIRMED'}">bg-success/10 border-success/20</c:when>
-                                            
-                                            <%-- ✅ CHANGED: Completed = Green (Success) --%>
-                                            <c:when test="${apt.status == 'COMPLETED'}">bg-success/5 border-success/10</c:when>
-                                            
-                                            <%-- Pending = Yellow --%>
                                             <c:when test="${apt.status == 'PENDING'}">bg-info/10 border-info/20</c:when>
-                                            
-                                            <%-- Cancelled = Red --%>
                                             <c:when test="${apt.status == 'CANCELLED'}">bg-destructive/10 border-destructive/20</c:when>
-                                            
-                                            <%-- ✅ CHANGED: Acknowledged is now Red (same as Denied) --%>
                                             <c:when test="${apt.status == 'DENIED' || apt.status == 'REJECTED' || apt.status == 'ACKNOWLEDGED'}">bg-destructive/10 border-destructive/20</c:when>
-                                            
+                                            <c:when test="${apt.status == 'COMPLETED'}">bg-success/5 border-success/10</c:when>
                                             <c:otherwise>bg-muted border-border</c:otherwise>
                                         </c:choose>
                                     </c:set>
@@ -223,24 +212,19 @@
                                                         <c:when test="${apt.status == 'CONFIRMED'}">
                                                             <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800 border border-green-200">Confirmed</span>
                                                         </c:when>
-                                                        
-                                                        <%-- ✅ CHANGED: Completed is now Green Badge --%>
-                                                        <c:when test="${apt.status == 'COMPLETED'}">
-                                                            <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800 border border-green-200">
-                                                                <i data-lucide="check" class="w-3 h-3 inline mr-1"></i>Completed
-                                                            </span>
-                                                        </c:when>
-                                                        
                                                         <c:when test="${apt.status == 'PENDING'}">
                                                             <span class="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">Pending</span>
                                                         </c:when>
                                                         <c:when test="${apt.status == 'CANCELLED'}">
                                                             <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800 border border-red-200">Cancelled by Student</span>
                                                         </c:when>
-                                                        
-                                                        <%-- ✅ CHANGED: Acknowledged shows as Denied --%>
                                                         <c:when test="${apt.status == 'DENIED' || apt.status == 'REJECTED' || apt.status == 'ACKNOWLEDGED'}">
                                                             <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800 border border-red-200">Denied</span>
+                                                        </c:when>
+                                                        <c:when test="${apt.status == 'COMPLETED'}">
+                                                            <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800 border border-green-200">
+                                                                <i data-lucide="check" class="w-3 h-3 inline mr-1"></i>Completed
+                                                            </span>
                                                         </c:when>
                                                     </c:choose>
                                                 </div>
@@ -258,7 +242,6 @@
                                                     </p>
                                                 </c:if>
                                                 
-                                                <%-- Denial Reason (Shows for Acknowledged as well) --%>
                                                 <c:if test="${(apt.status == 'DENIED' || apt.status == 'REJECTED' || apt.status == 'ACKNOWLEDGED') && not empty apt.denialReason}">
                                                     <p class="text-sm text-red-600 mt-2 p-2 bg-red-50 rounded border border-red-100">
                                                         <strong>Denial Reason:</strong> ${apt.denialReason}
@@ -267,12 +250,24 @@
                                             </div>
                                         </div>
                                         
-                                        <%-- Action Button only for Confirmed --%>
+                                        <%-- Action Buttons only for Confirmed --%>
                                         <c:if test="${apt.status == 'CONFIRMED'}">
-                                            <button class="w-full inline-flex items-center justify-center bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm hover:opacity-90 transition-opacity">
-                                                <i data-lucide="video" class="w-4 h-4 mr-2"></i>
-                                                Join Telehealth Call
-                                            </button>
+                                            <div class="flex flex-col gap-2 mt-3">
+                                                <a href="https://meet.google.com" target="_blank" class="w-full inline-flex items-center justify-center bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm hover:opacity-90 transition-opacity">
+                                                    <i data-lucide="video" class="w-4 h-4 mr-2"></i>
+                                                    Join Telehealth Call
+                                                </a>
+                                                
+                                                <form method="POST" action="/counselor/appointment/complete">
+                                                    <input type="hidden" name="appointmentId" value="${apt.id}" />
+                                                    <button type="submit" 
+                                                            onclick="return confirm('Mark this session as completed?');"
+                                                            class="w-full inline-flex items-center justify-center border border-green-600 text-green-700 bg-green-50 px-4 py-2 rounded-md text-sm hover:bg-green-100 transition-colors">
+                                                        <i data-lucide="check-square" class="w-4 h-4 mr-2"></i>
+                                                        Mark as Completed
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </c:if>
                                     </div>
                                 </c:forEach>
@@ -335,7 +330,6 @@
 <script>
 // Function to handle calendar clicks
 function selectDate(dateString) {
-    // Redirects the page with the selected date as a query parameter
     window.location.href = '/counselor/schedule?date=' + dateString;
 }
 

@@ -66,8 +66,7 @@ public class CounselorController {
         // 2. Fetch Raw List for Today
         List<Appointment> allToday = appointmentDAO.findByCounselorAndDate(counselor, today);
 
-        // 3. ✅ FILTER: Only show Upcoming/Actionable (Confirmed or Pending)
-        // We exclude Cancelled, Denied, Acknowledged, and Completed from the Dashboard view
+        // 3. FILTER: Only show Upcoming/Actionable (Confirmed or Pending)
         List<Appointment> actionableToday = allToday.stream()
                 .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED || 
                              a.getStatus() == Appointment.AppointmentStatus.PENDING)
@@ -78,12 +77,10 @@ public class CounselorController {
             if (apt.getStudent() != null) apt.getStudent().getName();
         }
 
-        // 4. Update Metrics to match the filtered view
-        // "Today's Appointments" count now reflects only what is on the user's plate
+        // 4. Update Metrics
         model.addAttribute("todayCount", actionableToday.size());
         
-        // "Pending Requests" (Global count, not just today)
-        // Using findByCounselorAndStatus to get the accurate count for this specific counselor
+        // "Pending Requests" (Global count)
         List<Appointment> allPending = appointmentDAO.findByCounselorAndStatus(counselor, Appointment.AppointmentStatus.PENDING);
         model.addAttribute("pendingCount", allPending.size());
 
@@ -114,7 +111,7 @@ public class CounselorController {
         List<Appointment> pendingAppointments = appointmentDAO.findByCounselorAndStatus(
                 counselor, Appointment.AppointmentStatus.PENDING);
 
-        // 3. Fetch Selected Date Appointments (ALL Statuses shown here for history)
+        // 3. Fetch Selected Date Appointments
         List<Appointment> dailyAppointments = appointmentDAO.findByCounselorAndDate(
                 counselor, selectedDate);
 
@@ -154,8 +151,6 @@ public class CounselorController {
         } catch (Exception e) {
             log.error("Error approving appointment", e);
         }
-        // Redirect back to the referring page (Dashboard or Schedule) if possible, or default to schedule
-        // For simplicity, let's redirect to schedule as it handles dates better
         return "redirect:/counselor/schedule"; 
     }
 
@@ -186,6 +181,32 @@ public class CounselorController {
             log.error("Error denying appointment", e);
         }
         return "redirect:/counselor/schedule";
+    }
+
+    // ✅ NEW METHOD: Mark Appointment as Completed
+    @PostMapping("/appointment/complete")
+    @Transactional
+    public String completeAppointment(@RequestParam Long appointmentId, HttpSession session) {
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null) return "redirect:/login";
+
+        try {
+            Appointment apt = appointmentDAO.findById(appointmentId);
+            
+            // Validation: Exists + Belongs to counselor + Is currently CONFIRMED
+            if (apt != null && 
+                apt.getCounselor() != null && 
+                apt.getCounselor().getId().equals(counselor.getId()) &&
+                apt.getStatus() == Appointment.AppointmentStatus.CONFIRMED) {
+                
+                apt.setStatus(Appointment.AppointmentStatus.COMPLETED);
+                appointmentDAO.update(apt);
+                log.info("Counselor {} marked Appointment {} as COMPLETED", counselor.getId(), appointmentId);
+            }
+        } catch (Exception e) {
+            log.error("Error completing appointment", e);
+        }
+        return "redirect:/counselor/schedule"; // Redirecting to schedule is safer for flow
     }
 
     // ==========================================

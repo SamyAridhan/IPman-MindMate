@@ -71,23 +71,7 @@
                                         <span class="text-muted-foreground">•</span>
                                         <span>${counselor.experience}</span>
                                     </div>
-                                    <c:choose>
-                                        <c:when test="${counselor.availability == 'High'}">
-                                            <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800">
-                                                High Availability
-                                            </span>
-                                        </c:when>
-                                        <c:when test="${counselor.availability == 'Medium'}">
-                                            <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                                                Medium Availability
-                                            </span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">
-                                                Low Availability
-                                            </span>
-                                        </c:otherwise>
-                                    </c:choose>
+                                    <%-- Availability badges removed here --%>
                                 </div>
                             </div>
                         </div>
@@ -202,7 +186,6 @@
         <div class="p-6 border-b border-border">
             <h2 class="text-xl font-semibold text-foreground">Confirm Your Appointment</h2>
         </div>
-        
         <div class="p-6">
             <p class="mb-4 text-foreground">Please confirm the details of your counseling session:</p>
             <div class="bg-info/10 p-4 rounded-lg space-y-2 border border-info/20">
@@ -217,7 +200,6 @@
                 <p>• Please arrive 5 minutes early for your session</p>
             </div>
         </div>
-
         <div class="p-6 border-t border-border flex justify-end gap-3">
             <button type="button" id="cancel-button" class="px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors">
                 Cancel
@@ -250,11 +232,7 @@ let currentMonth = new Date();
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
     lucide.createIcons();
-    
-    // Initialize calendar with current month
     renderCalendar(currentMonth);
-    
-    // Event Listeners
     setupCounselorSelection();
     setupCalendarNavigation();
     setupSessionTypeSelection();
@@ -268,30 +246,18 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupCounselorSelection() {
     document.querySelectorAll('.counselor-card').forEach(card => {
         card.addEventListener('click', function() {
-            // Remove previous selection
             document.querySelectorAll('.counselor-card').forEach(c => {
                 c.classList.remove('border-primary', 'bg-primary/10');
                 c.classList.add('border-border');
             });
-            
-            // Mark as selected
             this.classList.add('border-primary', 'bg-primary/10');
             this.classList.remove('border-border');
-            
-            // Store selection
             selectedCounselor = {
                 id: this.dataset.id,
                 name: this.dataset.name,
                 specialization: this.dataset.specialization
             };
-            
-            console.log('Counselor selected:', selectedCounselor);
-            
-            // If date is also selected, fetch slots
-            if (selectedDate) {
-                fetchAvailableSlots();
-            }
-            
+            if (selectedDate) fetchAvailableSlots();
             updateSummary();
         });
     });
@@ -303,13 +269,10 @@ function setupCounselorSelection() {
 function renderCalendar(date) {
     const year = date.getFullYear();
     const month = date.getMonth();
-    
-    // Update header
     const monthNames = ["January", "February", "March", "April", "May", "June",
-                       "July", "August", "September", "October", "November", "December"];
+                        "July", "August", "September", "October", "November", "December"];
     document.getElementById('current-month').textContent = monthNames[month] + ' ' + year;
     
-    // Get first day of month and number of days
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
@@ -318,14 +281,12 @@ function renderCalendar(date) {
     const calendarDays = document.getElementById('calendar-days');
     calendarDays.innerHTML = '';
     
-    // Add empty cells for days before month starts
     for (let i = 0; i < firstDay; i++) {
         const emptyCell = document.createElement('div');
         emptyCell.className = 'p-2 text-muted-foreground/50';
         calendarDays.appendChild(emptyCell);
     }
     
-    // Add day cells
     for (let day = 1; day <= daysInMonth; day++) {
         const dayDate = new Date(year, month, day);
         dayDate.setHours(0, 0, 0, 0);
@@ -336,21 +297,23 @@ function renderCalendar(date) {
         dayCell.className = 'p-2 rounded cursor-pointer';
         dayCell.textContent = day;
         
+        // Use consistent formatting YYYY-MM-DD
+        const yearStr = dayDate.getFullYear();
+        const monthStr = String(dayDate.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(dayDate.getDate()).padStart(2, '0');
+        dayCell.dataset.date = yearStr + "-" + monthStr + "-" + dayStr;
+        
         if (isPast) {
             dayCell.className += ' text-muted-foreground/30 cursor-not-allowed';
         } else {
             dayCell.className += ' hover:bg-secondary';
-            dayCell.dataset.date = dayDate.toISOString().split('T')[0];
-            
             dayCell.addEventListener('click', function() {
-                if (!isPast) {
-                    selectDate(this);
-                }
+                if (!isPast) selectDate(this);
             });
         }
         
         if (isToday && !isPast) {
-            dayCell.classList.add('font-bold', 'text-primary');
+            dayCell.classList.add('font-bold', 'text-primary', 'is-today'); 
         }
         
         calendarDays.appendChild(dayCell);
@@ -362,7 +325,6 @@ function setupCalendarNavigation() {
         currentMonth.setMonth(currentMonth.getMonth() - 1);
         renderCalendar(currentMonth);
     });
-    
     document.getElementById('next-month').addEventListener('click', function() {
         currentMonth.setMonth(currentMonth.getMonth() + 1);
         renderCalendar(currentMonth);
@@ -370,76 +332,61 @@ function setupCalendarNavigation() {
 }
 
 function selectDate(element) {
-    // Remove previous selection
+    // 1. Clear previous selections
     document.querySelectorAll('#calendar-days > div').forEach(d => {
         d.classList.remove('bg-primary', 'text-primary-foreground');
+        if (d.classList.contains('is-today')) {
+            d.classList.add('text-primary');
+        }
     });
     
-    // Mark as selected
+    // 2. Highlight new selection
     element.classList.add('bg-primary', 'text-primary-foreground');
+    element.classList.remove('text-primary'); 
     
-    // Store date
-    const dateStr = element.dataset.date;
-    const dateObj = new Date(dateStr + 'T00:00:00');
-    selectedDate = dateObj;
+    // 3. Store date (Avoid UTC issues by splitting string)
+    const dateStr = element.dataset.date; // "2026-01-05"
+    const [y, m, d] = dateStr.split('-').map(Number);
+    selectedDate = new Date(y, m - 1, d); 
     
-    // Format display date
-    const formatted = dateObj.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-    document.getElementById('selected-date-display').textContent = formatted;
+    // 4. Update Display
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('selected-date-display').textContent = selectedDate.toLocaleDateString('en-US', options);
     
-    console.log('Date selected:', dateStr);
-    
-    // Fetch slots if counselor is selected
-    if (selectedCounselor) {
-        fetchAvailableSlots();
-    }
-    
+    if (selectedCounselor) fetchAvailableSlots();
     updateSummary();
 }
 
 // ============================================
-// AJAX: FETCH AVAILABLE TIME SLOTS
+// AJAX & TIME SLOTS
 // ============================================
 function fetchAvailableSlots() {
     if (!selectedCounselor || !selectedDate) return;
     
-    // Show loading state
     document.getElementById('no-counselor-message').classList.add('hidden');
     document.getElementById('no-slots-message').classList.add('hidden');
     document.getElementById('time-slots-list').classList.add('hidden');
     document.getElementById('loading-slots').classList.remove('hidden');
     
-    // Format date for backend
-    const dateStr = selectedDate.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: '2-digit', 
-        year: 'numeric' 
-    });
+    // ✅ FIX: Manually format date to "MMM dd, yyyy" to match Backend DateTimeFormatter
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const month = months[selectedDate.getMonth()];
+    const year = selectedDate.getFullYear();
+    const dateStr = month + " " + day + ", " + year; // e.g., "Jan 05, 2026"
     
-const url = '/student/telehealth/available-slots?counselorId=' + selectedCounselor.id + '&date=' + encodeURIComponent(dateStr);    
-    console.log('Fetching slots from:', url);
+    const url = '/student/telehealth/available-slots?counselorId=' + selectedCounselor.id + '&date=' + encodeURIComponent(dateStr);    
     
     fetch(url)
         .then(response => response.json())
-        .then(slots => {
-            console.log('Received slots:', slots);
-            displayTimeSlots(slots);
-        })
+        .then(slots => displayTimeSlots(slots))
         .catch(error => {
-            console.error('Error fetching slots:', error);
+            console.error('Error:', error);
             document.getElementById('loading-slots').classList.add('hidden');
             document.getElementById('no-slots-message').classList.remove('hidden');
         });
 }
 
-// ============================================
-// FIXED: DISPLAY TIME SLOTS
-// ============================================
 function displayTimeSlots(slots) {
     const container = document.getElementById('time-slots-list');
     container.innerHTML = '';
@@ -452,96 +399,79 @@ function displayTimeSlots(slots) {
 
     document.getElementById('time-slots-list').classList.remove('hidden');
 
+    // Check Current Time for "Grey Out" Logic
+    const now = new Date();
+    // Compare YYYY-MM-DD
+    const todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0');
+    const selectedDateStr = selectedDate.getFullYear() + "-" + String(selectedDate.getMonth()+1).padStart(2,'0') + "-" + String(selectedDate.getDate()).padStart(2,'0');
+    
+    const isToday = (selectedDateStr === todayStr);
+    const currentHour = now.getHours();
+
     slots.forEach(timeStr => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors';
         button.dataset.time = timeStr;
+        button.innerHTML = '<i data-lucide="clock" class="w-4 h-4 mr-2"></i><span>' + formatTime(timeStr) + '</span>';
         
-        // ✅ FIXED: Use string concatenation (+) instead of template literals
-button.innerHTML = `
-    <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-    <span>` + formatTime(timeStr) + `</span>
-`;
-        
-        button.addEventListener('click', function() {
-            selectTimeSlot(this);
-        });
+        const slotHour = parseInt(timeStr.split(':')[0]);
+
+        if (isToday && slotHour <= currentHour) {
+            // Disable past slots
+            button.disabled = true;
+            button.classList.add('opacity-50', 'cursor-not-allowed', 'bg-muted');
+            button.classList.remove('hover:bg-secondary');
+            button.title = "This time has passed";
+        } else {
+            // Enable future slots
+            button.addEventListener('click', function() { selectTimeSlot(this); });
+        }
         
         container.appendChild(button);
     });
-
     lucide.createIcons();
 }
 
 function formatTime(timeStr) {
-    // ✅ Handle both "HH:mm" and "HH:mm:ss" formats
     const parts = timeStr.split(':');
     const hour = parseInt(parts[0]);
     const minutes = parts[1] || '00';
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const hour12 = hour % 12 || 12;
-    
-    // ✅ FIX: Use simple quotes and + instead of backticks
     return hour12 + ":" + minutes + " " + ampm;
 }
 
 function selectTimeSlot(element) {
-    // Remove previous selection
     document.querySelectorAll('.time-slot').forEach(s => {
-        s.classList.remove('bg-primary', 'text-primary-foreground');
-        s.classList.add('border-border');
+        if (!s.disabled) {
+            s.classList.remove('bg-primary', 'text-primary-foreground');
+            s.classList.add('border-border');
+        }
     });
-    
-    // Mark as selected
     element.classList.add('bg-primary', 'text-primary-foreground');
     element.classList.remove('border-border');
-    
     selectedTime = element.dataset.time;
-    
-    console.log('Time selected:', selectedTime);
-    
     updateSummary();
 }
 
 // ============================================
-// SESSION TYPE SELECTION
-// ============================================
-// ============================================
-// SESSION TYPE SELECTION (FIXED)
+// UTILITIES
 // ============================================
 function setupSessionTypeSelection() {
     const sessionSelect = document.getElementById('session-type');
-
-    // 1. Check if browser auto-filled the value on reload
-    if (sessionSelect.value) {
-        selectedSessionType = sessionSelect.value;
-        console.log('Restored session type:', selectedSessionType);
-    }
-
-    // 2. Listen for user changes
+    if (sessionSelect.value) selectedSessionType = sessionSelect.value;
     sessionSelect.addEventListener('change', function() {
         selectedSessionType = this.value;
-        console.log('Session type selected:', selectedSessionType);
         updateSummary();
     });
 }
 
-// ============================================
-// BOOKING SUMMARY UPDATE
-// ============================================
 function updateSummary() {
-    const allSelected = selectedCounselor && selectedDate && selectedTime && selectedSessionType;
-    
-    if (allSelected) {
-        const dateStr = selectedDate.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-        });
-        
+    if (selectedCounselor && selectedDate && selectedTime && selectedSessionType) {
         document.getElementById('summary-counselor').textContent = selectedCounselor.name;
-        document.getElementById('summary-date').textContent = dateStr;
+        // Use the displayed text from the date selection logic
+        document.getElementById('summary-date').textContent = document.getElementById('selected-date-display').textContent;
         document.getElementById('summary-time').textContent = formatTime(selectedTime);
         document.getElementById('summary-type').textContent = selectedSessionType;
         document.getElementById('booking-summary').classList.remove('hidden');
@@ -550,40 +480,31 @@ function updateSummary() {
     }
 }
 
-// ============================================
-// BOOKING CONFIRMATION
-// ============================================
 function setupBookingButton() {
-    document.getElementById('book-button').addEventListener('click', openConfirmationModal);
-}
+    document.getElementById('book-button').addEventListener('click', function() {
+        const dateTimeStr = document.getElementById('summary-date').textContent + ' at ' + formatTime(selectedTime);
+        
+        // Use same format as fetchAvailableSlots: "MMM dd, yyyy"
+        // Because the controller parses this string
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        const month = months[selectedDate.getMonth()];
+        const year = selectedDate.getFullYear();
+        const dateForBackend = month + " " + day + ", " + year;
 
-function openConfirmationModal() {
-    const dateTimeStr = selectedDate.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
-    }) + ' at ' + formatTime(selectedTime);
-    
-    const dateForBackend = selectedDate.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: '2-digit', 
-        year: 'numeric' 
+        document.getElementById('confirm-counselor').textContent = selectedCounselor.name;
+        document.getElementById('confirm-specialization').textContent = selectedCounselor.specialization;
+        document.getElementById('confirm-datetime').textContent = dateTimeStr;
+        document.getElementById('confirm-type').textContent = selectedSessionType;
+        
+        document.getElementById('form-counselor-id').value = selectedCounselor.id;
+        document.getElementById('form-date').value = dateForBackend;
+        document.getElementById('form-time').value = selectedTime;
+        document.getElementById('form-session-type').value = selectedSessionType;
+        
+        document.getElementById('confirmation-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     });
-    
-    document.getElementById('confirm-counselor').textContent = selectedCounselor.name;
-    document.getElementById('confirm-specialization').textContent = selectedCounselor.specialization;
-    document.getElementById('confirm-datetime').textContent = dateTimeStr;
-    document.getElementById('confirm-type').textContent = selectedSessionType;
-    
-    // Set form values
-    document.getElementById('form-counselor-id').value = selectedCounselor.id;
-    document.getElementById('form-date').value = dateForBackend;
-    document.getElementById('form-time').value = selectedTime;
-    document.getElementById('form-session-type').value = selectedSessionType;
-    
-    document.getElementById('confirmation-modal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
 }
 
 function setupModalHandlers() {

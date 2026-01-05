@@ -196,19 +196,13 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-1 ml-4">
-                                <button class="icon-btn">
-                                    <i data-lucide="bookmark" class="w-4 h-4"></i>
-                                </button>
-                                <button class="icon-btn">
-                                    <i data-lucide="thumbs-up" class="w-4 h-4"></i>
-                                </button>
-                                <button class="icon-btn">
-                                    <i data-lucide="thumbs-down" class="w-4 h-4"></i>
-                                </button>
+                                <button class="icon-btn"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+                                <button class="icon-btn"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+                                <button class="icon-btn"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
                             </div>
                         </div>
                     </a>
-
+                    
                     <a href="/student/recommendation?id=sleep-hygiene-tips"
                         class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
                         <div class="flex items-start justify-between">
@@ -225,50 +219,14 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-1 ml-4">
-                                <button class="icon-btn">
-                                    <i data-lucide="bookmark" class="w-4 h-4"></i>
-                                </button>
-                                <button class="icon-btn">
-                                    <i data-lucide="thumbs-up" class="w-4 h-4"></i>
-                                </button>
-                                <button class="icon-btn">
-                                    <i data-lucide="thumbs-down" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </a>
-
-                    <a href="/student/recommendation?id=breathing-exercises-quick"
-                      class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <i data-lucide="dumbbell" class="w-4 h-4"></i>
-                                    <h4 class="font-medium text-foreground">Breathing Exercises</h4>
-                                </div>
-                                <p class="text-sm text-muted-foreground mb-2">Quick techniques for anxiety management</p>
-                                <div class="flex items-center space-x-3 text-xs text-muted-foreground">
-                                    <span class="badge-outline-blue">exercise</span>
-                                    <span>10 min</span>
-                                    <span class="badge-outline-blue">anxiety</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-1 ml-4">
-                                <button class="icon-btn">
-                                    <i data-lucide="bookmark" class="w-4 h-4"></i>
-                                </button>
-                                <button class="icon-btn">
-                                    <i data-lucide="thumbs-up" class="w-4 h-4"></i>
-                                </button>
-                                <button class="icon-btn">
-                                    <i data-lucide="thumbs-down" class="w-4 h-4"></i>
-                                </button>
+                                <button class="icon-btn"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+                                <button class="icon-btn"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+                                <button class="icon-btn"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
                             </div>
                         </div>
                     </a>
                 </div>
             </div>
-
         </div>
 
         <div class="space-y-6">
@@ -283,38 +241,30 @@
                     <c:choose>
                         <c:when test="${not empty bookedAppointments}">
                             <c:forEach var="appointment" items="${bookedAppointments}">
-                                <%-- ✅ FILTER: Hide Completed AND Acknowledged --%>
-                                <c:if test="${appointment.status != 'COMPLETED' && appointment.status != 'ACKNOWLEDGED'}">
+                                
+                                <%-- ✅ LOGIC: Only show Confirmed, Pending, or Denied/Rejected. Exclude Completed/Cancelled/Acknowledged. --%>
+                                <c:if test="${appointment.status == 'CONFIRMED' || appointment.status == 'PENDING' || appointment.status == 'DENIED' || appointment.status == 'REJECTED'}">
                                 
                                     <div class="session-card p-4 rounded-lg border border-border mb-3 hover:shadow-md transition-shadow">
                                         
                                         <div class="flex items-center justify-between mb-2">
                                             <h4 class="font-medium text-foreground">${appointment.sessionType}</h4>
+                                            
+                                            <%-- Status Badges --%>
                                             <c:choose>
                                                 <c:when test="${appointment.status == 'CONFIRMED'}">
-                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
-                                                        Confirmed
-                                                    </span>
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">Confirmed</span>
                                                 </c:when>
                                                 <c:when test="${appointment.status == 'PENDING'}">
-                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
-                                                        Pending
-                                                    </span>
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">Pending</span>
                                                 </c:when>
                                                 <c:when test="${appointment.status == 'DENIED' || appointment.status == 'REJECTED'}">
-                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
-                                                        Denied
-                                                    </span>
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">Denied</span>
                                                 </c:when>
-                                                <c:otherwise>
-                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                                        ${appointment.status}
-                                                    </span>
-                                                </c:otherwise>
                                             </c:choose>
                                         </div>
 
-                                        <%-- Display Rejection Reason if applicable (Using denialReason) --%>
+                                        <%-- Display Rejection Reason if Denied --%>
                                         <c:if test="${(appointment.status == 'DENIED' || appointment.status == 'REJECTED') && not empty appointment.denialReason}">
                                             <div class="text-xs text-red-600 bg-red-50 p-2 rounded mb-3 border border-red-100">
                                                 <span class="font-semibold">Reason:</span> ${appointment.denialReason}
@@ -339,11 +289,11 @@
                                         </div>
 
                                         <div class="flex gap-2">
-                                            <%-- ACTION BUTTONS LOGIC --%>
+                                            <%-- Action Buttons --%>
                                             
-                                            <%-- 1. JOIN (Confirmed only) --%>
+                                            <%-- 1. JOIN (Confirmed only) - Updated to Google Meet --%>
                                             <c:if test="${appointment.status == 'CONFIRMED'}">
-                                                <a href="/student/telehealth/join/${appointment.id}" 
+                                                <a href="https://meet.google.com" target="_blank"
                                                    class="flex-1 inline-flex justify-center items-center text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
                                                     <i data-lucide="video" class="w-3 h-3 mr-1"></i>
                                                     Join
@@ -362,7 +312,7 @@
                                                 </form>
                                             </c:if>
 
-                                            <%-- 3. NOTED/DISMISS (Denied only) --%>
+                                            <%-- 3. NOTED (Denied only - to remove from view) --%>
                                             <c:if test="${appointment.status == 'DENIED' || appointment.status == 'REJECTED'}">
                                                 <form action="/student/telehealth/acknowledge" method="post" class="w-full">
                                                     <input type="hidden" name="appointmentId" value="${appointment.id}" />
@@ -375,7 +325,7 @@
                                             </c:if>
                                         </div>
                                     </div>
-                                </c:if> <%-- End of Filter for Completed/Acknowledged --%>
+                                </c:if> 
                             </c:forEach>
                         </c:when>
                         <c:otherwise>

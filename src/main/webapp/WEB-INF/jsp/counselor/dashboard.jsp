@@ -124,12 +124,26 @@
                                         </p>
                                     </c:if>
                                     
-                                    <%-- Only show JOIN button for Confirmed --%>
+                                    <%-- Action Buttons for Confirmed Appointments --%>
                                     <c:if test="${apt.status == 'CONFIRMED'}">
-                                        <button class="w-full mt-3 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-                                            <i data-lucide="video" class="w-4 h-4"></i>
-                                            Join Session
-                                        </button>
+                                        <div class="flex gap-2 mt-3">
+                                            <%-- 1. JOIN (Google Meet) --%>
+                                            <a href="https://meet.google.com" target="_blank" class="flex-1 inline-flex items-center justify-center bg-primary text-primary-foreground px-3 py-2 rounded-md text-sm hover:opacity-90 transition-opacity">
+                                                <i data-lucide="video" class="w-4 h-4 mr-2"></i>
+                                                Join
+                                            </a>
+
+                                            <%-- 2. COMPLETE (Action) --%>
+                                            <form method="POST" action="/counselor/appointment/complete" class="flex-1">
+                                                <input type="hidden" name="appointmentId" value="${apt.id}" />
+                                                <button type="submit" 
+                                                        onclick="return confirm('Mark this session as completed?');"
+                                                        class="w-full inline-flex items-center justify-center border border-green-600 text-green-700 bg-green-50 px-3 py-2 rounded-md text-sm hover:bg-green-100 transition-colors">
+                                                    <i data-lucide="check" class="w-4 h-4 mr-2"></i>
+                                                    Complete
+                                                </button>
+                                            </form>
+                                        </div>
                                     </c:if>
                                 </div>
                             </c:forEach>
