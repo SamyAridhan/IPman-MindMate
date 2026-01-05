@@ -3,23 +3,47 @@
 <jsp:include page="../common/header.jsp" />
 
 <div class="container mx-auto px-4 py-8">
+    
+    <c:if test="${param.success == 'approved'}">
+        <div class="fade-in bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <i data-lucide="check-circle-2" class="h-5 w-5 text-green-600 mt-0.5"></i>
+            <div>
+                <h3 class="text-sm font-medium text-green-800">Appointment Approved</h3>
+                <p class="text-sm text-green-700 mt-1">The appointment has been confirmed. The student will be notified.</p>
+            </div>
+        </div>
+    </c:if>
+
+    <c:if test="${param.success == 'denied'}">
+        <div class="fade-in bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <i data-lucide="info" class="h-5 w-5 text-blue-600 mt-0.5"></i>
+            <div>
+                <h3 class="text-sm font-medium text-blue-800">Appointment Denied</h3>
+                <p class="text-sm text-blue-700 mt-1">The appointment has been cancelled and the student has been notified.</p>
+            </div>
+        </div>
+    </c:if>
+
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-foreground mb-2">Counselor Dashboard</h1>
         <p class="text-muted-foreground">Professional workspace for counseling management</p>
     </div>
 
-    <!-- Key Metrics -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <a href="/counselor/schedule" class="block">
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border hover:shadow-lg transition-all cursor-pointer">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-muted-foreground">Today's Appointments</p>
-                        <p class="text-3xl font-bold text-foreground">${todayCount}</p>
+                        <p class="text-4xl font-bold text-foreground mt-2">${todayCount}</p>
                     </div>
-                    <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                        <i data-lucide="calendar" class="w-6 h-6 text-primary"></i>
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                        <i data-lucide="calendar" class="w-8 h-8 text-primary"></i>
                     </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm text-primary font-medium">
+                    View Schedule
+                    <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
                 </div>
             </div>
         </a>
@@ -29,55 +53,97 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-muted-foreground">Pending Requests</p>
-                        <p class="text-3xl font-bold text-foreground">${pendingCount}</p>
+                        <p class="text-4xl font-bold text-foreground mt-2">${pendingCount}</p>
                     </div>
-                    <div class="w-12 h-12 bg-info/10 rounded-full flex items-center justify-center">
-                        <i data-lucide="clock" class="w-6 h-6 text-info"></i>
+                    <div class="w-16 h-16 bg-info/10 rounded-full flex items-center justify-center">
+                        <i data-lucide="clock" class="w-8 h-8 text-info"></i>
                     </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm text-info font-medium">
+                    Review Requests
+                    <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
                 </div>
             </div>
         </a>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Today's Schedule -->
+    <div class="mb-8">
         <div class="bg-card rounded-lg shadow-sm border border-border">
             <div class="p-6 border-b border-border">
                 <h2 class="text-xl font-semibold text-foreground flex items-center">
                     <i data-lucide="calendar" class="w-5 h-5 mr-2 text-primary"></i>
-                    Today's Schedule
+                    Today's Schedule (Upcoming)
                 </h2>
             </div>
             <div class="p-6">
                 <c:choose>
                     <c:when test="${empty todayAppointments}">
                         <div class="text-center py-8 text-muted-foreground">
-                            <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 text-success"></i>
-                            <p>No appointments today</p>
+                            <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-3 text-success"></i>
+                            <p class="font-medium">No active appointments today</p>
+                            <p class="text-xs mt-1">All sessions are either completed or you are free!</p>
                         </div>
                     </c:when>
                     <c:otherwise>
-                        <div class="space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <c:forEach var="apt" items="${todayAppointments}">
-                                <div class="p-4 bg-muted/50 rounded-lg border border-border">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span class="font-semibold text-foreground">
+                                
+                                <%-- Determine Card Color --%>
+                                <c:set var="statusColor">
+                                    <c:choose>
+                                        <c:when test="${apt.status == 'CONFIRMED'}">bg-success/10 border-success/20</c:when>
+                                        <c:when test="${apt.status == 'PENDING'}">bg-info/10 border-info/20</c:when>
+                                        <c:otherwise>bg-muted border-border</c:otherwise>
+                                    </c:choose>
+                                </c:set>
+
+                                <div class="p-4 rounded-lg border ${statusColor} hover:shadow-sm transition-shadow">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <span class="font-semibold text-foreground flex items-center gap-2">
+                                            <i data-lucide="clock" class="w-4 h-4"></i>
                                             ${apt.time}
                                         </span>
                                         <c:choose>
-                                            <c:when test="${apt.status == 'confirmed'}">
-                                                <span class="px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">Confirmed</span>
+                                            <c:when test="${apt.status == 'CONFIRMED'}">
+                                                <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800 border border-green-200">Confirmed</span>
                                             </c:when>
-                                            <c:otherwise>
-                                                <span class="px-2 py-0.5 text-xs rounded-full bg-secondary text-secondary-foreground">Pending</span>
-                                            </c:otherwise>
+                                            <c:when test="${apt.status == 'PENDING'}">
+                                                <span class="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">Pending</span>
+                                            </c:when>
                                         </c:choose>
                                     </div>
-                                    <p class="text-sm text-muted-foreground">${apt.notes}</p>
-                                    <c:if test="${apt.status == 'confirmed'}">
-                                        <button class="w-full mt-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm hover:opacity-90 transition-opacity">
-                                            Join Session
-                                        </button>
+                                    <p class="text-sm text-muted-foreground mb-1">
+                                        <strong>Student:</strong> ${apt.student.name}
+                                    </p>
+                                    <p class="text-sm text-muted-foreground">
+                                        <strong>Type:</strong> ${apt.sessionType}
+                                    </p>
+                                    <c:if test="${not empty apt.notes}">
+                                        <p class="text-xs text-muted-foreground mt-2 p-2 bg-background rounded">
+                                            <strong>Notes:</strong> ${apt.notes}
+                                        </p>
+                                    </c:if>
+                                    
+                                    <%-- Action Buttons for Confirmed Appointments --%>
+                                    <c:if test="${apt.status == 'CONFIRMED'}">
+                                        <div class="flex gap-2 mt-3">
+                                            <%-- 1. JOIN (Google Meet) --%>
+                                            <a href="https://meet.google.com" target="_blank" class="flex-1 inline-flex items-center justify-center bg-primary text-primary-foreground px-3 py-2 rounded-md text-sm hover:opacity-90 transition-opacity">
+                                                <i data-lucide="video" class="w-4 h-4 mr-2"></i>
+                                                Join
+                                            </a>
+
+                                            <%-- 2. COMPLETE (Action) --%>
+                                            <form method="POST" action="/counselor/appointment/complete" class="flex-1">
+                                                <input type="hidden" name="appointmentId" value="${apt.id}" />
+                                                <button type="submit" 
+                                                        onclick="return confirm('Mark this session as completed?');"
+                                                        class="w-full inline-flex items-center justify-center border border-green-600 text-green-700 bg-green-50 px-3 py-2 rounded-md text-sm hover:bg-green-100 transition-colors">
+                                                    <i data-lucide="check" class="w-4 h-4 mr-2"></i>
+                                                    Complete
+                                                </button>
+                                            </form>
+                                        </div>
                                     </c:if>
                                 </div>
                             </c:forEach>
@@ -85,96 +151,28 @@
                     </c:otherwise>
                 </c:choose>
                 <a href="/counselor/schedule" class="block w-full mt-4">
-                    <button class="w-full border border-border bg-background text-foreground px-4 py-2 rounded-md hover:bg-secondary transition-colors">
+                    <button class="w-full border border-border bg-background text-foreground px-4 py-2 rounded-md hover:bg-secondary transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="calendar-days" class="w-4 h-4"></i>
                         View Full Schedule
                     </button>
                 </a>
             </div>
         </div>
-
-        <!-- Pending Requests -->
-        <div class="bg-card rounded-lg shadow-sm border border-border">
-            <div class="p-6 border-b border-border">
-                <h2 class="text-xl font-semibold text-foreground flex items-center">
-                    <i data-lucide="clock" class="w-5 h-5 mr-2 text-info"></i>
-                    Pending Appointment Requests
-                </h2>
-            </div>
-            <div class="p-6">
-                <c:choose>
-                    <c:when test="${empty pendingAppointments}">
-                        <div class="text-center py-8 text-muted-foreground">
-                            <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 text-success"></i>
-                            <p>No pending requests</p>
-                        </div>
-                    </c:when>
-                    <c:otherwise>
-                        <div class="space-y-3">
-                            <c:forEach var="apt" items="${pendingAppointments}">
-                                <div class="p-4 bg-muted/50 rounded-lg border border-border">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span class="text-sm font-semibold text-foreground">
-                                            ${apt.date} ${apt.time}
-                                        </span>
-                                    </div>
-                                    <p class="text-sm text-muted-foreground mb-3">${apt.notes}</p>
-                                    <div class="flex space-x-2">
-                                        <form method="POST" action="/counselor/appointment/approve" class="flex-1">
-                                            <input type="hidden" name="appointmentId" value="${apt.id}" />
-                                            <button type="submit" class="w-full bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm hover:opacity-90 transition-opacity">
-                                                Approve
-                                            </button>
-                                        </form>
-                                        <form method="POST" action="/counselor/appointment/deny" class="flex-1">
-                                            <input type="hidden" name="appointmentId" value="${apt.id}" />
-                                            <button type="submit" class="w-full border border-border bg-background text-foreground px-3 py-1.5 rounded-md text-sm hover:bg-secondary transition-colors">
-                                                Deny
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </c:forEach>
-                        </div>
-                    </c:otherwise>
-                </c:choose>
-            </div>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="bg-card rounded-lg shadow-sm border border-border">
-            <div class="p-6 border-b border-border">
-                <h2 class="text-xl font-semibold text-foreground flex items-center">
-                    <i data-lucide="users" class="w-5 h-5 mr-2 text-success"></i>
-                    Recent Activity
-                </h2>
-            </div>
-            <div class="p-6">
-                <div class="space-y-4">
-                    <div class="flex items-start space-x-3">
-                        <div class="w-2 h-2 bg-success rounded-full mt-2"></div>
-                        <div class="flex-1">
-                            <p class="text-sm text-foreground">New assessment completed</p>
-                            <p class="text-xs text-muted-foreground">Student ID: #1234 - 15 min ago</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                        <div class="w-2 h-2 bg-info rounded-full mt-2"></div>
-                        <div class="flex-1">
-                            <p class="text-sm text-foreground">Module completed</p>
-                            <p class="text-xs text-muted-foreground">Stress Management - 1 hour ago</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                        <div class="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                        <div class="flex-1">
-                            <p class="text-sm text-foreground">New forum post</p>
-                            <p class="text-xs text-muted-foreground">Community Discussion - 2 hours ago</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
+
+<script>
+// Auto-dismiss messages
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.fade-in');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            alert.style.transition = 'opacity 0.5s';
+            setTimeout(() => alert.remove(), 500);
+        }, 5000);
+    });
+});
+</script>
 
 <jsp:include page="../common/footer.jsp" />

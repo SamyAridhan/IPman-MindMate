@@ -1,4 +1,3 @@
-// src/main/java/com/mindmate/dao/CounselorDAO.java
 package com.mindmate.dao;
 
 import com.mindmate.model.Counselor;
@@ -16,5 +15,12 @@ public interface CounselorDAO extends GenericDAO<Counselor> {
      * Counts total number of counselors.
      * @return Total count
      */
-    long count(); // ✅ Added this method
+    long count();
+    
+    // ✅ NEW METHOD: For Performance Analytics
+    /**
+     * Finds counselors sorted by total appointments handled.
+     * Used for performance ranking.
+     */
+    List<Counselor> findTopCounselorsByAppointments(int limit);
 }
