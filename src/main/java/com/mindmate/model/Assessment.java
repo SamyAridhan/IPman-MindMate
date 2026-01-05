@@ -26,6 +26,9 @@ public class Assessment {
     @Column(name = "taken_at")
     private LocalDateTime takenAt;
 
+    @Column(name = "response_data") 
+    private String responseData;
+
     public Assessment() {
         this.takenAt = LocalDateTime.now();
     }
@@ -51,4 +54,12 @@ public class Assessment {
 
     public LocalDateTime getTakenAt() { return takenAt; }
     public void setTakenAt(LocalDateTime takenAt) { this.takenAt = takenAt; }
+
+    public String getResponseData() {
+        return responseData;
+    }
+
+    public void setResponseData(String responseData) {
+        this.responseData = responseData;
+    }
 }
