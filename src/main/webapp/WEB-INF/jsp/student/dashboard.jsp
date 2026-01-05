@@ -300,13 +300,13 @@
                                                 </a>
                                             </c:if>
                                             
-                                            <%-- 2. CANCEL (Pending or Confirmed only) --%>
+                                            <%-- 2. CANCEL (Pending or Confirmed only) - ✅ UPDATED UI (Filled Style) --%>
                                             <c:if test="${appointment.status == 'PENDING' || appointment.status == 'CONFIRMED'}">
                                                 <form action="/student/telehealth/cancel" method="post" class="flex-1">
                                                     <input type="hidden" name="appointmentId" value="${appointment.id}" />
                                                     <button type="submit" 
                                                             onclick="return confirm('Are you sure you want to cancel this appointment?');"
-                                                            class="w-full inline-flex justify-center items-center text-xs px-3 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors">
+                                                            class="w-full inline-flex justify-center items-center text-xs px-3 py-1.5 bg-red-100 text-red-700 border border-red-200 rounded-md hover:bg-red-200 transition-colors">
                                                         Cancel
                                                     </button>
                                                 </form>
