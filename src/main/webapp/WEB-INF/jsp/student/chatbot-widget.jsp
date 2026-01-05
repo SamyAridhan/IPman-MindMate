@@ -150,6 +150,7 @@
     function initializeChatbot() {
         // Load saved state from sessionStorage
         loadChatState();
+        loadHistoryFromServer();
         
         // Restore chat window state
         const savedIsOpen = sessionStorage.getItem(STORAGE_KEYS.IS_OPEN);
@@ -322,52 +323,70 @@
     // MESSAGE HANDLING
     // ============================================
 
-    function handleSendMessage() {
-        if (!inputField) return;
-        
-        const userMessage = inputField.value.trim();
-        if (!userMessage || isLoading) return;
+    async function handleSendMessage() {
+    if (!inputField) return;
+    
+    const userMessage = inputField.value.trim();
+    if (!userMessage || isLoading) return;
 
-        // Add user message
-        currentMessages.push({
-            role: 'user',
-            content: userMessage,
-            timestamp: new Date().toISOString()
+    // 1. UI: Add user message to screen immediately
+    const userMsgObj = {
+        role: 'user',
+        content: userMessage,
+        timestamp: new Date().toISOString()
+    };
+    currentMessages.push(userMsgObj);
+    
+    inputField.value = '';
+    renderMessages();
+    saveChatState(); // Local persistence
+
+    // 2. UI: Show loading state
+    isLoading = true;
+    if (typingIndicator) typingIndicator.classList.remove('hidden');
+    if (sendButton) sendButton.disabled = true;
+    if (inputField) inputField.disabled = true;
+    scrollToBottom();
+
+    try {
+        // 3. API: Send message to your Spring Boot Backend
+        const response = await fetch('/api/chat/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: userMessage // Sending raw string because Controller uses @RequestBody String
         });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        // 4. API: Get the JSON ChatMessage object back from AI
+        const aiMsgObj = await response.json();
         
-        inputField.value = '';
+        // 5. UI: Update chat with real AI response
+        currentMessages.push(aiMsgObj);
         renderMessages();
         saveChatState();
 
-        // Show typing indicator
-        isLoading = true;
-        if (typingIndicator) typingIndicator.classList.remove('hidden');
-        if (sendButton) sendButton.disabled = true;
-        if (inputField) inputField.disabled = true;
+    } catch (error) {
+        console.error('Chat Error:', error);
+        // Fallback if API fails
+        currentMessages.push({
+            role: 'assistant',
+            content: "I'm having trouble connecting to the server. Please check your connection.",
+            timestamp: new Date().toISOString()
+        });
+        renderMessages();
+    } finally {
+        // 6. UI: Reset loading state
+        isLoading = false;
+        if (typingIndicator) typingIndicator.classList.add('hidden');
+        if (sendButton) sendButton.disabled = false;
+        if (inputField) inputField.disabled = false;
+        if (inputField) inputField.focus();
         scrollToBottom();
-
-        // Simulate AI response
-        setTimeout(() => {
-            const aiResponse = generateAIResponse(userMessage);
-            
-            currentMessages.push({
-                role: 'assistant',
-                content: aiResponse,
-                timestamp: new Date().toISOString()
-            });
-
-            // Hide typing indicator
-            isLoading = false;
-            if (typingIndicator) typingIndicator.classList.add('hidden');
-            if (sendButton) sendButton.disabled = false;
-            if (inputField) inputField.disabled = false;
-            
-            renderMessages();
-            saveChatState();
-            
-            if (inputField) inputField.focus();
-        }, 1200);
     }
+}
 
     function generateAIResponse(userMessage) {
         const lowerMessage = userMessage.toLowerCase();
@@ -408,5 +427,20 @@
         
         return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
     }
+
+    async function loadHistoryFromServer() {
+    try {
+        const response = await fetch('/api/chat/history');
+        if (response.ok) {
+            const history = await response.json();
+            if (history && history.length > 0) {
+                currentMessages = history;
+                renderMessages();
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load history:', error);
+    }
+}
     
 </script>
