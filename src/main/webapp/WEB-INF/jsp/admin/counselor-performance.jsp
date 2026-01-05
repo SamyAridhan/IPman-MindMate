@@ -19,7 +19,7 @@
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase">Total Appointments</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase">Pending</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase">Confirmed</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Denied</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Cancelled</th> <th class="px-6 py-3 text-left text-xs font-medium uppercase">Denied</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase">Approval Rate</th>
                 </tr>
             </thead>
@@ -28,9 +28,9 @@
                     <tr class="hover:bg-muted">
                         <td class="px-6 py-4 whitespace-nowrap font-medium">${stat.counselorName}</td>
                         <td class="px-6 py-4 whitespace-nowrap">${stat.totalAppointments}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">${stat.pendingAppointments}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-yellow-600">${stat.pendingAppointments}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-green-600">${stat.confirmedAppointments}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-red-600">${stat.deniedAppointments}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-muted-foreground">${stat.cancelledAppointments}</td> <td class="px-6 py-4 whitespace-nowrap text-red-600">${stat.deniedAppointments}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 py-1 rounded-full text-sm 
                                 ${stat.approvalRate >= 80 ? 'bg-green-100 text-green-800' : 
@@ -44,7 +44,7 @@
                 
                 <c:if test="${empty counselorStats}">
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-muted-foreground">
+                        <td colspan="7" class="px-6 py-4 text-center text-muted-foreground">
                             No counselor data available
                         </td>
                     </tr>

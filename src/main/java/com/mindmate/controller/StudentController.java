@@ -23,13 +23,15 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/student")
 public class StudentController {
 
     private static final Logger log = LoggerFactory.getLogger(StudentController.class);
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH);
 
     @Autowired
     private AppointmentDAO appointmentDAO;
@@ -56,7 +58,6 @@ public class StudentController {
         model.addAttribute("role", "student");
         model.addAttribute("user", SessionHelper.getUserName(session));
         
-        // ✅ FIXED: Use Ascending order so upcoming appointments appear first
         List<Appointment> appointments = appointmentDAO.findByStudentOrderByDateAscTimeAsc(student);
         model.addAttribute("bookedAppointments", appointments);
         
@@ -78,6 +79,79 @@ public class StudentController {
         model.addAttribute("counselors", counselors);
         model.addAttribute("currentDate", LocalDate.now());
         return "student/telehealth-book";
+    }
+
+    @GetMapping("/telehealth/available-slots")
+    @ResponseBody
+    @Transactional
+    public List<String> getAvailableSlots(
+            @RequestParam Long counselorId,
+            @RequestParam String date,
+            HttpSession session) {
+        
+        List<String> availableSlots = new ArrayList<>();
+        if (getLoggedInStudent(session) == null) return availableSlots;
+        
+        try {
+            Counselor counselor = counselorDAO.findById(counselorId);
+            LocalDate targetDate = LocalDate.parse(date, DATE_FORMATTER);
+
+            // ============================================================
+            // ✅ NEW LOGIC: Realistic Slots with Lunch Gap & Variations
+            // ============================================================
+            List<LocalTime> potentialSlots = new ArrayList<>();
+
+            if (counselorId % 2 != 0) { 
+                // PATTERN A (Odd IDs): "Early Bird"
+                // 8:30 - 10:00
+                // 10:00 - 11:30
+                // 11:30 - 13:00 (Lunch starts at 13:00)
+                // --- LUNCH ---
+                // 14:00 - 15:30
+                // 15:30 - 17:00
+                potentialSlots.add(LocalTime.of(8, 30));
+                potentialSlots.add(LocalTime.of(10, 0));
+                potentialSlots.add(LocalTime.of(11, 30));
+                potentialSlots.add(LocalTime.of(14, 0));
+                potentialSlots.add(LocalTime.of(15, 30));
+            } else {
+                // PATTERN B (Even IDs): "Standard"
+                // 9:00 - 10:30
+                // 10:30 - 12:00
+                // --- LUNCH GAP (12:00 - 14:30) --- 
+                // (We skip 12:00 because it ends at 13:30, cutting into lunch)
+                // 14:30 - 16:00
+                // 16:00 - 17:30
+                potentialSlots.add(LocalTime.of(9, 0));
+                potentialSlots.add(LocalTime.of(10, 30));
+                potentialSlots.add(LocalTime.of(14, 30));
+                potentialSlots.add(LocalTime.of(16, 0));
+            }
+
+            // Get existing bookings to filter them out
+            List<Appointment> booked = appointmentDAO.findByCounselorAndDate(counselor, targetDate);
+            List<LocalTime> bookedTimes = booked.stream()
+                .filter(a -> a.getStatus() != Appointment.AppointmentStatus.CANCELLED && 
+                             a.getStatus() != Appointment.AppointmentStatus.DENIED)
+                .map(Appointment::getTime)
+                .collect(Collectors.toList());
+
+            // Process Slots
+            for (LocalTime slot : potentialSlots) {
+                // 1. Check if already booked
+                if (!bookedTimes.contains(slot)) {
+                    // 2. Check if past time (Only for TODAY)
+                    // If targetDate is today, slot must be in the future
+                    if (!targetDate.equals(LocalDate.now()) || slot.isAfter(LocalTime.now())) {
+                        availableSlots.add(slot.toString());
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("Slot fetch error", e);
+        }
+        return availableSlots;
     }
 
     @PostMapping("/telehealth/book")
@@ -105,11 +179,20 @@ public class StudentController {
                 return "redirect:/student/telehealth?error=invaliddate";
             }
 
-            if (appointmentDAO.existsByCounselorAndDateAndTime(counselor, date, time)) {
-                log.warn("Slot unavailable for Counselor {}", counselorId);
+            // ROBUST CLASH CHECK
+            List<Appointment> dayAppointments = appointmentDAO.findByCounselorAndDate(counselor, date);
+            
+            boolean slotTaken = dayAppointments.stream()
+                .anyMatch(a -> a.getTime().equals(time) && 
+                               a.getStatus() != Appointment.AppointmentStatus.CANCELLED && 
+                               a.getStatus() != Appointment.AppointmentStatus.DENIED);
+
+            if (slotTaken) {
+                log.warn("Slot {} at {} for Counselor {} is already taken", date, time, counselorId);
                 return "redirect:/student/telehealth?error=unavailable";
             }
 
+            // Proceed to Book
             Appointment appointment = new Appointment();
             appointment.setStudent(student);
             appointment.setCounselor(counselor);
@@ -125,7 +208,7 @@ public class StudentController {
             return "redirect:/student/dashboard?success=true";
             
         } catch (DateTimeParseException e) {
-            log.error("Date format error", e);
+            log.error("Date format error: {}", e.getMessage());
             return "redirect:/student/telehealth?error=invaliddate";
         } catch (Exception e) {
             log.error("Booking system error", e);
@@ -133,6 +216,7 @@ public class StudentController {
         }
     }
 
+    // ... Other existing methods (Cancel, Acknowledge, Profile) remain unchanged ...
     @PostMapping("/telehealth/cancel")
     @Transactional
     public String cancelAppointment(@RequestParam("appointmentId") Long appointmentId, HttpSession session) {
@@ -141,11 +225,8 @@ public class StudentController {
 
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
-            
-            if (apt != null && 
-                apt.getStudent().getId().equals(student.getId()) &&
+            if (apt != null && apt.getStudent().getId().equals(student.getId()) &&
                 apt.getStatus() != Appointment.AppointmentStatus.CANCELLED) {
-                
                 apt.setStatus(Appointment.AppointmentStatus.CANCELLED);
                 appointmentDAO.update(apt);
                 return "redirect:/student/dashboard?success=cancelled";
@@ -164,12 +245,9 @@ public class StudentController {
 
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
-            
-            if (apt != null && 
-                apt.getStudent().getId().equals(student.getId()) &&
+            if (apt != null && apt.getStudent().getId().equals(student.getId()) &&
                 (apt.getStatus() == Appointment.AppointmentStatus.DENIED || 
                  apt.getStatus() == Appointment.AppointmentStatus.REJECTED)) {
-                
                 apt.setStatus(Appointment.AppointmentStatus.ACKNOWLEDGED);
                 appointmentDAO.update(apt);
                 return "redirect:/student/dashboard?success=acknowledged";
@@ -184,40 +262,8 @@ public class StudentController {
     public String profile(Model model, HttpSession session) {
         Student student = getLoggedInStudent(session);
         if (student == null) return "redirect:/login";
-
         model.addAttribute("role", "student");
         model.addAttribute("student", student);
         return "student/profile";
-    }
-
-    @GetMapping("/telehealth/available-slots")
-    @ResponseBody
-    public List<String> getAvailableSlots(
-            @RequestParam Long counselorId,
-            @RequestParam String date,
-            HttpSession session) {
-        
-        List<String> availableSlots = new ArrayList<>();
-        if (getLoggedInStudent(session) == null) return availableSlots;
-        
-        try {
-            Counselor counselor = counselorDAO.findById(counselorId);
-            LocalDate targetDate = LocalDate.parse(date, DATE_FORMATTER);
-
-            LocalTime start = LocalTime.of(9, 0);
-            LocalTime end = LocalTime.of(17, 0);
-
-            while (start.isBefore(end)) {
-                if (!appointmentDAO.existsByCounselorAndDateAndTime(counselor, targetDate, start)) {
-                    if (!targetDate.equals(LocalDate.now()) || start.isAfter(LocalTime.now())) {
-                        availableSlots.add(start.toString());
-                    }
-                }
-                start = start.plusHours(1);
-            }
-        } catch (Exception e) {
-            log.error("Slot fetch error", e);
-        }
-        return availableSlots;
     }
 }

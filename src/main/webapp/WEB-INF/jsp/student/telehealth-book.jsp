@@ -8,6 +8,7 @@
         <p class="text-muted-foreground">Schedule your appointment with a counselor</p>
     </div>
 
+    <%-- Error Messages --%>
     <c:if test="${param.error == 'unavailable'}">
         <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
             <i data-lucide="alert-circle" class="h-5 w-5 text-red-600 mt-0.5"></i>
@@ -71,7 +72,7 @@
                                         <span class="text-muted-foreground">•</span>
                                         <span>${counselor.experience}</span>
                                     </div>
-                                    <%-- Availability badges removed here --%>
+                                    <%-- Badges Removed --%>
                                 </div>
                             </div>
                         </div>
@@ -82,7 +83,6 @@
 
         <div class="lg:col-span-1">
             <div class="space-y-6">
-                
                 <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                     <div class="flex items-center mb-4">
                         <i data-lucide="calendar" class="w-5 h-5 mr-2 text-success"></i>
@@ -122,7 +122,6 @@
                         <option value="Phone Call">Phone Call (30 min) - Free</option>
                     </select>
                 </div>
-
             </div>
         </div>
 
@@ -297,7 +296,7 @@ function renderCalendar(date) {
         dayCell.className = 'p-2 rounded cursor-pointer';
         dayCell.textContent = day;
         
-        // Use consistent formatting YYYY-MM-DD
+        // Consistent formatting
         const yearStr = dayDate.getFullYear();
         const monthStr = String(dayDate.getMonth() + 1).padStart(2, '0');
         const dayStr = String(dayDate.getDate()).padStart(2, '0');
@@ -332,7 +331,6 @@ function setupCalendarNavigation() {
 }
 
 function selectDate(element) {
-    // 1. Clear previous selections
     document.querySelectorAll('#calendar-days > div').forEach(d => {
         d.classList.remove('bg-primary', 'text-primary-foreground');
         if (d.classList.contains('is-today')) {
@@ -340,16 +338,13 @@ function selectDate(element) {
         }
     });
     
-    // 2. Highlight new selection
     element.classList.add('bg-primary', 'text-primary-foreground');
     element.classList.remove('text-primary'); 
     
-    // 3. Store date (Avoid UTC issues by splitting string)
-    const dateStr = element.dataset.date; // "2026-01-05"
+    const dateStr = element.dataset.date;
     const [y, m, d] = dateStr.split('-').map(Number);
     selectedDate = new Date(y, m - 1, d); 
     
-    // 4. Update Display
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('selected-date-display').textContent = selectedDate.toLocaleDateString('en-US', options);
     
@@ -368,12 +363,12 @@ function fetchAvailableSlots() {
     document.getElementById('time-slots-list').classList.add('hidden');
     document.getElementById('loading-slots').classList.remove('hidden');
     
-    // ✅ FIX: Manually format date to "MMM dd, yyyy" to match Backend DateTimeFormatter
+    // Format date for Backend "MMM dd, yyyy"
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const day = String(selectedDate.getDate()).padStart(2, '0');
     const month = months[selectedDate.getMonth()];
     const year = selectedDate.getFullYear();
-    const dateStr = month + " " + day + ", " + year; // e.g., "Jan 05, 2026"
+    const dateStr = month + " " + day + ", " + year;
     
     const url = '/student/telehealth/available-slots?counselorId=' + selectedCounselor.id + '&date=' + encodeURIComponent(dateStr);    
     
@@ -399,9 +394,8 @@ function displayTimeSlots(slots) {
 
     document.getElementById('time-slots-list').classList.remove('hidden');
 
-    // Check Current Time for "Grey Out" Logic
+    // Grey Out Logic
     const now = new Date();
-    // Compare YYYY-MM-DD
     const todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0');
     const selectedDateStr = selectedDate.getFullYear() + "-" + String(selectedDate.getMonth()+1).padStart(2,'0') + "-" + String(selectedDate.getDate()).padStart(2,'0');
     
@@ -418,13 +412,11 @@ function displayTimeSlots(slots) {
         const slotHour = parseInt(timeStr.split(':')[0]);
 
         if (isToday && slotHour <= currentHour) {
-            // Disable past slots
             button.disabled = true;
             button.classList.add('opacity-50', 'cursor-not-allowed', 'bg-muted');
             button.classList.remove('hover:bg-secondary');
             button.title = "This time has passed";
         } else {
-            // Enable future slots
             button.addEventListener('click', function() { selectTimeSlot(this); });
         }
         
@@ -455,9 +447,6 @@ function selectTimeSlot(element) {
     updateSummary();
 }
 
-// ============================================
-// UTILITIES
-// ============================================
 function setupSessionTypeSelection() {
     const sessionSelect = document.getElementById('session-type');
     if (sessionSelect.value) selectedSessionType = sessionSelect.value;
@@ -470,7 +459,6 @@ function setupSessionTypeSelection() {
 function updateSummary() {
     if (selectedCounselor && selectedDate && selectedTime && selectedSessionType) {
         document.getElementById('summary-counselor').textContent = selectedCounselor.name;
-        // Use the displayed text from the date selection logic
         document.getElementById('summary-date').textContent = document.getElementById('selected-date-display').textContent;
         document.getElementById('summary-time').textContent = formatTime(selectedTime);
         document.getElementById('summary-type').textContent = selectedSessionType;
@@ -483,9 +471,6 @@ function updateSummary() {
 function setupBookingButton() {
     document.getElementById('book-button').addEventListener('click', function() {
         const dateTimeStr = document.getElementById('summary-date').textContent + ' at ' + formatTime(selectedTime);
-        
-        // Use same format as fetchAvailableSlots: "MMM dd, yyyy"
-        // Because the controller parses this string
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const day = String(selectedDate.getDate()).padStart(2, '0');
         const month = months[selectedDate.getMonth()];

@@ -140,7 +140,6 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                 <div class="mb-4">
                     <h3 class="text-xl font-semibold text-foreground">Appointment Trends</h3>
@@ -162,106 +161,89 @@
             </div>
         </div>
 
-        <div class="bg-card rounded-lg shadow-sm border border-border">
-            <div class="p-6 border-b border-border">
-                <h3 class="text-xl font-semibold text-foreground">Detailed Statistics</h3>
-            </div>
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <h4 class="text-sm font-medium text-muted-foreground mb-3">User Breakdown</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-foreground">Students</span>
-                                <span class="text-sm font-medium text-foreground"><c:out value="${totalStudents}" default="0"/></span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-foreground">Counselors</span>
-                                <span class="text-sm font-medium text-foreground"><c:out value="${totalCounselors}" default="0"/></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h4 class="text-sm font-medium text-muted-foreground mb-3">Appointment Status</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-foreground">Confirmed</span>
-                                <span class="text-sm font-medium text-green-600"><c:out value="${confirmedAppointments}" default="0"/></span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-foreground">Cancelled</span>
-                                <span class="text-sm font-medium text-red-600"><c:out value="${cancelledAppointments}" default="0"/></span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-foreground">Completed</span>
-                                <span class="text-sm font-medium text-blue-600"><c:out value="${completedAppointments}" default="0"/></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h4 class="text-sm font-medium text-muted-foreground mb-3">Module Usage</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-foreground">Assessments</span>
-                                <span class="text-sm font-medium text-foreground"><c:out value="${assessmentsTaken}" default="0"/></span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-foreground">Forum Posts</span>
-                                <span class="text-sm font-medium text-foreground"><c:out value="${forumPosts}" default="0"/></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             
-            <a href="/admin/counselor-performance" class="bg-card p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow block">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xl font-semibold text-foreground">Counselor Performance</h3>
-                    <i data-lucide="bar-chart-2" class="w-6 h-6 text-primary"></i>
+            <div class="lg:col-span-3 bg-card rounded-lg shadow-sm border border-border">
+                <div class="p-6 border-b border-border">
+                    <h3 class="text-xl font-semibold text-foreground">Detailed Statistics</h3>
                 </div>
-                <p class="text-muted-foreground mb-4">View individual counselor statistics and performance metrics.</p>
-                <div class="text-primary font-medium flex items-center gap-2">
-                    View Details
-                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <h4 class="text-sm font-medium text-muted-foreground mb-3">User Breakdown</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-foreground">Students</span>
+                                    <span class="text-sm font-medium text-foreground"><c:out value="${totalStudents}" default="0"/></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-foreground">Counselors</span>
+                                    <span class="text-sm font-medium text-foreground"><c:out value="${totalCounselors}" default="0"/></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-sm font-medium text-muted-foreground mb-3">Appointment Status</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-foreground">Confirmed</span>
+                                    <span class="text-sm font-medium text-green-600"><c:out value="${confirmedAppointments}" default="0"/></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-foreground">Cancelled</span>
+                                    <span class="text-sm font-medium text-red-600"><c:out value="${cancelledAppointments}" default="0"/></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-foreground">Completed</span>
+                                    <span class="text-sm font-medium text-blue-600"><c:out value="${completedAppointments}" default="0"/></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-sm font-medium text-muted-foreground mb-3">Module Usage</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-foreground">Assessments</span>
+                                    <span class="text-sm font-medium text-foreground"><c:out value="${assessmentsTaken}" default="0"/></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-foreground">Forum Posts</span>
+                                    <span class="text-sm font-medium text-foreground"><c:out value="${forumPosts}" default="0"/></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </a>
-
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xl font-semibold text-foreground">User Management</h3>
-                    <i data-lucide="users" class="w-6 h-6 text-primary"></i>
-                </div>
-                <p class="text-muted-foreground mb-4">Manage students, counselors, and admin accounts.</p>
-                <button class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity font-medium">
-                    Manage Users
-                </button>
             </div>
 
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xl font-semibold text-foreground">System Settings</h3>
-                    <i data-lucide="settings" class="w-6 h-6 text-primary"></i>
-                </div>
-                <p class="text-muted-foreground mb-4">Configure platform settings and preferences.</p>
-                <button class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity font-medium">
-                    Settings
-                </button>
+            <div class="lg:col-span-1">
+                <a href="/admin/counselor-performance" class="bg-card p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow block h-full flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xl font-semibold text-foreground">Counselor Metrics</h3>
+                            <div class="p-2 bg-primary/10 rounded-full">
+                                <i data-lucide="bar-chart-2" class="w-6 h-6 text-primary"></i>
+                            </div>
+                        </div>
+                        <p class="text-muted-foreground mb-4">Analyze individual counselor performance, ratings, and session counts.</p>
+                    </div>
+                    <div class="text-primary font-medium flex items-center gap-2 mt-auto">
+                        View Details
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </div>
+                </a>
             </div>
+
         </div>
     </div>
 </div>
 
 <script>
 // ============================================
-// DATA EXTRACTION (Fixes Syntax Errors)
+// DATA EXTRACTION
 // ============================================
-
-// Read data from the hidden HTML container
 const rawDataPoints = document.querySelectorAll('#analytics-data-source .data-point');
 const trendData = Array.from(rawDataPoints).map(point => ({
     date: point.getAttribute('data-date'),
@@ -269,7 +251,6 @@ const trendData = Array.from(rawDataPoints).map(point => ({
     users: parseInt(point.getAttribute('data-users') || '0')
 }));
 
-// Helper to format dates safely in JS
 const formatChartDate = (dateStr) => {
     try {
         if (!dateStr) return 'N/A';
@@ -279,7 +260,6 @@ const formatChartDate = (dateStr) => {
     } catch(e) { return dateStr; }
 };
 
-// Extract labels and data
 const labels = trendData.map(d => formatChartDate(d.date)).reverse();
 const appointmentData = trendData.map(d => d.appointments).reverse();
 const userData = trendData.map(d => d.users).reverse();

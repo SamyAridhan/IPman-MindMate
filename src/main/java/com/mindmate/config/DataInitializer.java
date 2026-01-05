@@ -1,5 +1,3 @@
-// src/main/java/com/mindmate/config/DataInitializer.java
-
 package com.mindmate.config;
 
 import com.mindmate.dao.*;
@@ -21,8 +19,10 @@ import java.util.Random;
  * Enhanced Data Initializer with comprehensive test data
  * Populates database with realistic Malaysian/UTM-themed test data
  * Updated: Ensures logical consistency between CANCELLED and DENIED statuses.
- * * @author Samy (A23CS0246)
- * @version Phase 3.1 - Fixed Logic
+ * Optimized for DEMO: Guarantees data for Today/Tomorrow for immediate testing.
+ *
+ * @author Samy (A23CS0246)
+ * @version Phase 3.4 - Synced with Counselor Schedules
  */
 @Configuration
 public class DataInitializer {
@@ -61,7 +61,6 @@ public class DataInitializer {
             if (counselorDAO.count() < 5) {
                 System.out.println("👨‍⚕️ Seeding Counselors...");
                 
-                // Existing 3
                 seedCounselor(counselorDAO, "Dr. Sarah Johnson", "sarah.johnson@mindmate.com",
                     "Licensed Mental Health Counselor specializing in anxiety and depression",
                     "SJ", 4.8, "8 years", "High");
@@ -74,7 +73,6 @@ public class DataInitializer {
                     "Therapist specializing in student mental health",
                     "ER", 4.7, "6 years", "Low");
                 
-                // New 2
                 seedCounselor(counselorDAO, "Dr. Ahmad Faiz", "ahmad.faiz@mindmate.com",
                     "Counselor specializing in academic stress and career guidance",
                     "AF", 4.6, "5 years", "High");
@@ -105,14 +103,14 @@ public class DataInitializer {
                         for (DayOfWeek day : workDays) {
                             CounselorAvailability availability = new CounselorAvailability(
                                 counselor, day,
-                                LocalTime.of(9, 0),
-                                LocalTime.of(17, 0)
+                                LocalTime.of(8, 30), // Extended range to cover early birds
+                                LocalTime.of(17, 30)
                             );
                             availabilityDAO.save(availability);
                         }
                     }
                 }
-                System.out.println("✅ Working hours (Mon-Fri, 9AM-5PM) set for all counselors");
+                System.out.println("✅ Working hours set for all counselors");
             }
 
             // ==========================================
@@ -122,7 +120,7 @@ public class DataInitializer {
             if (studentDAO.count() < 12) {
                 System.out.println("🎓 Seeding Students...");
                 
-                // Malaysian Names (UTM-themed)
+                seedStudent(studentDAO, "Demo Student", "demo@student.mindmate.com");
                 seedStudent(studentDAO, "Ahmad Zafran Hakim", "A23CS0101@student.utm.my");
                 seedStudent(studentDAO, "Nurul Aina Sofiya", "A23CS0102@student.utm.my");
                 seedStudent(studentDAO, "Tan Wei Xuan", "A23CS0103@student.utm.my");
@@ -133,9 +131,6 @@ public class DataInitializer {
                 seedStudent(studentDAO, "Chong Mei Ling", "A23CS0108@student.utm.my");
                 seedStudent(studentDAO, "Raj Kumar Singh", "A23CS0109@student.utm.my");
                 seedStudent(studentDAO, "Lim Xiao Hui", "A23CS0110@student.utm.my");
-                
-                // Keep demo student + add international
-                seedStudent(studentDAO, "Demo Student", "demo@student.mindmate.com");
                 seedStudent(studentDAO, "Emma Williams", "A23CS0199@student.utm.my");
                 
                 System.out.println("✅ 12 Students created (Password: student123)");
@@ -143,115 +138,108 @@ public class DataInitializer {
             students = studentDAO.findAll();
 
             // ==========================================
-            // 4. SEED APPOINTMENTS (30 Total - Realistic Distribution)
+            // 4. SEED APPOINTMENTS (Demo & Distributed)
             // ==========================================
             if (appointmentDAO.count() < 30 && !students.isEmpty() && !counselors.isEmpty()) {
                 System.out.println("📅 Seeding Appointments...");
                 
                 LocalDate today = LocalDate.now();
                 
-                // Get the Demo Student specifically to ensure you see these in your dashboard
+                // Get Key Actors
                 Student demoStudent = students.stream()
                         .filter(s -> s.getEmail().equals("demo@student.mindmate.com"))
                         .findFirst()
                         .orElse(students.get(0));
 
-                Counselor demoCounselor = counselors.get(0);
-                Counselor demoCounselor2 = counselors.get(1);
+                Counselor mainCounselor = counselors.get(0); // Sarah Johnson (Odd ID usually, check DB)
+                Counselor secondaryCounselor = counselors.get(1); // Michael Chen
 
-                // --- 1. Specific Demo: DENIED APPOINTMENT (To test Red Badge + Noted Button) ---
-                // Logic: Status=DENIED, DenialReason=Filled
-                Appointment deniedAppt = new Appointment();
-                deniedAppt.setStudent(demoStudent);
-                deniedAppt.setCounselor(demoCounselor);
-                deniedAppt.setCounselorName(demoCounselor.getName());
-                deniedAppt.setDate(today.plusDays(2));
-                deniedAppt.setTime(LocalTime.of(10, 0));
-                deniedAppt.setSessionType("Video Call");
-                deniedAppt.setStatus(Appointment.AppointmentStatus.DENIED); 
-                deniedAppt.setNotes("Need urgent help.");
-                deniedAppt.setDenialReason("I am fully booked that morning, please choose afternoon."); // ✅ Correct
-                appointmentDAO.save(deniedAppt);
+                // --- 1. DEMO SCENARIOS (Manually ensure these match the counselor's pattern) ---
+                // Assuming ID generation starts at 1 (Odd) -> Pattern A (8:30, 10:00...)
+                // Assuming ID generation continues to 2 (Even) -> Pattern B (9:00, 10:30...)
 
-                // --- 2. Specific Demo: CANCELLED APPOINTMENT (To test status) ---
-                // Logic: Status=CANCELLED, Notes=Student Reason, DenialReason=NULL
-                Appointment cancelledAppt = new Appointment();
-                cancelledAppt.setStudent(demoStudent);
-                cancelledAppt.setCounselor(demoCounselor2);
-                cancelledAppt.setCounselorName(demoCounselor2.getName());
-                cancelledAppt.setDate(today.plusDays(3));
-                cancelledAppt.setTime(LocalTime.of(14, 0));
-                cancelledAppt.setSessionType("Chat Session");
-                cancelledAppt.setStatus(Appointment.AppointmentStatus.CANCELLED);
-                cancelledAppt.setNotes("I have a class test at this time."); // ✅ Correct
-                cancelledAppt.setDenialReason(null); // ✅ Correct
-                appointmentDAO.save(cancelledAppt);
+                // A. TODAY: Confirmed (Using 14:00 for Odd / 14:30 for Even)
+                LocalTime timeA = (mainCounselor.getId() % 2 != 0) ? LocalTime.of(14, 0) : LocalTime.of(14, 30);
+                createAppointment(appointmentDAO, demoStudent, mainCounselor, 
+                    today, timeA, "Video Call", 
+                    Appointment.AppointmentStatus.CONFIRMED, "Looking forward to discussing my progress.", null);
 
-                // --- 3. Specific Demo: PENDING APPOINTMENT ---
-                Appointment pendingAppt = new Appointment();
-                pendingAppt.setStudent(demoStudent);
-                pendingAppt.setCounselor(demoCounselor);
-                pendingAppt.setCounselorName(demoCounselor.getName());
-                pendingAppt.setDate(today.plusDays(5));
-                pendingAppt.setTime(LocalTime.of(9, 0));
-                pendingAppt.setSessionType("In-Person");
-                pendingAppt.setStatus(Appointment.AppointmentStatus.PENDING);
-                appointmentDAO.save(pendingAppt);
+                // B. TOMORROW: Pending (Using 10:00 for Odd / 10:30 for Even)
+                LocalTime timeB = (mainCounselor.getId() % 2 != 0) ? LocalTime.of(10, 0) : LocalTime.of(10, 30);
+                createAppointment(appointmentDAO, demoStudent, mainCounselor, 
+                    today.plusDays(1), timeB, "Chat Session", 
+                    Appointment.AppointmentStatus.PENDING, "Feeling anxious about upcoming exams.", null);
 
-                // --- 4. Fill rest with random data ---
+                // C. YESTERDAY: Completed
+                LocalTime timeC = (secondaryCounselor.getId() % 2 != 0) ? LocalTime.of(11, 30) : LocalTime.of(10, 30);
+                createAppointment(appointmentDAO, demoStudent, secondaryCounselor, 
+                    today.minusDays(1), timeC, "Video Call", 
+                    Appointment.AppointmentStatus.COMPLETED, "Initial consultation.", null);
+
+                // D. 2 DAYS AGO: Denied
+                LocalTime timeD = (secondaryCounselor.getId() % 2 != 0) ? LocalTime.of(8, 30) : LocalTime.of(9, 0);
+                createAppointment(appointmentDAO, demoStudent, secondaryCounselor, 
+                    today.minusDays(2), timeD, "Phone Call", 
+                    Appointment.AppointmentStatus.DENIED, "Urgent request.", "I was on leave that day, sorry.");
+
+                // --- 2. FILLER DATA (For Charts & Admin Dashboard) ---
                 
-                // --- COMPLETED (6) - Last 2 weeks ---
-                seedAppointments(appointmentDAO, students, counselors, 
-                    today.minusDays(14), today.minusDays(1), 6, 
-                    Appointment.AppointmentStatus.COMPLETED, "Past session completed", false);
+                // COMPLETED: Spread over last 30 days
+                seedRandomAppointments(appointmentDAO, students, counselors, 
+                    today.minusDays(30), today.minusDays(1), 15, 
+                    Appointment.AppointmentStatus.COMPLETED, false);
                 
-                // --- CONFIRMED (10) - This week + Next week ---
-                seedAppointments(appointmentDAO, students, counselors,
-                    today.plusDays(1), today.plusDays(10), 10,
-                    Appointment.AppointmentStatus.CONFIRMED, "Appointment confirmed by counselor", false);
+                // UPCOMING: Spread over next 14 days
+                seedRandomAppointments(appointmentDAO, students, counselors, 
+                    today.plusDays(2), today.plusDays(14), 10, 
+                    Appointment.AppointmentStatus.CONFIRMED, false);
+
+                // PENDING: Spread over next week
+                seedRandomAppointments(appointmentDAO, students, counselors, 
+                    today.plusDays(1), today.plusDays(7), 5, 
+                    Appointment.AppointmentStatus.PENDING, false);
                 
-                System.out.println("✅ Appointments created (Includes Denied/Cancelled demo cases)");
+                System.out.println("✅ Appointments seeded: Demo scenarios + Filler data");
             }
 
             // ==========================================
-            // 5. SEED ANALYTICS SNAPSHOTS (12 Daily Snapshots)
+            // 5. SEED ANALYTICS SNAPSHOTS (14 Daily Snapshots)
             // ==========================================
-            if (analyticsDAO.findAll().size() < 12) {
-                System.out.println("📊 Seeding Analytics History...");
+            if (analyticsDAO.findAll().size() < 14) {
+                System.out.println("📊 Seeding Analytics Trends...");
                 
-                LocalDateTime startDate = LocalDateTime.now().minusDays(12);
-                int baseUsers = 8; 
-                int baseAppointments = 15;
-                int baseActive = 5;
+                LocalDateTime startDate = LocalDateTime.now().minusDays(14);
                 
-                for (int i = 0; i < 12; i++) {
+                int currentUsers = 12; 
+                int currentAppts = 20;
+                int currentAssessments = 3400;
+                
+                for (int i = 0; i < 14; i++) {
                     SystemAnalytics snapshot = new SystemAnalytics();
                     
-                    snapshot.setTotalStudents(baseUsers + i);
+                    currentUsers += (i % 3 == 0) ? 1 : 0; 
+                    currentAppts += random.nextInt(3);    
+                    currentAssessments += random.nextInt(15);
+
+                    snapshot.setTotalStudents(currentUsers - 5);
                     snapshot.setTotalCounselors(5);
-                    snapshot.setTotalUsers(baseUsers + i + 5);
-                    snapshot.setActiveUsers(baseActive + (i / 3));
+                    snapshot.setTotalUsers(currentUsers);
+                    snapshot.setActiveUsers((int)(currentUsers * (0.6 + (random.nextDouble() * 0.2)))); 
                     
-                    // Appointment metrics
-                    snapshot.setTotalAppointments(baseAppointments + (i * 2));
-                    snapshot.setPendingAppointments(3 + random.nextInt(6));
-                    snapshot.setConfirmedAppointments(5 + random.nextInt(8));
-                    snapshot.setCancelledAppointments(1 + random.nextInt(4));
-                    snapshot.setCompletedAppointments(baseAppointments - 10 + (i * 2));
+                    snapshot.setTotalAppointments(currentAppts);
+                    snapshot.setPendingAppointments(2 + random.nextInt(3));
+                    snapshot.setConfirmedAppointments(5 + random.nextInt(5));
+                    snapshot.setCancelledAppointments(1 + random.nextInt(2));
+                    snapshot.setCompletedAppointments(currentAppts - 10); 
                     
-                    // Module metrics
-                    snapshot.setAssessmentsTaken(3400 + (i * 20));
-                    snapshot.setForumPosts(1050 + (i * 15));
-                    snapshot.setContentViews(5300 + (i * 50));
-                    
-                    // Set recorded date
-                    LocalDateTime recordedAt = startDate.plusDays(i);
-                    snapshot.setRecordedAt(recordedAt);
+                    snapshot.setAssessmentsTaken(currentAssessments);
+                    snapshot.setForumPosts(1050 + (i * 5));
+                    snapshot.setContentViews(5000 + (i * 45));
+                    snapshot.setRecordedAt(startDate.plusDays(i));
                     
                     analyticsDAO.save(snapshot);
                 }
-                
-                System.out.println("✅ 12 Analytics snapshots created (last 12 days)");
+                System.out.println("✅ Analytics trends seeded");
             }
 
             System.out.println("=== DATA INITIALIZATION COMPLETE ===");
@@ -284,56 +272,83 @@ public class DataInitializer {
         dao.save(student);
     }
 
-    private int seedAppointments(AppointmentDAO dao, List<Student> students, List<Counselor> counselors,
-                                 LocalDate startDate, LocalDate endDate, int count,
-                                 Appointment.AppointmentStatus status, String notes, boolean isDenial) {
+    private void createAppointment(AppointmentDAO dao, Student student, Counselor counselor,
+                                   LocalDate date, LocalTime time, String type,
+                                   Appointment.AppointmentStatus status, String notes, String denialReason) {
+        Appointment apt = new Appointment();
+        apt.setStudent(student);
+        apt.setCounselor(counselor);
+        apt.setCounselorName(counselor.getName());
+        apt.setDate(date);
+        apt.setTime(time);
+        apt.setSessionType(type);
+        apt.setStatus(status);
+        apt.setNotes(notes);
+        apt.setDenialReason(denialReason);
+        dao.save(apt);
+    }
+
+    // ✅ FIXED: Helper now respects the Odd/Even counselor ID timing logic
+    private void seedRandomAppointments(AppointmentDAO dao, List<Student> students, List<Counselor> counselors,
+                                        LocalDate startDate, LocalDate endDate, int count,
+                                        Appointment.AppointmentStatus status, boolean isDenial) {
         
         String[] sessionTypes = {"Video Call", "Chat Session", "Phone Call"};
-        LocalTime[] times = {
-            LocalTime.of(9, 0), LocalTime.of(10, 0), LocalTime.of(11, 0),
-            LocalTime.of(13, 0), LocalTime.of(14, 0), LocalTime.of(15, 0), LocalTime.of(16, 0)
+        
+        // Pattern A (Odd IDs): 8:30, 10:00, 11:30, 14:00, 15:30
+        LocalTime[] oddTimes = {
+            LocalTime.of(8, 30), LocalTime.of(10, 0), LocalTime.of(11, 30),
+            LocalTime.of(14, 0), LocalTime.of(15, 30)
+        };
+
+        // Pattern B (Even IDs): 9:00, 10:30, 14:30, 16:00
+        LocalTime[] evenTimes = {
+            LocalTime.of(9, 0), LocalTime.of(10, 30), 
+            LocalTime.of(14, 30), LocalTime.of(16, 0)
         };
         
         int created = 0;
-        LocalDate currentDate = startDate;
-        int attempts = 0; 
+        int maxAttempts = count * 3; 
         
-        while (created < count && !currentDate.isAfter(endDate) && attempts < 100) {
-            // Skip weekends
-            if (currentDate.getDayOfWeek() == DayOfWeek.SATURDAY || 
-                currentDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                currentDate = currentDate.plusDays(1);
+        for (int i = 0; i < maxAttempts && created < count; i++) {
+            long days = endDate.toEpochDay() - startDate.toEpochDay();
+            LocalDate randomDate = startDate.plusDays(random.nextInt((int)days + 1));
+            
+            if (randomDate.getDayOfWeek() == DayOfWeek.SATURDAY || randomDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
                 continue;
             }
-            
+
             Counselor counselor = counselors.get(random.nextInt(counselors.size()));
-            LocalTime time = times[random.nextInt(times.length)];
+            Student student = students.get(random.nextInt(students.size())); 
             
-            Appointment appointment = new Appointment();
-            appointment.setStudent(students.get(random.nextInt(students.size())));
-            appointment.setCounselor(counselor);
-            appointment.setCounselorName(counselor.getName());
-            
-            appointment.setDate(currentDate);
-            appointment.setTime(time);
-            appointment.setSessionType(sessionTypes[random.nextInt(sessionTypes.length)]);
-            appointment.setStatus(status);
-            appointment.setNotes(notes);
-            
-            // ✅ Only set Denial Reason if logic dictates (Student Cancellation is NOT a denial)
-            if (isDenial) {
-                 appointment.setDenialReason("Counselor unavailable at this time.");
+            // ✅ DYNAMIC TIME SELECTION BASED ON ID
+            LocalTime time;
+            if (counselor.getId() % 2 != 0) {
+                time = oddTimes[random.nextInt(oddTimes.length)];
             } else {
-                 appointment.setDenialReason(null);
+                time = evenTimes[random.nextInt(evenTimes.length)];
             }
+
+            if (dao.existsByCounselorAndDateAndTime(counselor, randomDate, time)) {
+                continue;
+            }
+
+            Appointment apt = new Appointment();
+            apt.setStudent(student);
+            apt.setCounselor(counselor);
+            apt.setCounselorName(counselor.getName());
+            apt.setDate(randomDate);
+            apt.setTime(time);
+            apt.setSessionType(sessionTypes[random.nextInt(sessionTypes.length)]);
+            apt.setStatus(status);
+            apt.setNotes("Automated test appointment " + i);
             
-            dao.save(appointment);
+            if (isDenial) {
+                apt.setDenialReason("Counselor unavailable.");
+            }
+
+            dao.save(apt);
             created++;
-            
-            currentDate = currentDate.plusDays(random.nextInt(3) + 1);
-            attempts++;
         }
-        
-        return created;
     }
 }

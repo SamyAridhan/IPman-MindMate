@@ -3,17 +3,17 @@ package com.mindmate.util;
 /**
  * Data structure for counselor performance metrics.
  * Used in admin dashboard to display counselor statistics.
- * 
- * @author Ying Yi (A23CS0180)
+ * * @author Ying Yi (A23CS0180)
  */
 public class CounselorStats {
     
     private Long counselorId;
     private String counselorName;
-    private long totalAppointments;
+    private long totalAppointments; // ✅ FIXED: Changed from int to long
     private long pendingAppointments;
     private long confirmedAppointments;
     private long deniedAppointments;
+    private long cancelledAppointments; // ✅ NEW FIELD
     private double approvalRate; // Percentage of approved appointments
     
     // Constructor
@@ -50,6 +50,10 @@ public class CounselorStats {
     
     public long getDeniedAppointments() { return deniedAppointments; }
     public void setDeniedAppointments(long deniedAppointments) { this.deniedAppointments = deniedAppointments; }
+    
+    // ✅ NEW Getter/Setter for Cancelled
+    public long getCancelledAppointments() { return cancelledAppointments; }
+    public void setCancelledAppointments(long cancelledAppointments) { this.cancelledAppointments = cancelledAppointments; }
     
     public double getApprovalRate() { return approvalRate; }
     public String getFormattedApprovalRate() { 

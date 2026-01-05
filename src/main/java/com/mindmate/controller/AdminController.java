@@ -2,9 +2,9 @@ package com.mindmate.controller;
 
 import com.mindmate.dao.*;
 import com.mindmate.model.Appointment;
-import com.mindmate.model.Counselor; // ✅ New Import
+import com.mindmate.model.Counselor;
 import com.mindmate.model.SystemAnalytics;
-import com.mindmate.util.CounselorStats; // ✅ New Import
+import com.mindmate.util.CounselorStats;
 import com.mindmate.util.SessionHelper;
 
 import jakarta.servlet.http.HttpSession;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList; // ✅ New Import
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,7 +64,7 @@ public class AdminController {
         long cancelledAppointments = appointmentDAO.countByStatus(Appointment.AppointmentStatus.CANCELLED);
         long completedAppointments = appointmentDAO.countByStatus(Appointment.AppointmentStatus.COMPLETED);
         
-        int activeUsers = 856; 
+        int activeUsers = (int) totalUsers; 
         int assessmentsTaken = 3421; 
         int forumPosts = 1089; 
         
@@ -171,7 +171,6 @@ public class AdminController {
         return "admin/analytics";
     }
 
-    // ✅ NEW ENDPOINT: Counselor Performance
     @GetMapping("/counselor-performance")
     public String counselorPerformance(HttpSession session, Model model) {
         if (!isAdmin(session)) return "redirect:/login";
@@ -186,28 +185,38 @@ public class AdminController {
             for (Counselor counselor : allCounselors) {
                 CounselorStats stats = new CounselorStats(counselor.getId(), counselor.getName());
                 
-                // Get appointments for this counselor
-                // Note: Ideally we'd use a more efficient DAO method for stats, but this works for now
                 List<Appointment> appointments = appointmentDAO.findByCounselor(counselor);
                 
                 stats.setTotalAppointments(appointments.size());
                 
                 long pending = appointments.stream()
                     .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING).count();
+                
+                // History of Success (Confirmed + Completed)
                 long confirmed = appointments.stream()
-                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED).count();
+                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED || 
+                                 a.getStatus() == Appointment.AppointmentStatus.COMPLETED).count();
+                
+                // History of Rejection (Denied + Rejected + Acknowledged)
                 long denied = appointments.stream()
-                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CANCELLED && a.getDenialReason() != null).count();
+                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.DENIED || 
+                                 a.getStatus() == Appointment.AppointmentStatus.REJECTED || 
+                                 a.getStatus() == Appointment.AppointmentStatus.ACKNOWLEDGED).count();
+
+                // ✅ NEW: Explicitly count Cancelled (by Student)
+                long cancelled = appointments.stream()
+                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CANCELLED).count();
                 
                 stats.setPendingAppointments(pending);
                 stats.setConfirmedAppointments(confirmed);
                 stats.setDeniedAppointments(denied);
+                stats.setCancelledAppointments(cancelled); // ✅ Set it
+                
                 stats.calculateApprovalRate();
                 
                 performanceList.add(stats);
             }
             
-            // Sort by total appointments (descending)
             performanceList.sort((a, b) -> Long.compare(b.getTotalAppointments(), a.getTotalAppointments()));
             
             model.addAttribute("counselorStats", performanceList);
