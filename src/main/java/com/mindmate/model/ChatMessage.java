@@ -19,16 +19,25 @@ public class ChatMessage {
     // When a student logs in, they get a NEW sessionId
     private String sessionId; 
 
+    // NEW: Store the title (first user message, max 100 chars)
+    @Column(length = 255)
+    private String title;
+
     private String role; 
     @Column(columnDefinition = "TEXT")
     private String content;
     private LocalDateTime timestamp;
+
+    public ChatMessage() {
+        // Required by Hibernate
+    }
 
     public ChatMessage(String role, String content, LocalDateTime timestamp) {
         this.role = role;
         this.content = content;
         this.timestamp = timestamp;
     }
+    
     public ChatMessage(Long id, Student student, String sessionId, String role, String content,
             LocalDateTime timestamp) {
         this.id = id;
@@ -38,6 +47,18 @@ public class ChatMessage {
         this.content = content;
         this.timestamp = timestamp;
     }
+
+    public ChatMessage(Long id, Student student, String sessionId, String title, String role, 
+            String content, LocalDateTime timestamp) {
+        this.id = id;
+        this.student = student;
+        this.sessionId = sessionId;
+        this.title = title;
+        this.role = role;
+        this.content = content;
+        this.timestamp = timestamp;
+    }
+
     public Long getId() {
         return id;
     }
@@ -56,6 +77,14 @@ public class ChatMessage {
     public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
     }
+    
+    public String getTitle() {
+        return title;
+    }
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    
     public String getRole() {
         return role;
     }
@@ -74,6 +103,4 @@ public class ChatMessage {
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
-
-    
 }

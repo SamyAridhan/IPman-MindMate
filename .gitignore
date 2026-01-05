@@ -29,6 +29,8 @@ bin/
 # Spring Boot
 application-local.properties
 application-dev.properties
+application.properties
+
 
 # Logs
 *.log

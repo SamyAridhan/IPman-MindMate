@@ -13,7 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -37,72 +39,113 @@ public class ChatRestController {
      * If it's a new login, it generates a fresh ID to ensure a "clean" start.
      */
     @PostMapping("/send")
-    public ResponseEntity<ChatMessage> handleSendMessage(@RequestBody String message, HttpSession session) {
-        Long userId = SessionHelper.getUserId(session);
-        String role = SessionHelper.getRole(session);
+public ResponseEntity<ChatMessage> handleSendMessage(@RequestBody String message, HttpSession session) {
+    Long userId = SessionHelper.getUserId(session);
+    String role = SessionHelper.getRole(session);
 
-        // Security Check
-        if (userId == null || !"student".equals(role)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        // 1. Manage Chat Session ID (Start a new one if none exists in this browser session)
-        String chatSessionId = (String) session.getAttribute(SESSION_KEY);
-        if (chatSessionId == null) {
-            chatSessionId = "chat_" + UUID.randomUUID().toString().substring(0, 8);
-            session.setAttribute(SESSION_KEY, chatSessionId);
-        }
-
-        Student student = studentDAO.findById(userId);
-
-        // 2. Save User Message to Database
-        ChatMessage userMsg = new ChatMessage("user", message, LocalDateTime.now());
-        userMsg.setStudent(student);
-        userMsg.setSessionId(chatSessionId);
-        chatDAO.saveMessage(userMsg);
-
-        // 3. Get AI Response from Gemini
-        String aiResponse = geminiService.generateResponse(message);
-
-        // 4. Save AI Message to Database
-        ChatMessage aiMsg = new ChatMessage("assistant", aiResponse, LocalDateTime.now());
-        aiMsg.setStudent(student);
-        aiMsg.setSessionId(chatSessionId);
-        chatDAO.saveMessage(aiMsg);
-
-        return ResponseEntity.ok(aiMsg);
+    // Security Check
+    if (userId == null || !"student".equals(role)) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+
+    // 1. Manage Chat Session ID (Start a new one if none exists in this browser session)
+    String chatSessionId = (String) session.getAttribute(SESSION_KEY);
+    if (chatSessionId == null) {
+        chatSessionId = "chat_" + UUID.randomUUID().toString().substring(0, 8);
+        session.setAttribute(SESSION_KEY, chatSessionId);
+    }
+
+    Student student = studentDAO.findById(userId);
+
+    // 2. Save User Message to Database
+    ChatMessage userMsg = new ChatMessage("user", message, LocalDateTime.now());
+    userMsg.setStudent(student);
+    userMsg.setSessionId(chatSessionId);
+    
+    // NEW: Generate title from first user message in this session
+    long messageCount = chatDAO.countByStudentAndSessionId(student, chatSessionId);
+    if (messageCount == 0) {
+        String title = generateTitle(message);
+        userMsg.setTitle(title);
+    }
+    
+    chatDAO.saveMessage(userMsg);
+
+    // 3. Get AI Response from Gemini
+    String aiResponse = geminiService.generateResponse(message);
+
+    // 4. Save AI Message to Database
+    ChatMessage aiMsg = new ChatMessage("assistant", aiResponse, LocalDateTime.now());
+    aiMsg.setStudent(student);
+    aiMsg.setSessionId(chatSessionId);
+    // Don't set title for AI messages, only for first user message
+    chatDAO.saveMessage(aiMsg);
+
+    return ResponseEntity.ok(aiMsg);
+}
+
+// NEW: Helper method to generate title from user message
+private String generateTitle(String message) {
+    // Truncate to first 60 characters and remove special characters
+    String title = message.replaceAll("[^a-zA-Z0-9\\s]", "").trim();
+    
+    if (title.length() > 60) {
+        title = title.substring(0, 60).trim() + "...";
+    }
+    
+    return title.isEmpty() ? "New Chat" : title;
+}
 
     /**
      * Gets all unique session IDs for this specific student to show in the sidebar.
      */
     @GetMapping("/sessions")
-    public ResponseEntity<List<String>> getChatSessions(HttpSession session) {
-        Long userId = SessionHelper.getUserId(session);
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        List<String> sessions = chatDAO.getUniqueSessionsByStudent(userId);
-        return ResponseEntity.ok(sessions);
+public ResponseEntity<?> getSessions(HttpSession session) {
+    Long userId = SessionHelper.getUserId(session);
+    String role = SessionHelper.getRole(session);
+    
+    if (userId == null || !"student".equals(role)) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+    
+    Student student = studentDAO.findById(userId);
+    
+    // Get session titles from database
+    List<ChatMessage> sessionTitles = chatDAO.getSessionTitlesByStudent(student);
+    
+    // Return as a list of objects with sessionId and title
+    List<Map<String, String>> sessions = sessionTitles.stream()
+        .map(msg -> {
+            Map<String, String> sessionData = new HashMap<>();
+            sessionData.put("sessionId", msg.getSessionId());
+            sessionData.put("title", msg.getTitle() != null ? msg.getTitle() : "Chat");
+            return sessionData;
+        })
+        .toList();
+    
+    return ResponseEntity.ok(sessions);
+}
 
     /**
      * Fetches messages for a specific conversation when clicked in the sidebar.
      */
     @GetMapping("/history/load")
-    public ResponseEntity<List<ChatMessage>> getSpecificHistory(@RequestParam String sessionId, HttpSession session) {
-        Long userId = SessionHelper.getUserId(session);
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        // IMPORTANT: Switch the current session ID so future "sends" stay in this conversation
-        session.setAttribute(SESSION_KEY, sessionId);
-
-        List<ChatMessage> history = chatDAO.getMessagesBySession(sessionId);
-        return ResponseEntity.ok(history);
+public ResponseEntity<List<ChatMessage>> loadHistory(
+        @RequestParam String sessionId, 
+        HttpSession session) {
+    
+    Long userId = SessionHelper.getUserId(session);
+    if (userId == null) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+    
+    Student student = studentDAO.findById(userId);
+    
+    // Load messages for this specific session
+    List<ChatMessage> messages = chatDAO.getMessagesByStudentAndSession(student, sessionId);
+    
+    return ResponseEntity.ok(messages);
+}
 
     /**
      * Retrieves messages for the conversation currently active in the widget.

@@ -40,7 +40,7 @@
         </div>
 
         <%-- 3. Header --%>
-        <div class="p-4 border-b border-border bg-gradient-to-r from-primary/10 to-primary/5">
+        <div class="p-4 border-b border-border bg-gradient-to-r from-primary/10 to-primary/5 relative z-10">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                     <button onclick="toggleSidebar(true)" class="p-1.5 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors">
@@ -64,12 +64,12 @@
         </div>
 
         <%-- 4. Messages Container --%>
-        <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50 custom-scrollbar">
+        <div id="messages-container" class="flex-1 overflow-y-auto p-4 bg-background custom-scrollbar relative z-0 flex flex-col">
             <%-- Messages render here --%>
         </div>
 
         <%-- 5. Typing Indicator --%>
-        <div id="typing-indicator" class="px-4 pb-2 hidden">
+        <div id="typing-indicator" class="px-4 pb-2 hidden relative z-10">
             <div class="flex items-center gap-2 text-[11px] text-muted-foreground italic">
                 <div class="flex gap-0.5">
                     <span class="w-1 h-1 bg-primary/60 rounded-full animate-bounce"></span>
@@ -81,10 +81,10 @@
         </div>
 
         <%-- 6. Input Area --%>
-        <div class="p-4 bg-card border-t border-border">
+        <div class="p-4 bg-card border-t border-border relative z-10">
             <form onsubmit="handleSendMessage(); return false;" class="flex gap-2">
                 <input id="chat-input" type="text" placeholder="Tell me how you feel..." 
-                       class="flex-1 h-10 bg-background border border-input rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-primary outline-none transition-all">
+                       class="flex-1 h-10 bg-background border border-input rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-primary outline-none transition-all text-foreground" autocomplete="off">
                 <button id="chat-send-button" type="submit" class="h-10 w-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:opacity-90 transition-all">
                     <i data-lucide="send" class="h-4 w-4"></i>
                 </button>
@@ -94,6 +94,7 @@
 </div>
 
 <script>
+    // Ensure Lucide icons are initialized
     lucide.createIcons();
 
     let isChatOpen = false;
@@ -106,7 +107,7 @@
     const inputField = document.getElementById('chat-input');
     const typingIndicator = document.getElementById('typing-indicator');
 
-    // Initialize
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
         loadCurrentHistory();
     });
@@ -129,16 +130,27 @@
         try {
             const response = await fetch('/api/chat/sessions');
             const sessions = await response.json();
+            console.log('Sessions fetched:', sessions);
             const list = document.getElementById('history-list');
             
-            list.innerHTML = sessions.map(sid => `
-                <button onclick="loadSession('${sid}')" class="w-full text-left p-3 rounded-xl hover:bg-primary/5 text-xs flex items-center gap-3 transition-all border border-transparent hover:border-border group">
-                    <i data-lucide="message-square" class="h-4 w-4 text-muted-foreground group-hover:text-primary"></i>
-                    <span class="truncate text-muted-foreground group-hover:text-foreground">${sid.replace('chat_', 'Conversation ')}</span>
-                </button>
-            `).join('');
+            list.innerHTML = sessions.map(session => {
+                // session should be an object with sessionId and title
+                const sessionId = session.sessionId || session;
+                const title = session.title || 'Chat';
+                
+                console.log('Rendering session:', sessionId, title);
+                
+                return `
+                    <button onclick="loadSession('${sessionId}')" class="w-full text-left p-3 rounded-xl hover:bg-primary/5 text-xs flex items-center gap-3 transition-all border border-transparent hover:border-border group">
+                        <i data-lucide="message-square" class="h-4 w-4 text-muted-foreground group-hover:text-primary"></i>
+                        <span class="truncate text-muted-foreground group-hover:text-foreground font-medium">${title}</span>
+                    </button>
+                `;
+            }).join('');
             lucide.createIcons();
-        } catch (e) { console.error("History fetch failed", e); }
+        } catch (e) { 
+            console.error("History fetch failed", e); 
+        }
     }
 
     async function loadSession(sessionId) {
@@ -147,7 +159,9 @@
             currentMessages = await response.json();
             renderMessages();
             toggleSidebar(false);
-        } catch (e) { console.error("Session load failed", e); }
+        } catch (e) { 
+            console.error("Session load failed", e); 
+        }
     }
 
     async function startNewChat() {
@@ -160,7 +174,9 @@
             }];
             renderMessages();
             toggleSidebar(false);
-        } catch (e) { console.error("New chat failed", e); }
+        } catch (e) { 
+            console.error("New chat failed", e); 
+        }
     }
 
     // ============================================
@@ -172,8 +188,10 @@
         chatWindow.classList.toggle('hidden', !open);
         chatButton.classList.toggle('hidden', open);
         if (open) {
-            scrollToBottom();
-            inputField.focus();
+            setTimeout(() => {
+                scrollToBottom();
+                inputField.focus();
+            }, 50);
         }
     }
 
@@ -181,11 +199,17 @@
         const message = inputField.value.trim();
         if (!message || isLoading) return;
 
-        // UI: Add user message
-        const userMsg = { role: 'user', content: message, timestamp: new Date().toISOString() };
+        // 1. Add User Message locally - store ONLY the plain message text
+        const userMsg = { 
+            role: 'user', 
+            content: message,  // Plain text, NOT JSON
+            timestamp: new Date().toISOString() 
+        };
         currentMessages.push(userMsg);
-        inputField.value = '';
+        console.log('User message added:', userMsg);
+        inputField.value = ''; 
         renderMessages();
+        scrollToBottom();
 
         isLoading = true;
         typingIndicator.classList.remove('hidden');
@@ -195,23 +219,79 @@
             const response = await fetch('/api/chat/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: message
+                body: JSON.stringify({ message: message })
             });
             
-            const aiMsg = await response.json();
-            console.log("Server Response:", aiMsg); // Check your browser console (F12)
+            if (!response.ok) throw new Error('Server error');
+
+            const data = await response.json();
+            console.log('Backend response:', data);
             
-            if (aiMsg && (aiMsg.content || aiMsg.text)) {
+            // Extract the message data from the response
+            if (data && data.content) {
+                const aiMsg = {
+                    role: data.role || 'assistant',
+                    content: data.content,
+                    timestamp: data.timestamp || new Date().toISOString()
+                };
                 currentMessages.push(aiMsg);
+                console.log('AI message added:', aiMsg);
             } else {
-                throw new Error("Empty content received");
+                throw new Error("Empty response");
             }
-            renderMessages();
         } catch (error) {
             console.error('Send Error:', error);
+            currentMessages.push({
+                role: 'assistant',
+                content: "I'm having trouble connecting to my brain right now. Please try again later.",
+                timestamp: new Date().toISOString()
+            });
         } finally {
             isLoading = false;
             typingIndicator.classList.add('hidden');
+            renderMessages(); 
+            scrollToBottom();
+        }
+    
+
+        isLoading = true;
+        typingIndicator.classList.remove('hidden');
+        scrollToBottom();
+
+        try {
+            const response = await fetch('/api/chat/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+            
+            if (!response.ok) throw new Error('Server error');
+
+            const data = await response.json();
+            
+            // Extract the message data from the response
+            if (data && data.content) {
+                const aiMsg = {
+                    role: data.role || 'assistant',
+                    content: data.content,
+                    timestamp: data.timestamp || new Date().toISOString()
+                };
+                currentMessages.push(aiMsg);
+                console.log('Message added:', aiMsg);
+            } else {
+                throw new Error("Empty response");
+            }
+        } catch (error) {
+            console.error('Send Error:', error);
+            currentMessages.push({
+                role: 'assistant',
+                content: "I'm having trouble connecting to my brain right now. Please try again later.",
+                timestamp: new Date().toISOString()
+            });
+        } finally {
+            isLoading = false;
+            typingIndicator.classList.add('hidden');
+            renderMessages(); 
             scrollToBottom();
         }
     }
@@ -230,35 +310,96 @@
                 }];
             }
             renderMessages();
-        } catch (e) { console.error("Load history error", e); }
+        } catch (e) { 
+            console.error("Load history error", e); 
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     function renderMessages() {
+        if (!messagesContainer) return;
         messagesContainer.innerHTML = '';
-        currentMessages.forEach(msg => {
+
+        currentMessages.forEach((msg) => {
             const isUser = msg.role === 'user';
+            const textToDisplay = msg.content || "";
+
+            // Container for the entire message (with alignment)
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.marginBottom = '12px';
+            div.style.justifyContent = isUser ? 'flex-end' : 'flex-start';
+
+            // Wrapper for avatar + bubble
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'flex-end';
+            wrapper.style.gap = '8px';
+            if (isUser) wrapper.style.flexDirection = 'row-reverse';
+
+            // Avatar
+            const avatar = document.createElement('div');
+            avatar.style.width = '32px';
+            avatar.style.height = '32px';
+            avatar.style.borderRadius = '50%';
+            avatar.style.display = 'flex';
+            avatar.style.alignItems = 'center';
+            avatar.style.justifyContent = 'center';
+            avatar.style.flexShrink = '0';
+            avatar.style.border = '1px solid rgba(0,0,0,0.1)';
             
-            // FIX: Ensure we are grabbing the text correctly regardless of naming
-            const textContent = msg.content || msg.text || ""; 
+            if (isUser) {
+                avatar.style.backgroundColor = 'rgb(219, 112, 147)'; // primary pink
+                avatar.innerHTML = '<i data-lucide="user" style="color: white; width: 16px; height: 16px;"></i>';
+            } else {
+                avatar.style.backgroundColor = 'rgba(219, 112, 147, 0.2)';
+                avatar.innerHTML = '<i data-lucide="bot" style="color: rgb(219, 112, 147); width: 16px; height: 16px;"></i>';
+            }
+
+            // Message bubble
+            const bubble = document.createElement('div');
+            bubble.style.borderRadius = '16px';
+            bubble.style.padding = '12px 16px';
+            bubble.style.maxWidth = '280px';
+            bubble.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
             
-            const html = `
-                <div class="flex items-start gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}">
-                    <div class="w-8 h-8 rounded-full ${isUser ? 'bg-primary' : 'bg-primary/20'} flex items-center justify-center shrink-0 border border-primary/10">
-                        <i data-lucide="${isUser ? 'user' : 'bot'}" class="h-4 w-4 ${isUser ? 'text-primary-foreground' : 'text-primary'}"></i>
-                    </div>
-                    <div class="${isUser ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-secondary text-foreground rounded-tl-none shadow-sm'} rounded-2xl px-4 py-2.5 max-w-[80%]">
-                        <p class="text-sm leading-relaxed whitespace-pre-wrap">${textContent}</p>
-                    </div>
-                </div>
-            `;
-            messagesContainer.insertAdjacentHTML('beforeend', html);
+            if (isUser) {
+                bubble.style.backgroundColor = 'rgb(219, 112, 147)'; // primary
+                bubble.style.color = 'white';
+            } else {
+                bubble.style.backgroundColor = 'rgb(245, 245, 245)'; // secondary light
+                bubble.style.color = 'rgb(64, 64, 64)';
+            }
+
+            const p = document.createElement('p');
+            p.style.fontSize = '14px';
+            p.style.lineHeight = '1.5';
+            p.style.whiteSpace = 'pre-wrap';
+            p.style.wordBreak = 'break-word';
+            p.style.margin = '0';
+            p.textContent = textToDisplay;
+
+            bubble.appendChild(p);
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            div.appendChild(wrapper);
+
+            messagesContainer.appendChild(div);
         });
-        lucide.createIcons();
+
+        setTimeout(() => lucide.createIcons(), 0);
         scrollToBottom();
     }
 
     function scrollToBottom() {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
     }
 </script>
 
@@ -266,4 +407,20 @@
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fadeIn {
+        animation: fadeIn 0.3s ease-in-out;
+    }
 </style>
