@@ -248,69 +248,57 @@
             </div>
 
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-foreground">AI Recommendations</h2>
-                    <div class="flex items-center space-x-2">
-                        <select class="px-3 py-1.5 border border-input rounded-md bg-background text-sm">
-                            <option>All Topics</option>
-                            <option>Stress</option>
-                            <option>Sleep</option>
-                            <option>Anxiety</option>
-                        </select>
-                        <button class="icon-btn border border-input">
-                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                        </button>
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center">
+            <i data-lucide="sparkles" class="w-5 h-5 mr-2 text-primary"></i>
+            <h2 class="text-xl font-semibold text-foreground">
+                Personalized Learning Modules
+            </h2>
+        </div>
+        
+        <button onclick="window.location.reload();" class="icon-btn border border-input" title="Refresh">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div class="space-y-4">
+        
+        <c:forEach var="module" items="${recommendedModules}">
+            <a href="/student/view-module?id=${module.id}" 
+               class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors border border-transparent hover:border-border">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <%-- Dynamic Icon based on content type --%>
+                            <i data-lucide="${module.contentType == 'Video' ? 'video' : 'file-text'}" 
+                               class="w-4 h-4 ${module.contentType == 'Video' ? 'text-blue-500' : 'text-green-500'}"></i>
+                            <h4 class="font-medium text-foreground">${module.title}</h4>
+                        </div>
+                        <p class="text-sm text-muted-foreground line-clamp-2">${module.description}</p>
+                        
+                        <div class="flex items-center mt-2">
+                             <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                                <i data-lucide="star" class="w-3 h-3 inline mr-1 fill-current"></i> ${module.pointsValue} pts
+                            </span>
+                        </div>
+                    </div>
+                    <div class="ml-4 text-primary opacity-70">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
                     </div>
                 </div>
+            </a>
+        </c:forEach>
 
-                <div class="space-y-4">
-                    <a href="/student/recommendation?id=mindfulness-beginners"
-                        class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <i data-lucide="video" class="w-4 h-4"></i>
-                                    <h4 class="font-medium text-foreground">Mindfulness for Beginners</h4>
-                                </div>
-                                <p class="text-sm text-muted-foreground mb-2">Based on your stress levels, try this calming session</p>
-                                <div class="flex items-center space-x-3 text-xs text-muted-foreground">
-                                    <span class="badge-outline-blue">video</span>
-                                    <span>15 min</span>
-                                    <span class="badge-outline-blue">stress</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-1 ml-4">
-                                <button class="icon-btn"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
-                                <button class="icon-btn"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
-                                <button class="icon-btn"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
-                            </div>
-                        </div>
-                    </a>
-                    
-                    <a href="/student/recommendation?id=sleep-hygiene-tips"
-                        class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <i data-lucide="file-text" class="w-4 h-4"></i>
-                                    <h4 class="font-medium text-foreground">Sleep Hygiene Tips</h4>
-                                </div>
-                                <p class="text-sm text-muted-foreground mb-2">Improve your sleep quality with simple changes</p>
-                                <div class="flex items-center space-x-3 text-xs text-muted-foreground">
-                                    <span class="badge-outline-blue">article</span>
-                                    <span>5 min read</span>
-                                    <span class="badge-outline-blue">sleep</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-1 ml-4">
-                                <button class="icon-btn"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
-                                <button class="icon-btn"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
-                                <button class="icon-btn"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
-                            </div>
-                        </div>
-                    </a>
-                </div>
+        <%-- EMPTY STATE --%>
+        <c:if test="${empty recommendedModules}">
+            <div class="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg">
+                <i data-lucide="book-open" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                <p class="text-sm">Complete the self-assessment to see your personalized list.</p>
             </div>
+        </c:if>
+
+    </div>
+</div>
         </div>
 
         <div class="space-y-6">
@@ -529,7 +517,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         displayColors: false,
                         callbacks: {
                             label: function(context) {
-                                return 'Score: ' + context.parsed.y + '/100';
+                                return 'Score: ' + context.parsed.y + '/15';
                             }
                         }
                     }

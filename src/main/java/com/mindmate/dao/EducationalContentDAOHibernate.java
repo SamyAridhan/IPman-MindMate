@@ -79,4 +79,15 @@ public class EducationalContentDAOHibernate implements EducationalContentDAO {
             return query.list();
         }
     }
+
+    @Override
+    public List<EducationalContent> searchByKeyword(String keyword) {
+        try (Session session = sessionFactory.openSession()) {
+            // Searches for the keyword in the Title OR Description
+            String hql = "FROM EducationalContent c WHERE lower(c.title) LIKE :kw OR lower(c.description) LIKE :kw";
+            Query<EducationalContent> query = session.createQuery(hql, EducationalContent.class);
+            query.setParameter("kw", "%" + keyword.toLowerCase() + "%");
+            return query.list();
+        }
+    }
 }

@@ -302,18 +302,21 @@ public class DataInitializer {
                     Assessment a1 = new Assessment(demoStudent, 14);
                     a1.setResultCategory("Severe"); 
                     a1.setTakenAt(LocalDateTime.now().minusDays(7));
+                    a1.setResponseData("3,3,3,2,3");
                     assessmentDAO.save(a1);
 
                     // 2. Moderate Risk - 3 days ago
                     Assessment a2 = new Assessment(demoStudent, 12);
                     a2.setResultCategory("Moderate");
                     a2.setTakenAt(LocalDateTime.now().minusDays(3));
+                    a2.setResponseData("2,1,1,2,3");
                     assessmentDAO.save(a2);
 
                     // 3. Minimal Risk - Today
                     Assessment a3 = new Assessment(demoStudent, 4);
                     a3.setResultCategory("Minimal");
                     a3.setTakenAt(LocalDateTime.now().minusHours(2));
+                    a3.setResponseData("1,0,1,1,1");
                     assessmentDAO.save(a3);
                     
                     System.out.println("✅ Seeded 3 assessments for Demo Student.");

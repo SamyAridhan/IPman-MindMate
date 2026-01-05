@@ -27,8 +27,10 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Controller
@@ -89,6 +91,58 @@ public class StudentController {
             latest = history.get(history.size() - 1);
         }
         model.addAttribute("latestAssessment", latest);
+
+        // --- ✅ PERSONALIZATION LOGIC START ---
+        Set<EducationalContent> recommendations = new HashSet<>(); // Use Set to avoid duplicates
+
+        if (latest != null && latest.getResponseData() != null) {
+            String[] answers = latest.getResponseData().split(",");
+
+            if (answers.length >= 5) {
+                int q1 = Integer.parseInt(answers[0]); // Anxiety
+                int q2 = Integer.parseInt(answers[1]); // Worry
+                int q3 = Integer.parseInt(answers[2]); // Depression
+                int q4 = Integer.parseInt(answers[3]); // Interest
+                int q5 = Integer.parseInt(answers[4]); // Sleep
+
+                boolean specificNeedsFound = false;
+
+                // 1. ANXIETY (Q1 or Q2 High) -> Search "Anxiety" or "Grounding"
+                if (q1 >= 2 || q2 >= 2) {
+                    recommendations.addAll(contentDAO.searchByKeyword("Anxiety"));
+                    recommendations.addAll(contentDAO.searchByKeyword("Grounding"));
+                    specificNeedsFound = true;
+                }
+
+                // 2. MOOD/CONFIDENCE (Q3 or Q4 High) -> Search "Confidence", "Social", "Depression"
+                if (q3 >= 2 || q4 >= 2) {
+                    recommendations.addAll(contentDAO.searchByKeyword("Confidence"));
+                    recommendations.addAll(contentDAO.searchByKeyword("Social"));
+                    specificNeedsFound = true;
+                }
+
+                // 3. SLEEP (Q5 High) -> Search "Sleep"
+                if (q5 >= 2) {
+                    recommendations.addAll(contentDAO.searchByKeyword("Sleep"));
+                    specificNeedsFound = true;
+                }
+
+                // 4. STRESS (If Q1 is mild but present) -> Search "Stress"
+                if ((q1 == 1 || q2 == 1) && !specificNeedsFound) {
+                    recommendations.addAll(contentDAO.searchByKeyword("Stress"));
+                    recommendations.addAll(contentDAO.searchByKeyword("Pomodoro")); // Productivity helps stress
+                }
+
+            }
+        }
+
+        // Fallback: If list is still empty, show everything (or specific general topics)
+        if (recommendations.isEmpty()) {
+            recommendations.addAll(contentDAO.findAll()); // Show all or just searchByKeyword("Stress")
+        }
+
+        model.addAttribute("recommendedModules", recommendations);
+        // --- 🔒 PERSONALIZATION LOGIC END ---
         
         return "student/dashboard";
     }
