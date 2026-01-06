@@ -250,9 +250,12 @@
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
     <div class="flex items-center justify-between mb-4">
         <div>
-            <h2 class="text-xl font-bold text-foreground">
-                ${not empty recTitle ? recTitle : 'Tailored for Your Well-being'}
-            </h2>
+            <div class="flex items-center">
+                <i data-lucide="sparkles" class="w-5 h-5 mr-2 text-primary"></i>
+                <h2 class="text-xl font-bold text-foreground">
+                    ${not empty recTitle ? recTitle : 'Tailored for Your Well-being'}
+                </h2>
+            </div>
             <p class="text-sm text-muted-foreground mt-1">
                 <c:choose>
                     <c:when test="${not empty latestAssessment}">
