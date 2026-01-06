@@ -342,21 +342,29 @@
             } else if (typeof data === 'object') {
                 // Try to find any non-empty string field
                 for (let key in data) {
-                    if (typeof data[key] === 'string' && data[key].length > 0 && key !== 'role' && key !== 'timestamp') {
+                    if (typeof data[key] === 'string' && data[key].length > 0 && key !== 'role' && key !== 'timestamp' && key !== 'sessionId') {
                         messageContent = data[key];
                         break;
                     }
                 }
             }
             
-            // If content looks like JSON, try to parse it
-            if (messageContent && messageContent.startsWith('{')) {
+            // If content looks like JSON, try to parse it recursively
+            if (messageContent && messageContent.trim().startsWith('{')) {
                 try {
                     const parsed = JSON.parse(messageContent);
-                    if (parsed.message) {
+                    // Check if parsed object has a message field
+                    if (parsed.message && typeof parsed.message === 'string') {
                         messageContent = parsed.message;
-                    } else if (parsed.content) {
+                    } else if (parsed.content && typeof parsed.content === 'string') {
                         messageContent = parsed.content;
+                    } else if (typeof parsed === 'string') {
+                        messageContent = parsed;
+                    }
+                    // If still looks like JSON after first parse, try again
+                    if (messageContent.trim().startsWith('{')) {
+                        const parsed2 = JSON.parse(messageContent);
+                        if (parsed2.message) messageContent = parsed2.message;
                     }
                 } catch (e) {
                     console.warn('Could not parse JSON content:', e);
@@ -364,7 +372,7 @@
             }
 
             // Don't add empty messages
-            if (messageContent && messageContent.trim().length > 0) {
+            if (messageContent && messageContent.trim().length > 0 && !messageContent.trim().startsWith('{')) {
                 const aiMsg = {
                     role: data.role || 'assistant',
                     content: messageContent,
@@ -373,7 +381,7 @@
                 currentMessages.push(aiMsg);
                 console.log('AI message added:', aiMsg);
             } else {
-                console.warn('Empty message received, skipping');
+                console.warn('Empty or invalid message received, skipping:', messageContent);
             }
         } catch (error) {
             console.error('Send Error:', error);
@@ -394,8 +402,31 @@
         try {
             const response = await fetch('/api/chat/history/current');
             const history = await response.json();
+            console.log('Current history loaded:', history);
+            
             if (history && history.length > 0) {
-                currentMessages = history;
+                // Transform messages to ensure content is properly extracted
+                currentMessages = history.map(msg => {
+                    let content = msg.content || '';
+                    
+                    // If content is a JSON string, parse it
+                    if (typeof content === 'string' && content.startsWith('{')) {
+                        try {
+                            const parsed = JSON.parse(content);
+                            if (parsed.message) {
+                                content = parsed.message;
+                            }
+                        } catch (e) {
+                            // Not valid JSON, use as-is
+                        }
+                    }
+                    
+                    return {
+                        role: msg.role || 'user',
+                        content: content,
+                        timestamp: msg.timestamp || new Date().toISOString()
+                    };
+                });
             } else {
                 currentMessages = [{
                     role: 'assistant',
@@ -421,23 +452,43 @@
             let timeString = '';
             if (msg.timestamp) {
                 try {
-                    if (typeof msg.timestamp === 'string' && msg.timestamp.includes('T')) {
-                        // Simple substring extraction: "2026-01-06T09:09:58.3246055" -> "09:09"
-                        const timePart = msg.timestamp.split('T')[1]; // Gets "09:09:58.3246055"
-                        timeString = timePart.substring(0, 5); // Gets "09:09"
-                        console.log('✓ Time extracted:', timeString);
-                    } else {
-                        // Fallback for Date objects
-                        const date = new Date(msg.timestamp);
+                    console.log('Processing timestamp:', msg.timestamp, 'Type:', typeof msg.timestamp);
+                    
+                    let date;
+                    if (typeof msg.timestamp === 'string') {
+                        date = new Date(msg.timestamp);
+                        console.log('Parsed date:', date, 'Valid:', !isNaN(date.getTime()));
+                        
                         if (!isNaN(date.getTime())) {
+                            const h = date.getHours();
+                            const m = date.getMinutes();
+                            console.log('Raw hours:', h, 'Raw minutes:', m);
+                            
+                            const hours = String(h).padStart(2, '0');
+                            const minutes = String(m).padStart(2, '0');
+                            console.log('Padded hours:', hours, 'Padded minutes:', minutes);
+                            
+                            timeString = hours + ':' + minutes;
+                            console.log('✓ Final time string:', timeString);
+                        }
+                    } else {
+                        date = msg.timestamp;
+                        if (date && !isNaN(date.getTime())) {
                             const hours = String(date.getHours()).padStart(2, '0');
                             const minutes = String(date.getMinutes()).padStart(2, '0');
-                            timeString = `${hours}:${minutes}`;
-                            console.log('✓ Time from Date:', timeString);
+                            timeString = hours + ':' + minutes;
+                            console.log('✓ Time converted to local:', timeString);
                         }
                     }
+                    
+                    // Fallback if still empty
+                    if (!timeString && typeof msg.timestamp === 'string' && msg.timestamp.includes('T')) {
+                        const timePart = msg.timestamp.split('T')[1];
+                        timeString = timePart.substring(0, 5);
+                        console.log('✓ Time extracted via fallback:', timeString);
+                    }
                 } catch (e) {
-                    console.error('Time formatting error:', e);
+                    console.error('Time formatting error:', e, 'timestamp:', msg.timestamp);
                 }
             }
 
