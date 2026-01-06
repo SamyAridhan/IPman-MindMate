@@ -1,202 +1,311 @@
-// src/main/java/com/mindmate/controller/ForumController.java
 package com.mindmate.controller;
 
-import com.mindmate.util.SessionHelper; // ✅ Import this
-import jakarta.servlet.http.HttpSession; // ✅ Import this
-
+import com.mindmate.dao.ForumDAO;
+import com.mindmate.dao.StudentDAO;
+import com.mindmate.model.ForumPost;
+import com.mindmate.model.ForumReply;
+import com.mindmate.util.SessionHelper;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/student")
 public class ForumController {
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+    @Autowired
+    private ForumDAO forumDAO;
+    
+    @Autowired
+    private StudentDAO studentDAO;
 
-    // Mock Post Data Structure (Keeping this as is for now)
-    private final List<Map<String, Object>> mockPosts = Arrays.asList(
-        // Post 1
-        new HashMap<String, Object>() {{ 
-            put("id", 1); 
-            put("title", "How to manage stress during exams?"); 
-            put("content", "I feel overwhelmed with upcoming finals. Any non-meditation tips?"); 
-            put("author", "AnonUser1"); 
-            put("timestamp", LocalDateTime.now().minusHours(3).format(FORMATTER)); 
-            put("category", "anxiety"); 
-            put("categoryName", "Anxiety Support"); 
-            put("replies", 8); 
-            put("likes", 12); 
-            put("views", 150); 
-            put("supportLevel", "high"); 
-            put("coachingRequested", false); 
-            put("helpfulCount", 2);
-            put("isFlagged", false);
-        }},
-        // ... (Your other mock posts remain here) ...
-        new HashMap<String, Object>() {{ 
-            put("id", 2); 
-            put("title", "Coping with anxiety - sharing experiences"); 
-            put("content", "I had a panic attack today..."); 
-            put("author", "AnonUser2"); 
-            put("timestamp", LocalDateTime.now().minusDays(1).format(FORMATTER)); 
-            put("category", "anxiety"); 
-            put("categoryName", "Anxiety Support"); 
-            put("replies", 15); 
-            put("likes", 25); 
-            put("views", 400); 
-            put("supportLevel", "urgent"); 
-            put("coachingRequested", true); 
-            put("helpfulCount", 5);
-            put("isFlagged", false);
-        }},
-        new HashMap<String, Object>() {{ 
-            put("id", 3); 
-            put("title", "Tips for better sleep"); 
-            put("content", "Struggling to fall asleep..."); 
-            put("author", "AnonUser3"); 
-            put("timestamp", LocalDateTime.now().minusDays(3).format(FORMATTER)); 
-            put("category", "general"); 
-            put("categoryName", "General Support"); 
-            put("replies", 4); 
-            put("likes", 5); 
-            put("views", 80); 
-            put("supportLevel", "medium"); 
-            put("coachingRequested", false); 
-            put("helpfulCount", 1);
-            put("isFlagged", false);
-        }},
-        new HashMap<String, Object>() {{ 
-            put("id", 4); 
-            put("title", "Building self-confidence"); 
-            put("content", "Just wanted to share a small win today!..."); 
-            put("author", "AnonUser4"); 
-            put("timestamp", LocalDateTime.now().minusDays(5).format(FORMATTER)); 
-            put("category", "general"); 
-            put("categoryName", "General Support"); 
-            put("replies", 12); 
-            put("likes", 30); 
-            put("views", 220); 
-            put("supportLevel", "positive"); 
-            put("coachingRequested", false); 
-            put("helpfulCount", 3);
-            put("isFlagged", false);
-        }}
-    );
-
-    private Map<String, Object> findPostById(int postId) {
-        return mockPosts.stream()
-                .filter(post -> (Integer) post.get("id") == postId)
-                .findFirst()
-                .orElse(null);
-    }
-
-    // --- Forum Module ---
     @GetMapping("/forum")
     public String forumList(
         @RequestParam(value = "sortBy", defaultValue = "recent") String sortBy,
         @RequestParam(value = "searchQuery", required = false) String searchQuery,
+        @RequestParam(value = "category", required = false) String categoryFilter, 
+        @RequestParam(value = "view", required = false) String view, // Added for My Posts
         Model model,
-        HttpSession session // ✅ Added Session
+        HttpSession session
     ) {
-        // 🔒 SECURITY CHECK
         if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
             return "redirect:/login";
         }
+    
+        // Get current User Info
+        Long loggedInUserIdLong = SessionHelper.getUserId(session);
+        Integer currentUserId = (loggedInUserIdLong != null) ? loggedInUserIdLong.intValue() : null;
+        String currentUserName = SessionHelper.getUserName(session);
 
-        List<Map<String, Object>> posts = new ArrayList<>(mockPosts);
-
-        // 1. Apply Search Filter
-        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
-            String query = searchQuery.toLowerCase();
-            posts.removeIf(post -> 
-                !((String) post.get("title")).toLowerCase().contains(query) &&
-                !((String) post.get("content")).toLowerCase().contains(query)
-            );
+        // 1. Fetch posts
+        List<ForumPost> rawAllPosts = forumDAO.getAllPosts(sortBy, searchQuery, currentUserId);
+        
+        // 2. DEDUPLICATE & Mark Ownership
+        Map<Integer, ForumPost> uniquePostsMap = new LinkedHashMap<>();
+        for (ForumPost p : rawAllPosts) {
+            // Check if current user owns this post
+            if (p.getAuthor() != null && p.getAuthor().equals(currentUserName)) {
+                p.setIsOwner(true);
+            }
+            uniquePostsMap.put(p.getId(), p);
         }
         
-        // 2. Apply Sorting Logic
-        posts.sort((postA, postB) -> {
-            switch (sortBy) {
-                case "popular":
-                    return ((Integer) postB.get("likes")).compareTo((Integer) postA.get("likes"));
-                case "helpful":
-                    return ((Integer) postB.get("helpfulCount")).compareTo((Integer) postA.get("helpfulCount"));
-                case "active":
-                    return ((Integer) postB.get("replies")).compareTo((Integer) postA.get("replies"));
-                case "recent":
-                default:
-                    return ((String) postB.get("timestamp")).compareTo((String) postA.get("timestamp"));
-            }
-        });
-
-        // 3. Calculate Category Counts
-        Map<String, Long> categoryCounts = posts.stream()
-                .collect(Collectors.groupingBy(post -> (String) post.get("category"), Collectors.counting()));
-
-        List<Map<String, Object>> forumCategories = Arrays.asList(
-            Map.of("id", "all", "name", "All Topics", "count", (long) posts.size(), "color", "bg-blue-100 text-blue-800"),
-            Map.of("id", "anxiety", "name", "Anxiety Support", "count", categoryCounts.getOrDefault("anxiety", 0L), "color", "bg-purple-100 text-purple-800"),
-            Map.of("id", "general", "name", "General Support", "count", categoryCounts.getOrDefault("general", 0L), "color", "bg-green-100 text-green-800")
-        );
-        model.addAttribute("forumCategories", forumCategories);
-
-        // 4. Identify Urgent Posts
-        List<Map<String, Object>> urgentPosts = posts.stream()
-                .filter(post -> "urgent".equals(post.get("supportLevel")))
-                .collect(Collectors.toList());
-        model.addAttribute("urgentPosts", urgentPosts);
+        List<ForumPost> allUniquePosts = new ArrayList<>(uniquePostsMap.values());
         
-        // 5. Pass lists and parameters
+        // 3. Filter Logic
+        List<ForumPost> posts = allUniquePosts;
+
+        // View filter (My Posts vs All)
+        if ("my-posts".equals(view)) {
+            posts = posts.stream()
+                    .filter(p -> p.getAuthor() != null && p.getAuthor().equals(currentUserName))
+                    .collect(Collectors.toList());
+        } 
+        // Category filter (Only if not in "My Posts" view)
+        else if (categoryFilter != null && !categoryFilter.isEmpty() && !"all".equalsIgnoreCase(categoryFilter)) {
+            posts = posts.stream()
+                    .filter(p -> categoryFilter.equalsIgnoreCase(p.getCategory()))
+                    .collect(Collectors.toList());
+        }
+    
+        // 4. Calculate category counts
+        Map<String, Long> counts = calculateCategoryCounts(allUniquePosts);
+    
+        // 5. Map categories for Sidebar
+        List<Map<String, Object>> forumCategories = Arrays.asList(
+            createCategoryMap("all", "All Topics", (long) allUniquePosts.size(), "bg-gray-100 text-gray-800"),
+            createCategoryMap("General Support", "General Support", counts.get("General Support"), "bg-green-100 text-green-800"),
+            createCategoryMap("Anxiety Support", "Anxiety Support", counts.get("Anxiety Support"), "bg-purple-100 text-purple-800"),
+            createCategoryMap("Depression Support", "Depression Support", counts.get("Depression Support"), "bg-blue-100 text-blue-800"),
+            createCategoryMap("Stress Management", "Stress Management", counts.get("Stress Management"), "bg-orange-100 text-orange-800"),
+            createCategoryMap("Sleep Issues", "Sleep Issues", counts.get("Sleep Issues"), "bg-indigo-100 text-indigo-800"),
+            createCategoryMap("Relationships", "Relationships", counts.get("Relationships"), "bg-pink-100 text-pink-800"),
+            createCategoryMap("Academic Pressure", "Academic Pressure", counts.get("Academic Pressure"), "bg-yellow-100 text-yellow-800")
+        );
+    
         model.addAttribute("posts", posts);
+        model.addAttribute("forumCategories", forumCategories);
         model.addAttribute("currentSort", sortBy);
         model.addAttribute("currentSearch", searchQuery);
-        model.addAttribute("role", "student");
-
+        model.addAttribute("selectedCategory", categoryFilter); 
+        
         return "student/forum-list";
     }
 
-    @PostMapping("/forum/flag")
-    @ResponseBody 
-    public Map<String, Object> flagPost(@RequestParam("postId") int postId, HttpSession session) {
-        // 🔒 SECURITY CHECK (JSON response for AJAX)
-        if (!SessionHelper.isLoggedIn(session)) {
-            return Map.of("error", "Unauthorized");
+    @PostMapping("/forum/delete")
+    @ResponseBody
+    public Map<String, Object> deletePost(@RequestParam("postId") int postId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        String currentUserName = SessionHelper.getUserName(session);
+
+        ForumPost post = forumDAO.getPostById(postId);
+        
+        // Security check: Only author can delete
+        if (post != null && post.getAuthor().equals(currentUserName)) {
+            try {
+                forumDAO.deletePost(postId);
+                response.put("success", true);
+            } catch (Exception e) {
+                response.put("success", false);
+                response.put("error", e.getMessage());
+            }
+        } else {
+            response.put("success", false);
+            response.put("error", "Unauthorized");
         }
+        return response;
+    }
 
-        Map<String, Object> post = findPostById(postId);
+    @PostMapping("/forum/interact")
+    @ResponseBody
+    public Map<String, Object> recordInteraction(
+            @RequestParam("postId") int postId, 
+            @RequestParam("type") String type,
+            HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+        Long userIdLong = SessionHelper.getUserId(session);
+        if (userIdLong == null) {
+            response.put("success", false);
+            return response;
+        }
+        int userId = userIdLong.intValue();
 
+        ForumPost post = forumDAO.getPostById(postId);
         if (post == null) {
-            return Map.of("error", 404);
+            response.put("success", false);
+            return response;
         }
+
+        boolean isActive = false;
+        int newCount = 0;
+
+        if ("like".equals(type)) {
+            Set<Integer> likes = post.getLikedUserIds();
+            if (likes.contains(userId)) {
+                likes.remove(userId);
+                isActive = false;
+            } else {
+                likes.add(userId);
+                isActive = true;
+            }
+            post.setLikes(likes.size());
+            newCount = post.getLikes();
+        } 
+        else if ("helpful".equals(type)) {
+            Set<Integer> helpful = post.getHelpfulUserIds();
+            if (helpful.contains(userId)) {
+                helpful.remove(userId);
+                isActive = false;
+            } else {
+                helpful.add(userId);
+                isActive = true;
+            }
+            post.setHelpfulCount(helpful.size());
+            newCount = post.getHelpfulCount();
+        }
+
+        forumDAO.saveOrUpdate(post);
         
-        post.put("isFlagged", true);
-        System.out.println("--- POST " + postId + " FLAGGED for review. ---");
+        response.put("success", true);
+        response.put("isActive", isActive);
+        response.put("newCount", newCount);
+        return response;
+    }
+
+    @PostMapping("/forum/flag")
+    @ResponseBody
+    public Map<String, Object> flagPost(@RequestParam("postId") int postId, HttpSession session) {
+        Long userIdLong = SessionHelper.getUserId(session);
+        if (userIdLong == null) return Map.of("success", false);
         
-        return Map.of("success", true, "isFlagged", post.get("isFlagged"));
+        boolean isNowFlagged = forumDAO.toggleFlag(postId, userIdLong.intValue());
+        return Map.of("success", true, "isFlagged", isNowFlagged);
     }
 
     @GetMapping("/forum/thread")
-    public String forumThread(Model model, HttpSession session) {
-        // 🔒 SECURITY CHECK
-        if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
-            return "redirect:/login";
+    public String forumThread(@RequestParam("id") int id, Model model, HttpSession session) {
+        if (!SessionHelper.isLoggedIn(session)) return "redirect:/login";
+
+        ForumPost post = forumDAO.getPostById(id);
+        if (post == null) return "redirect:/student/forum?error=PostNotFound";
+
+        Long userIdLong = SessionHelper.getUserId(session);
+        String currentUserName = SessionHelper.getUserName(session);
+
+        if (userIdLong != null) {
+            int uid = userIdLong.intValue();
+            post.setLikedByCurrentUser(post.getLikedUserIds().contains(uid));
+            post.setHelpfulByCurrentUser(post.getHelpfulUserIds().contains(uid));
+            post.setFlaggedByCurrentUser(post.getFlaggedUserIds().contains(uid));
+            
+            // Mark ownership for single thread view as well
+            if (post.getAuthor().equals(currentUserName)) {
+                post.setIsOwner(true);
+            }
         }
 
-        model.addAttribute("role", "student");
-        return "student/forum-thread";
+        model.addAttribute("post", post);
+        return "student/forum-thread"; 
+    }
+
+    private Map<String, Long> calculateCategoryCounts(List<ForumPost> posts) {
+        Map<String, Long> counts = new HashMap<>();
+        List<String> validNames = Arrays.asList(
+            "General Support", "Anxiety Support", "Depression Support", 
+            "Stress Management", "Sleep Issues", "Relationships", "Academic Pressure"
+        );
+        validNames.forEach(name -> counts.put(name, 0L));
+    
+        for (ForumPost p : posts) {
+            if (p.getCategory() == null) continue;
+            String postCat = p.getCategory().trim();
+            for (String officialName : validNames) {
+                if (officialName.equalsIgnoreCase(postCat)) {
+                    counts.put(officialName, counts.get(officialName) + 1);
+                    break; 
+                }
+            }
+        }
+        return counts;
+    }
+
+    private Map<String, Object> createCategoryMap(String id, String name, Long count, String color) {
+        return Map.of("id", id, "name", name, "count", count != null ? count : 0L, "color", color);
+    }
+
+    @PostMapping("/forum/create")
+    public String createPost(
+        @RequestParam("title") String title,
+        @RequestParam("story") String content,
+        @RequestParam("category") String category,
+        @RequestParam(value = "anonymous", required = false) Boolean isAnonymous,
+        HttpSession session
+    ) {
+        if (!SessionHelper.isLoggedIn(session)) return "redirect:/login";
+        String author = SessionHelper.getUserName(session);
+        ForumPost newPost = new ForumPost(title, content, category, author, (isAnonymous != null && isAnonymous));
+        forumDAO.saveOrUpdate(newPost);
+        return "redirect:/student/forum";
+    }
+
+    @PostMapping("/forum/thread/reply")
+    public String postReply(
+        @RequestParam("postId") int postId, 
+        @RequestParam("reply") String content,
+        @RequestParam(value = "parentId", required = false) Integer parentId,
+        @RequestParam(value = "anonymous", required = false) Boolean isAnonymous,
+        HttpSession session
+    ) {
+        if (!SessionHelper.isLoggedIn(session)) return "redirect:/login";
+        String author = SessionHelper.getUserName(session);
+        ForumPost post = forumDAO.getPostById(postId);
+        ForumReply parent = (parentId != null) ? forumDAO.getReplyById(parentId) : null;
+        ForumReply newReply = new ForumReply(content, author, post, parent, (isAnonymous != null && isAnonymous));
+        forumDAO.saveReply(newReply); 
+        return "redirect:/student/forum/thread?id=" + postId;
+    }
+
+    // NEW: Fetch post data for the edit modal
+    @GetMapping("/forum/get")
+    @ResponseBody
+    public ForumPost getPostJson(@RequestParam("postId") int postId) {
+        ForumPost post = forumDAO.getPostById(postId);
+        if (post != null) {
+            // IMPORTANT: Clear replies to avoid JSON nesting depth errors
+            post.setRepliesList(new HashSet<>()); 
+            // If your model has other circular references, null them out here
+        }
+        return post;
+    }
+
+    // NEW: Handle the actual update
+    @PostMapping("/forum/update")
+    public String updatePost(
+        @RequestParam("postId") int postId,
+        @RequestParam("title") String title,
+        @RequestParam("story") String content,
+        @RequestParam("category") String category,
+        @RequestParam(value = "anonymous", required = false) Boolean isAnonymous,
+        HttpSession session
+    ) {
+        String currentUserName = SessionHelper.getUserName(session);
+        ForumPost existingPost = forumDAO.getPostById(postId);
+
+        // Security check: Only author can update
+        if (existingPost != null && existingPost.getAuthor().equals(currentUserName)) {
+            existingPost.setTitle(title);
+            existingPost.setContent(content);
+            existingPost.setCategory(category);
+            existingPost.setAnonymous(isAnonymous != null && isAnonymous);
+            forumDAO.saveOrUpdate(existingPost);
+        }
+        return "redirect:/student/forum";
     }
 }

@@ -30,6 +30,7 @@ bin/
 application-local.properties
 application-dev.properties
 
+
 # Logs
 *.log
 logs/
