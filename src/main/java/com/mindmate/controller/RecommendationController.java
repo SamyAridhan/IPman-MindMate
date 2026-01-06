@@ -2,8 +2,8 @@
 package com.mindmate.controller;
 
 import com.mindmate.model.RecommendationResource;
-import com.mindmate.util.SessionHelper; // ✅ Import this
-import jakarta.servlet.http.HttpSession; // ✅ Import this
+import com.mindmate.util.SessionHelper; 
+import jakarta.servlet.http.HttpSession; 
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,9 +19,9 @@ public class RecommendationController {
     public String viewRecommendation(
             @RequestParam("id") String resourceId, 
             Model model,
-            HttpSession session // ✅ Added Session
+            HttpSession session 
     ) {
-        // 🔒 SECURITY CHECK
+        // SECURITY CHECK
         if (!SessionHelper.isLoggedIn(session) || !"student".equals(SessionHelper.getRole(session))) {
             return "redirect:/login";
         }

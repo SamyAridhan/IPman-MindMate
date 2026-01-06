@@ -33,6 +33,5 @@ public class ModerationStats {
         this.deletedCount = deletedCount;
     }
 
-    // Getters and Setters...
-    
+
 }

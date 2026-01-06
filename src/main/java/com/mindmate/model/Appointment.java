@@ -45,7 +45,6 @@ public class Appointment {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    // ✅ REVERTED: Back to 'denialReason' to avoid breaking other controllers
     @Column(name = "denial_reason", columnDefinition = "TEXT")
     private String denialReason;
 
@@ -78,7 +77,6 @@ public class Appointment {
         CANCELLED,      
         COMPLETED,      
         
-        // ✅ Kept these necessary statuses
         DENIED,         
         REJECTED,       
         ACKNOWLEDGED    
@@ -134,7 +132,6 @@ public class Appointment {
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
 
-    // ✅ REVERTED GETTERS/SETTERS
     public String getDenialReason() { return denialReason; }
     public void setDenialReason(String denialReason) { this.denialReason = denialReason; }
 

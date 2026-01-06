@@ -2,7 +2,7 @@
 package com.mindmate.controller;
 
 import com.mindmate.model.Question;
-import com.mindmate.util.SessionHelper; // ✅ Import this
+import com.mindmate.util.SessionHelper;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -207,12 +207,11 @@ public class AssessmentController {
         int totalScore = Arrays.stream(responses).sum();
         Map<String, Object> results = calculateResults(totalScore);
 
-        // --- ✅ NEW: DATABASE SAVING LOGIC ---
+        
         Long userId = SessionHelper.getUserId(session); 
         
         if (userId != null) {
             // 2. Find the student by ID
-            // Since your GenericDAO findById returns the object directly (not Optional), we just check for null
             Student student = studentDAO.findById(userId);
 
             if (student != null) {
@@ -220,13 +219,13 @@ public class AssessmentController {
                 Assessment assessment = new Assessment(student, totalScore);
                 assessment.setResultCategory((String) results.get("level")); // e.g., "Severe"
                 
-                // 2. ✅ NEW: Convert the int[] array to a CSV string (e.g., "3,2,0,1,3")
+                // 2. Convert the int[] array to a CSV string (e.g., "3,2,0,1,3")
                 // This is the part that was missing!
                 String responseDataCsv = java.util.stream.IntStream.of(responses)
                                                .mapToObj(String::valueOf)
                                                .collect(java.util.stream.Collectors.joining(","));
                 
-                // 3. ✅ NEW: Set the response data into the entity
+                // 3. Set the response data into the entity
                 assessment.setResponseData(responseDataCsv);
 
                 assessmentDAO.save(assessment);

@@ -46,7 +46,6 @@ public class ForumPost {
     @Transient 
     private long totalReplies;
 
-    // --- AUTOMATIC JOIN TABLES ---
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "post_likes", joinColumns = @JoinColumn(name = "post_id"))
     @Column(name = "user_id")

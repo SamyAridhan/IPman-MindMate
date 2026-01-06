@@ -92,7 +92,7 @@ public class CounselorDAOHibernate implements CounselorDAO {
         return query.getSingleResult();
     }
 
-    // ✅ NEW IMPLEMENTATION
+    
     @Override
     public List<Counselor> findTopCounselorsByAppointments(int limit) {
         // This query counts appointments per counselor and orders by count

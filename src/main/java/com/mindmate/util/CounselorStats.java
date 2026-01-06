@@ -9,11 +9,11 @@ public class CounselorStats {
     
     private Long counselorId;
     private String counselorName;
-    private long totalAppointments; // ✅ FIXED: Changed from int to long
+    private long totalAppointments;
     private long pendingAppointments;
     private long confirmedAppointments;
     private long deniedAppointments;
-    private long cancelledAppointments; // ✅ NEW FIELD
+    private long cancelledAppointments; 
     private double approvalRate; // Percentage of approved appointments
     
     // Constructor
@@ -51,7 +51,6 @@ public class CounselorStats {
     public long getDeniedAppointments() { return deniedAppointments; }
     public void setDeniedAppointments(long deniedAppointments) { this.deniedAppointments = deniedAppointments; }
     
-    // ✅ NEW Getter/Setter for Cancelled
     public long getCancelledAppointments() { return cancelledAppointments; }
     public void setCancelledAppointments(long cancelledAppointments) { this.cancelledAppointments = cancelledAppointments; }
     

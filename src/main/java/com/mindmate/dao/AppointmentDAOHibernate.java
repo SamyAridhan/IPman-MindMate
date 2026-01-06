@@ -68,7 +68,7 @@ public class AppointmentDAOHibernate implements AppointmentDAO {
         return query.getResultList();
     }
 
-    // ✅ NEW IMPLEMENTATION: Ascending Order for Dashboard
+    // Ascending Order for Dashboard
     @Override
     public List<Appointment> findByStudentOrderByDateAscTimeAsc(Student student) {
         TypedQuery<Appointment> query = entityManager.createQuery(
@@ -93,7 +93,7 @@ public class AppointmentDAOHibernate implements AppointmentDAO {
         return query.getSingleResult();
     }
 
-    // ✅ COUNSELOR IMPLEMENTATIONS
+    // COUNSELOR IMPLEMENTATIONS
 
     @Override
     public List<Appointment> findByCounselor(Counselor counselor) {

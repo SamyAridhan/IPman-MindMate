@@ -15,10 +15,9 @@ public class Assessment {
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    // REMOVED: private String testType; 
 
     @Column(name = "total_score")
-    private int score; // Renamed to simple 'score' or keep 'totalScore' if you prefer
+    private int score; 
 
     @Column(name = "result_category")
     private String resultCategory; // e.g., "Severe"

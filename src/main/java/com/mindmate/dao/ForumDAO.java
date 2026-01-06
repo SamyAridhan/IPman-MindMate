@@ -13,7 +13,6 @@ public interface ForumDAO {
     void flagPost(int postId);
     void saveReply(ForumReply reply);
 
-    // Inside src/main/java/com/mindmate/dao/ForumDAO.java
     ForumReply getReplyById(int id);
     void deletePost(int postId);
 

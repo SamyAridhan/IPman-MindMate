@@ -8,7 +8,7 @@ import com.mindmate.model.Appointment;
 import com.mindmate.model.EducationalContent;
 import com.mindmate.model.Counselor;
 import com.mindmate.util.SessionHelper;
-import com.mindmate.util.PasswordUtil; // ✅ Added Import
+import com.mindmate.util.PasswordUtil; 
 
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -346,7 +346,7 @@ public class CounselorController {
         }
 
         try {
-            // ✅ FIX: Use PasswordUtil
+            
             if (PasswordUtil.checkPassword(currentPassword, counselor.getPassword())) {
                 counselor.setPassword(PasswordUtil.hashPassword(newPassword)); 
                 counselorDAO.update(counselor);

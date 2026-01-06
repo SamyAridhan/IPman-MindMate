@@ -48,7 +48,7 @@ public ResponseEntity<ChatMessage> handleSendMessage(@RequestBody String message
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    // 1. Manage Chat Session ID (Start a new one if none exists in this browser session)
+    // Manage Chat Session ID (Start a new one if none exists in this browser session)
     String chatSessionId = (String) session.getAttribute(SESSION_KEY);
     if (chatSessionId == null) {
         chatSessionId = "chat_" + UUID.randomUUID().toString().substring(0, 8);
@@ -57,12 +57,12 @@ public ResponseEntity<ChatMessage> handleSendMessage(@RequestBody String message
 
     Student student = studentDAO.findById(userId);
 
-    // 2. Save User Message to Database
+    // Save User Message to Database
     ChatMessage userMsg = new ChatMessage("user", message, LocalDateTime.now());
     userMsg.setStudent(student);
     userMsg.setSessionId(chatSessionId);
     
-    // NEW: Generate title from first user message in this session
+    // Generate title from first user message in this session
     long messageCount = chatDAO.countByStudentAndSessionId(student, chatSessionId);
     if (messageCount == 0) {
         String title = generateTitle(message);
@@ -71,20 +71,20 @@ public ResponseEntity<ChatMessage> handleSendMessage(@RequestBody String message
     
     chatDAO.saveMessage(userMsg);
 
-    // 3. Get AI Response from Gemini
+    // Get AI Response from Gemini
     String aiResponse = geminiService.generateResponse(message);
 
-    // 4. Save AI Message to Database
+    // Save AI Message to Database
     ChatMessage aiMsg = new ChatMessage("assistant", aiResponse, LocalDateTime.now());
     aiMsg.setStudent(student);
     aiMsg.setSessionId(chatSessionId);
-    // Don't set title for AI messages, only for first user message
+
     chatDAO.saveMessage(aiMsg);
 
     return ResponseEntity.ok(aiMsg);
 }
 
-// NEW: Helper method to generate title from user message
+//Helper method to generate title from user message
 private String generateTitle(String message) {
     // Truncate to first 60 characters and remove special characters
     String title = message.replaceAll("[^a-zA-Z0-9\\s]", "").trim();

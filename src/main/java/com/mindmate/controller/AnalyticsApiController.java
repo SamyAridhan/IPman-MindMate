@@ -99,8 +99,7 @@ public class AnalyticsApiController {
         }
         
         try {
-            // This will be populated by AdminController's calculation
-            // For now, just return a success flag
+            
             stats.put("success", true);
             stats.put("message", "Use main dashboard endpoint for full stats");
         } catch (Exception e) {

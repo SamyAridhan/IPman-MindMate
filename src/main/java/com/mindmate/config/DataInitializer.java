@@ -634,7 +634,7 @@ if (forumDAO.getTotalPostCount() == 0) {
         ChatMessage message = new ChatMessage();
         message.setStudent(student);
         message.setSessionId(sessionId);
-        message.setTitle(title); // Only set this for the first message of a session
+        message.setTitle(title); 
         message.setRole(role);
         message.setContent(content);
         message.setTimestamp(timestamp);

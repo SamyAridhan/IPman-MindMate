@@ -4,7 +4,7 @@ import com.mindmate.dao.*;
 import com.mindmate.model.*;
 import com.mindmate.util.CounselorStats;
 import com.mindmate.util.SessionHelper;
-import com.mindmate.util.PasswordUtil; // ✅ Added Import
+import com.mindmate.util.PasswordUtil; 
 
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -352,7 +352,7 @@ public class AdminController {
         }
 
         try {
-            // ✅ FIX: Use PasswordUtil
+            
             if (PasswordUtil.checkPassword(currentPassword, admin.getPassword())) {
                 admin.setPassword(PasswordUtil.hashPassword(newPassword)); 
                 adminDAO.update(admin);

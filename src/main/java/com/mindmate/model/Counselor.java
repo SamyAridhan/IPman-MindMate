@@ -24,7 +24,7 @@ public class Counselor {
     @Column(unique = true, nullable = false)
     private String email;
 
-    // ✅ NEW: Password field (BCrypt hashed)
+    // Password field (BCrypt hashed)
     @NotBlank(message = "Password is required")
     @Column(nullable = false)
     private String password;
@@ -61,7 +61,6 @@ public class Counselor {
         this.specialization = specialization;
     }
 
-    // ✅ NEW: Constructor with password
     public Counselor(String name, String email, String password, String specialization) {
         this.name = name;
         this.email = email;
@@ -69,7 +68,7 @@ public class Counselor {
         this.specialization = specialization;
     }
 
-    // Getters and Setters (Keep all existing + add password)
+    // Getters and Setters
     public Long getId() {
         return id;
     }

@@ -12,7 +12,7 @@ import com.mindmate.model.Counselor;
 import com.mindmate.model.Student;
 import com.mindmate.model.EducationalContent;
 import com.mindmate.util.SessionHelper;
-import com.mindmate.util.PasswordUtil; // ✅ Added Import
+import com.mindmate.util.PasswordUtil; 
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +88,7 @@ public class StudentController {
         }
         model.addAttribute("latestAssessment", latest);
 
-        // --- ✅ REFINED PERSONALIZATION LOGIC START ---
+        // --- REFINED PERSONALIZATION LOGIC START ---
         List<EducationalContent> finalRecs = new ArrayList<>();
         String recTitle = "General Wellness Essentials";
         
@@ -163,7 +163,7 @@ public class StudentController {
 
         model.addAttribute("recommendedModules", finalRecs);
         model.addAttribute("recTitle", recTitle);
-        // --- 🔒 PERSONALIZATION LOGIC END ---
+        // --- PERSONALIZATION LOGIC END ---
 
         List<EducationalContent> allContent = contentDAO.findAll();
         List<EducationalContent> newestModules = allContent.stream()
@@ -447,7 +447,7 @@ public class StudentController {
         }
 
         try {
-            // ✅ FIX: Use PasswordUtil to check hash and encrypt new password
+            // Use PasswordUtil to check hash and encrypt new password
             if (PasswordUtil.checkPassword(currentPassword, student.getPassword())) {
                 student.setPassword(PasswordUtil.hashPassword(newPassword)); 
                 studentDAO.update(student);

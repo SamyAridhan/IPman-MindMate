@@ -7,7 +7,7 @@ import com.mindmate.model.ModerationStats;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import java.util.Set; // Add this line
+import java.util.Set; 
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
@@ -22,7 +22,6 @@ public class ForumDAOHibernate implements ForumDAO {
         this.sessionFactory = sessionFactory;
     }
 
-    // --- NEW ADMIN MODERATION METHODS ---
 
     @Override
     public List<ForumPost> getFlaggedPosts() {
@@ -71,7 +70,6 @@ public class ForumDAOHibernate implements ForumDAO {
         }
     }
 
-    // --- EXISTING METHODS ---
 
     @Override
     public List<ForumPost> getAllPosts(String sortBy, String searchQuery, Integer currentUserId) {
@@ -164,7 +162,6 @@ public class ForumDAOHibernate implements ForumDAO {
             tx = session.beginTransaction();
             
             // If the reply has a post, merge the post into this session first
-            // This fixes the "unsaved transient instance" error
             if (reply.getPost() != null) {
                 ForumPost attachedPost = (ForumPost) session.merge(reply.getPost());
                 reply.setPost(attachedPost);
@@ -208,14 +205,13 @@ public class ForumDAOHibernate implements ForumDAO {
         }
     }
 
-    // Inside ForumDAOHibernate
 // Increment logic for "Approved" stats
 public void incrementApprovedCount() {
     Transaction tx = null;
     try (Session session = sessionFactory.openSession()) {
         tx = session.beginTransaction();
         
-        // Fetch the single stats record (using a hardcoded ID like "global_stats")
+        // Fetch the single stats record 
         ModerationStats stats = session.get(ModerationStats.class, "global_stats");
         
         if (stats == null) {
@@ -225,7 +221,6 @@ public void incrementApprovedCount() {
         
         stats.setApprovedCount(stats.getApprovedCount() + 1);
         
-        // Use merge() instead of saveOrUpdate() to fix deprecation
         session.merge(stats); 
         
         tx.commit();
@@ -250,7 +245,7 @@ public void incrementApprovedCount() {
             
             stats.setDeletedCount(stats.getDeletedCount() + 1);
             
-            session.merge(stats); // Fixes deprecation
+            session.merge(stats); 
             
             tx.commit();
         } catch (Exception e) {

@@ -12,12 +12,12 @@ public interface ChatDAO {
     List<ChatMessage> getMessagesBySession(String sessionId);
     List<String> getUniqueSessionsByStudent(Long studentId);
     
-    // NEW: Count messages in a session for a student
+    // Count messages in a session for a student
     long countByStudentAndSessionId(Student student, String sessionId);
     
-    // NEW: Get session titles (first user message of each session) for sidebar
+    // Get session titles (first user message of each session) for sidebar
     List<ChatMessage> getSessionTitlesByStudent(Student student);
     
-    // NEW: Get messages for a student in a session
+    // Get messages for a student in a session
     List<ChatMessage> getMessagesByStudentAndSession(Student student, String sessionId);
 }

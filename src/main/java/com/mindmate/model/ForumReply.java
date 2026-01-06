@@ -18,7 +18,6 @@ public class ForumReply {
 
     private String author;
     
-    // ✅ NEW: Field to handle anonymity
     @Column(name = "is_anonymous")
     private boolean anonymous;
     
@@ -39,7 +38,6 @@ public class ForumReply {
 
     public ForumReply() {}
 
-    // ✅ Updated Constructor to include isAnonymous
     public ForumReply(String content, String author, ForumPost post, ForumReply parentReply, boolean isAnonymous) {
         this.content = content;
         this.author = author;
@@ -60,7 +58,6 @@ public class ForumReply {
     public String getAuthor() { return author; }
     public void setAuthor(String author) { this.author = author; }
 
-    // ✅ Getter and Setter for Anonymous
     public boolean isAnonymous() { return anonymous; }
     public void setAnonymous(boolean anonymous) { this.anonymous = anonymous; }
 

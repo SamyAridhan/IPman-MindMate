@@ -22,7 +22,6 @@ public class SystemAnalyticsDAOHibernate implements SystemAnalyticsDAO {
     @PersistenceContext
     private EntityManager entityManager;
 
-    // ✅ EXISTING METHODS (Unchanged)
     @Override
     public void save(SystemAnalytics analytics) {
         entityManager.persist(analytics);
@@ -68,7 +67,6 @@ public class SystemAnalyticsDAOHibernate implements SystemAnalyticsDAO {
         }
     }
 
-    // ✅ NEW IMPLEMENTATIONS (Safe for existing data)
 
     @Override
     public List<SystemAnalytics> findByDateRange(LocalDateTime startDate, LocalDateTime endDate) {

@@ -33,7 +33,7 @@ public class HistoryController {
         // 3. Call the DAO
         List<Assessment> assessments = assessmentDAO.findHistoryByStudent(userId);
 
-        // 4. ✅ NEW: Apply Filtering Logic
+        // 4. Apply Filtering Logic
         if (!"all".equals(limit) && assessments != null && !assessments.isEmpty()) {
             try {
                 int count = Integer.parseInt(limit);

@@ -17,7 +17,7 @@ public interface CounselorDAO extends GenericDAO<Counselor> {
      */
     long count();
     
-    // ✅ NEW METHOD: For Performance Analytics
+    // For Performance Analytics
     /**
      * Finds counselors sorted by total appointments handled.
      * Used for performance ranking.

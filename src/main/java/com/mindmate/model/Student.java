@@ -23,12 +23,12 @@ public class Student {
     @Column(unique = true, nullable = false)
     private String email;
 
-    // ✅ Password field (BCrypt hashed)
+    // Password field (BCrypt hashed)
     @NotBlank(message = "Password is required")
     @Column(nullable = false)
     private String password;
 
-    // --- NEW FIELDS FOR PROGRESS & GAMIFICATION ---
+    // --- FOR PROGRESS & GAMIFICATION ---
 
     @Column(name = "total_points")
     private Integer totalPoints = 0;
@@ -57,7 +57,6 @@ public class Student {
         this.email = email;
     }
 
-    // ✅ Constructor with password
     public Student(String name, String email, String password) {
         this.name = name;
         this.email = email;

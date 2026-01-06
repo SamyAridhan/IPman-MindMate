@@ -22,16 +22,16 @@ public class SystemAnalytics {
     private Integer totalUsers = 0; // Default to 0 to prevent NullPointerExceptions
 
     @Column(name = "total_students")
-    private Integer totalStudents = 0; // ✅ New
+    private Integer totalStudents = 0; 
 
     @Column(name = "total_counselors")
-    private Integer totalCounselors = 0; // ✅ New
+    private Integer totalCounselors = 0; 
 
     @Column(name = "active_users")
     private Integer activeUsers = 0;
 
     // ============================================
-    // APPOINTMENT METRICS (✅ All New)
+    // APPOINTMENT METRICS 
     // ============================================
     @Column(name = "total_appointments")
     private Integer totalAppointments = 0;
@@ -58,7 +58,7 @@ public class SystemAnalytics {
     private Integer forumPosts = 0;
 
     @Column(name = "content_views")
-    private Integer contentViews = 0; // ✅ New
+    private Integer contentViews = 0; 
 
     // ============================================
     // TIMESTAMP
@@ -78,7 +78,7 @@ public class SystemAnalytics {
     // ============================================
     public SystemAnalytics() {}
 
-    // ✅ KEEPING OLD CONSTRUCTOR (For Backward Compatibility)
+    // OLD CONSTRUCTOR (For Backward Compatibility)
     public SystemAnalytics(Integer totalUsers, Integer activeUsers, 
                            Integer assessmentsTaken, Integer forumPosts) {
         this.totalUsers = totalUsers;
@@ -88,7 +88,7 @@ public class SystemAnalytics {
         this.recordedAt = LocalDateTime.now();
     }
 
-    // ✅ ADDING NEW CONSTRUCTOR (For New Analytics Logic)
+    //NEW CONSTRUCTOR (For New Analytics Logic)
     public SystemAnalytics(Integer totalUsers, Integer totalAppointments) {
         this.totalUsers = totalUsers;
         this.totalAppointments = totalAppointments;
@@ -96,7 +96,7 @@ public class SystemAnalytics {
     }
 
     // ============================================
-    // GETTERS & SETTERS (Includes all new fields)
+    // GETTERS & SETTERS 
     // ============================================
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

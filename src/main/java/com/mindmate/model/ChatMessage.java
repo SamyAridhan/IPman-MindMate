@@ -19,7 +19,7 @@ public class ChatMessage {
     // When a student logs in, they get a NEW sessionId
     private String sessionId; 
 
-    // NEW: Store the title (first user message, max 100 chars)
+    // Store the title (first user message, max 100 chars)
     @Column(length = 255)
     private String title;
 
@@ -29,7 +29,6 @@ public class ChatMessage {
     private LocalDateTime timestamp;
 
     public ChatMessage() {
-        // Required by Hibernate
     }
 
     public ChatMessage(String role, String content, LocalDateTime timestamp) {

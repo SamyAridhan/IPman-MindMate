@@ -42,7 +42,6 @@ public class Admin {
         createdAt = LocalDateTime.now();
     }
 
-    // Constructors
     public Admin() {}
 
     public Admin(String name, String email, String password) {
@@ -51,7 +50,6 @@ public class Admin {
         this.password = password;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

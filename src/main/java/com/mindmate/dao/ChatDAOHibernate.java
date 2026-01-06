@@ -43,7 +43,7 @@ public class ChatDAOHibernate implements ChatDAO {
     
     @Override
     public List<String> getUniqueSessionsByStudent(Long studentId) {
-        // FIX: We group by sessionId and order by the latest message in that session
+        // Group by sessionId and order by the latest message in that session
         // This ensures the most recent conversations appear at the top of your sidebar
         return entityManager.createQuery(
             "SELECT m.sessionId FROM ChatMessage m WHERE m.student.id = :id " +
@@ -52,7 +52,7 @@ public class ChatDAOHibernate implements ChatDAO {
             .getResultList();
     }
 
-    // NEW: Count messages in a session for a student
+    // Count messages in a session for a student
     @Override
     public long countByStudentAndSessionId(Student student, String sessionId) {
         Long count = entityManager.createQuery(
@@ -64,7 +64,7 @@ public class ChatDAOHibernate implements ChatDAO {
         return count != null ? count : 0;
     }
 
-    // NEW: Get session titles (first user message of each session) for sidebar
+    // Get session titles (first user message of each session) for sidebar
     @Override
     public List<ChatMessage> getSessionTitlesByStudent(Student student) {
         return entityManager.createQuery(
@@ -75,7 +75,7 @@ public class ChatDAOHibernate implements ChatDAO {
             .getResultList();
     }
 
-    // NEW: Get messages for a student in a specific session
+    // Get messages for a student in a specific session
     @Override
     public List<ChatMessage> getMessagesByStudentAndSession(Student student, String sessionId) {
         return entityManager.createQuery(

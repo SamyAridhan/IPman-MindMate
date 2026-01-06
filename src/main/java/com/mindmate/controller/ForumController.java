@@ -30,7 +30,7 @@ public class ForumController {
         @RequestParam(value = "sortBy", defaultValue = "recent") String sortBy,
         @RequestParam(value = "searchQuery", required = false) String searchQuery,
         @RequestParam(value = "category", required = false) String categoryFilter, 
-        @RequestParam(value = "view", required = false) String view, // Added for My Posts
+        @RequestParam(value = "view", required = false) String view,
         Model model,
         HttpSession session
     ) {
@@ -46,7 +46,7 @@ public class ForumController {
         // 1. Fetch posts
         List<ForumPost> rawAllPosts = forumDAO.getAllPosts(sortBy, searchQuery, currentUserId);
         
-        // 2. DEDUPLICATE & Mark Ownership
+        // 2. Mark Ownership
         Map<Integer, ForumPost> uniquePostsMap = new LinkedHashMap<>();
         for (ForumPost p : rawAllPosts) {
             // Check if current user owns this post
@@ -61,7 +61,7 @@ public class ForumController {
         // 3. Filter Logic
         List<ForumPost> posts = allUniquePosts;
 
-        // View filter (My Posts vs All)
+        // View filter (my posts)
         if ("my-posts".equals(view)) {
             posts = posts.stream()
                     .filter(p -> p.getAuthor() != null && p.getAuthor().equals(currentUserName))
@@ -272,20 +272,18 @@ public class ForumController {
         return "redirect:/student/forum/thread?id=" + postId;
     }
 
-    // NEW: Fetch post data for the edit modal
+    // Fetch post data for the edit modal
     @GetMapping("/forum/get")
     @ResponseBody
     public ForumPost getPostJson(@RequestParam("postId") int postId) {
         ForumPost post = forumDAO.getPostById(postId);
-        if (post != null) {
-            // IMPORTANT: Clear replies to avoid JSON nesting depth errors
+        if (post != null) { 
             post.setRepliesList(new HashSet<>()); 
-            // If your model has other circular references, null them out here
         }
         return post;
     }
 
-    // NEW: Handle the actual update
+    // Handle the actual update
     @PostMapping("/forum/update")
     public String updatePost(
         @RequestParam("postId") int postId,
