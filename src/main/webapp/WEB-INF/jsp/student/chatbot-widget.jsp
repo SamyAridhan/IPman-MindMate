@@ -130,23 +130,76 @@
         try {
             const response = await fetch('/api/chat/sessions');
             const sessions = await response.json();
-            console.log('Sessions fetched:', sessions);
+            console.log('Sessions fetched - raw:', sessions);
             const list = document.getElementById('history-list');
             
-            list.innerHTML = sessions.map(session => {
-                // session should be an object with sessionId and title
-                const sessionId = session.sessionId || session;
-                const title = session.title || 'Chat';
+            if (!sessions || sessions.length === 0) {
+                list.innerHTML = '<p class="text-xs text-muted-foreground p-4">No chats yet</p>';
+                return;
+            }
+            
+            console.log('Total sessions:', sessions.length);
+            
+            // Clear and rebuild
+            list.innerHTML = '';
+            
+            sessions.forEach((session, index) => {
+                console.log('Processing session', index, ':', JSON.stringify(session));
                 
-                console.log('Rendering session:', sessionId, title);
+                const sessionId = session.sessionId;
+                const rawTitle = session.title;
+                // Clean up the title - remove "message" prefix if it exists
+                let cleanTitle = rawTitle;
+                if (cleanTitle && cleanTitle.startsWith('message')) {
+                    cleanTitle = cleanTitle.substring(7).trim(); // Remove "message" (7 chars)
+                }
+                // Further cleanup - capitalize first letter
+                cleanTitle = cleanTitle && cleanTitle.trim().length > 0 ? cleanTitle : 'Chat ' + (index + 1);
+                if (cleanTitle.length > 0) {
+                    cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
+                }
                 
-                return `
-                    <button onclick="loadSession('${sessionId}')" class="w-full text-left p-3 rounded-xl hover:bg-primary/5 text-xs flex items-center gap-3 transition-all border border-transparent hover:border-border group">
-                        <i data-lucide="message-square" class="h-4 w-4 text-muted-foreground group-hover:text-primary"></i>
-                        <span class="truncate text-muted-foreground group-hover:text-foreground font-medium">${title}</span>
-                    </button>
-                `;
-            }).join('');
+                console.log('Session details:', { index, sessionId, rawTitle, cleanedTitle: cleanTitle });
+                
+                if (!sessionId) {
+                    console.error('Missing sessionId for session:', session);
+                    return;
+                }
+                
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-3 rounded-xl hover:bg-primary/5 text-xs flex items-center gap-3 transition-all border border-transparent hover:border-border group';
+                btn.style.backgroundColor = 'transparent';
+                btn.style.cursor = 'pointer';
+                
+                // Create the icon
+                const icon = document.createElement('i');
+                icon.setAttribute('data-lucide', 'message-square');
+                icon.className = 'h-4 w-4 text-muted-foreground group-hover:text-primary';
+                
+                // Create the title span
+                const span = document.createElement('span');
+                span.className = 'truncate font-medium';
+                span.style.color = '#666666';
+                span.style.fontSize = '12px';
+                span.textContent = cleanTitle;
+                
+                btn.appendChild(icon);
+                btn.appendChild(span);
+                
+                console.log('Button created with title:', cleanTitle, 'HTML:', btn.innerHTML);
+                
+                // Attach listener directly to button
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('🔍 Button clicked for sessionId:', sessionId, 'title:', cleanTitle);
+                    loadSession(sessionId);
+                });
+                
+                list.appendChild(btn);
+                console.log('Button added to list, list now has', list.children.length, 'children');
+            });
+            
+            console.log('Final history list has', list.children.length, 'buttons');
             lucide.createIcons();
         } catch (e) { 
             console.error("History fetch failed", e); 
@@ -155,8 +208,58 @@
 
     async function loadSession(sessionId) {
         try {
-            const response = await fetch('/api/chat/history/load?sessionId=' + sessionId);
-            currentMessages = await response.json();
+            console.log('Loading session with ID:', sessionId);
+            const url = '/api/chat/history/load?sessionId=' + encodeURIComponent(sessionId);
+            console.log('Fetch URL:', url);
+            const response = await fetch(url);
+            const data = await response.json();
+            console.log('Session data received:', data);
+            
+            // Transform the backend data format to our chat format
+            let messages = [];
+            
+            if (Array.isArray(data)) {
+                console.log('Data is array, processing', data.length, 'items');
+                // Data is array of message objects from backend
+                messages = data.map(msg => {
+                    let content = '';
+                    
+                    if (typeof msg.content === 'string') {
+                        content = msg.content;
+                    } else if (msg.message) {
+                        content = msg.message;
+                    } else if (msg.title && msg.title !== 'null') {
+                        content = msg.title;
+                    }
+                    
+                    // If content looks like JSON, try to parse it
+                    if (content && content.startsWith('{')) {
+                        try {
+                            const parsed = JSON.parse(content);
+                            if (parsed.message) {
+                                content = parsed.message;
+                            }
+                        } catch (e) {
+                            // Not valid JSON, use as-is
+                        }
+                    }
+                    
+                    return {
+                        role: msg.role || 'user',
+                        content: content,
+                        timestamp: msg.timestamp || msg.createdAt || new Date().toISOString()
+                    };
+                }).filter(msg => msg.content && msg.content.trim().length > 0);
+                
+                console.log('Processed messages:', messages.length);
+            } else if (data.messages && Array.isArray(data.messages)) {
+                messages = data.messages;
+            } else if (data.history && Array.isArray(data.history)) {
+                messages = data.history;
+            }
+            
+            currentMessages = messages;
+            console.log('Final messages to display:', currentMessages);
             renderMessages();
             toggleSidebar(false);
         } catch (e) { 
@@ -199,10 +302,10 @@
         const message = inputField.value.trim();
         if (!message || isLoading) return;
 
-        // 1. Add User Message locally - store ONLY the plain message text
+        // 1. Add User Message locally
         const userMsg = { 
             role: 'user', 
-            content: message,  // Plain text, NOT JSON
+            content: message,
             timestamp: new Date().toISOString() 
         };
         currentMessages.push(userMsg);
@@ -227,59 +330,50 @@
             const data = await response.json();
             console.log('Backend response:', data);
             
-            // Extract the message data from the response
-            if (data && data.content) {
+            // Extract the message content - handle different response formats
+            let messageContent = '';
+            
+            if (typeof data === 'string') {
+                messageContent = data;
+            } else if (data && data.content) {
+                messageContent = data.content;
+            } else if (data && data.message) {
+                messageContent = data.message;
+            } else if (typeof data === 'object') {
+                // Try to find any non-empty string field
+                for (let key in data) {
+                    if (typeof data[key] === 'string' && data[key].length > 0 && key !== 'role' && key !== 'timestamp') {
+                        messageContent = data[key];
+                        break;
+                    }
+                }
+            }
+            
+            // If content looks like JSON, try to parse it
+            if (messageContent && messageContent.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(messageContent);
+                    if (parsed.message) {
+                        messageContent = parsed.message;
+                    } else if (parsed.content) {
+                        messageContent = parsed.content;
+                    }
+                } catch (e) {
+                    console.warn('Could not parse JSON content:', e);
+                }
+            }
+
+            // Don't add empty messages
+            if (messageContent && messageContent.trim().length > 0) {
                 const aiMsg = {
                     role: data.role || 'assistant',
-                    content: data.content,
+                    content: messageContent,
                     timestamp: data.timestamp || new Date().toISOString()
                 };
                 currentMessages.push(aiMsg);
                 console.log('AI message added:', aiMsg);
             } else {
-                throw new Error("Empty response");
-            }
-        } catch (error) {
-            console.error('Send Error:', error);
-            currentMessages.push({
-                role: 'assistant',
-                content: "I'm having trouble connecting to my brain right now. Please try again later.",
-                timestamp: new Date().toISOString()
-            });
-        } finally {
-            isLoading = false;
-            typingIndicator.classList.add('hidden');
-            renderMessages(); 
-            scrollToBottom();
-        }
-    
-
-        isLoading = true;
-        typingIndicator.classList.remove('hidden');
-        scrollToBottom();
-
-        try {
-            const response = await fetch('/api/chat/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: message })
-            });
-            
-            if (!response.ok) throw new Error('Server error');
-
-            const data = await response.json();
-            
-            // Extract the message data from the response
-            if (data && data.content) {
-                const aiMsg = {
-                    role: data.role || 'assistant',
-                    content: data.content,
-                    timestamp: data.timestamp || new Date().toISOString()
-                };
-                currentMessages.push(aiMsg);
-                console.log('Message added:', aiMsg);
-            } else {
-                throw new Error("Empty response");
+                console.warn('Empty message received, skipping');
             }
         } catch (error) {
             console.error('Send Error:', error);
@@ -315,12 +409,6 @@
         }
     }
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     function renderMessages() {
         if (!messagesContainer) return;
         messagesContainer.innerHTML = '';
@@ -328,6 +416,30 @@
         currentMessages.forEach((msg) => {
             const isUser = msg.role === 'user';
             const textToDisplay = msg.content || "";
+            
+            // Format time from timestamp
+            let timeString = '';
+            if (msg.timestamp) {
+                try {
+                    if (typeof msg.timestamp === 'string' && msg.timestamp.includes('T')) {
+                        // Simple substring extraction: "2026-01-06T09:09:58.3246055" -> "09:09"
+                        const timePart = msg.timestamp.split('T')[1]; // Gets "09:09:58.3246055"
+                        timeString = timePart.substring(0, 5); // Gets "09:09"
+                        console.log('✓ Time extracted:', timeString);
+                    } else {
+                        // Fallback for Date objects
+                        const date = new Date(msg.timestamp);
+                        if (!isNaN(date.getTime())) {
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            timeString = `${hours}:${minutes}`;
+                            console.log('✓ Time from Date:', timeString);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Time formatting error:', e);
+                }
+            }
 
             // Container for the entire message (with alignment)
             const div = document.createElement('div');
@@ -354,14 +466,20 @@
             avatar.style.border = '1px solid rgba(0,0,0,0.1)';
             
             if (isUser) {
-                avatar.style.backgroundColor = 'rgb(219, 112, 147)'; // primary pink
+                avatar.style.backgroundColor = 'rgb(219, 112, 147)';
                 avatar.innerHTML = '<i data-lucide="user" style="color: white; width: 16px; height: 16px;"></i>';
             } else {
                 avatar.style.backgroundColor = 'rgba(219, 112, 147, 0.2)';
                 avatar.innerHTML = '<i data-lucide="bot" style="color: rgb(219, 112, 147); width: 16px; height: 16px;"></i>';
             }
 
-            // Message bubble
+            // Message bubble with time
+            const bubbleContainer = document.createElement('div');
+            bubbleContainer.style.display = 'flex';
+            bubbleContainer.style.flexDirection = 'column';
+            bubbleContainer.style.gap = '4px';
+            bubbleContainer.style.alignItems = isUser ? 'flex-end' : 'flex-start';
+
             const bubble = document.createElement('div');
             bubble.style.borderRadius = '16px';
             bubble.style.padding = '12px 16px';
@@ -369,10 +487,10 @@
             bubble.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
             
             if (isUser) {
-                bubble.style.backgroundColor = 'rgb(219, 112, 147)'; // primary
+                bubble.style.backgroundColor = 'rgb(219, 112, 147)';
                 bubble.style.color = 'white';
             } else {
-                bubble.style.backgroundColor = 'rgb(245, 245, 245)'; // secondary light
+                bubble.style.backgroundColor = 'rgb(245, 245, 245)';
                 bubble.style.color = 'rgb(64, 64, 64)';
             }
 
@@ -385,8 +503,25 @@
             p.textContent = textToDisplay;
 
             bubble.appendChild(p);
+            bubbleContainer.appendChild(bubble);
+            
+            // Time text - always add if we have timeString
+            if (timeString) {
+                const timeSpan = document.createElement('span');
+                timeSpan.style.fontSize = '11px';
+                timeSpan.style.color = 'rgb(150, 150, 150)';
+                timeSpan.style.paddingRight = isUser ? '4px' : '0';
+                timeSpan.style.paddingLeft = isUser ? '0' : '4px';
+                timeSpan.style.marginTop = '2px';
+                timeSpan.textContent = timeString;
+                console.log('Adding time span:', timeString);
+                bubbleContainer.appendChild(timeSpan);
+            } else {
+                console.warn('No time string to display');
+            }
+            
             wrapper.appendChild(avatar);
-            wrapper.appendChild(bubble);
+            wrapper.appendChild(bubbleContainer);
             div.appendChild(wrapper);
 
             messagesContainer.appendChild(div);
