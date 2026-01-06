@@ -92,56 +92,81 @@ public class StudentController {
         }
         model.addAttribute("latestAssessment", latest);
 
-        // --- ✅ PERSONALIZATION LOGIC START ---
-        Set<EducationalContent> recommendations = new HashSet<>(); // Use Set to avoid duplicates
+        // --- ✅ REFINED PERSONALIZATION LOGIC START ---
+        List<EducationalContent> finalRecs = new ArrayList<>();
+        String recTitle = "General Wellness Essentials";
+        
+        // Use a TreeMap to automatically sort by Priority (1 = High, 3 = Low)
+        java.util.Map<Integer, List<EducationalContent>> priorityMap = new java.util.TreeMap<>();
+        priorityMap.put(1, new ArrayList<>()); // Critical: Anxiety/Mood/Depression
+        priorityMap.put(2, new ArrayList<>()); // Secondary: Stress/Focus/Motivation
+        priorityMap.put(3, new ArrayList<>()); // Maintenance: Sleep/General Wellness
 
         if (latest != null && latest.getResponseData() != null) {
             String[] answers = latest.getResponseData().split(",");
 
             if (answers.length >= 5) {
-                int q1 = Integer.parseInt(answers[0]); // Anxiety
-                int q2 = Integer.parseInt(answers[1]); // Worry
-                int q3 = Integer.parseInt(answers[2]); // Depression
-                int q4 = Integer.parseInt(answers[3]); // Interest
-                int q5 = Integer.parseInt(answers[4]); // Sleep
+                try {
+                    int q1 = Integer.parseInt(answers[0].trim()); // Anxiety
+                    int q2 = Integer.parseInt(answers[1].trim()); // Worry
+                    int q3 = Integer.parseInt(answers[2].trim()); // Depression
+                    int q4 = Integer.parseInt(answers[3].trim()); // Interest
+                    int q5 = Integer.parseInt(answers[4].trim()); // Sleep
 
-                boolean specificNeedsFound = false;
+                    boolean specificNeedsFound = false;
 
-                // 1. ANXIETY (Q1 or Q2 High) -> Search "Anxiety" or "Grounding"
-                if (q1 >= 2 || q2 >= 2) {
-                    recommendations.addAll(contentDAO.searchByKeyword("Anxiety"));
-                    recommendations.addAll(contentDAO.searchByKeyword("Grounding"));
-                    specificNeedsFound = true;
+                    // 1. PRIORITY 1: ANXIETY & DEPRESSION (Critical Support)
+                    if (q1 >= 2 || q2 >= 2 || q3 >= 2) {
+                        priorityMap.get(1).addAll(contentDAO.searchByKeyword("Anxiety"));
+                        priorityMap.get(1).addAll(contentDAO.searchByKeyword("Depression"));
+                        priorityMap.get(1).addAll(contentDAO.searchByKeyword("Grounding"));
+                        specificNeedsFound = true;
+                    }
+
+                    // 2. PRIORITY 2: MOTIVATION & STRESS
+                    if (q4 >= 2 || q1 == 1 || q2 == 1) {
+                        priorityMap.get(2).addAll(contentDAO.searchByKeyword("Motivation"));
+                        priorityMap.get(2).addAll(contentDAO.searchByKeyword("Stress"));
+                        priorityMap.get(2).addAll(contentDAO.searchByKeyword("Pomodoro"));
+                        specificNeedsFound = true;
+                    }
+
+                    // 3. PRIORITY 3: SLEEP
+                    if (q5 >= 2) {
+                        priorityMap.get(3).addAll(contentDAO.searchByKeyword("Sleep"));
+                        specificNeedsFound = true;
+                    }
+
+                    // --- FILTERING & CAPPING (Limit to Top 3) ---
+                    Set<Long> seenIds = new HashSet<>(); 
+                    for (List<EducationalContent> list : priorityMap.values()) {
+                        for (EducationalContent c : list) {
+                            if (finalRecs.size() < 3 && !seenIds.contains(c.getId())) {
+                                finalRecs.add(c);
+                                seenIds.add(c.getId());
+                            }
+                        }
+                        if (finalRecs.size() >= 3) break;
+                    }
+
+                    if (specificNeedsFound) {
+                        recTitle = "Top Support Priorities for You";
+                    }
+                } catch (NumberFormatException e) {
+                    log.error("Error parsing response data: {}", e.getMessage());
                 }
-
-                // 2. MOOD/CONFIDENCE (Q3 or Q4 High) -> Search "Confidence", "Social", "Depression"
-                if (q3 >= 2 || q4 >= 2) {
-                    recommendations.addAll(contentDAO.searchByKeyword("Confidence"));
-                    recommendations.addAll(contentDAO.searchByKeyword("Social"));
-                    specificNeedsFound = true;
-                }
-
-                // 3. SLEEP (Q5 High) -> Search "Sleep"
-                if (q5 >= 2) {
-                    recommendations.addAll(contentDAO.searchByKeyword("Sleep"));
-                    specificNeedsFound = true;
-                }
-
-                // 4. STRESS (If Q1 is mild but present) -> Search "Stress"
-                if ((q1 == 1 || q2 == 1) && !specificNeedsFound) {
-                    recommendations.addAll(contentDAO.searchByKeyword("Stress"));
-                    recommendations.addAll(contentDAO.searchByKeyword("Pomodoro")); // Productivity helps stress
-                }
-
             }
         }
 
-        // Fallback: If list is still empty, show everything (or specific general topics)
-        if (recommendations.isEmpty()) {
-            recommendations.addAll(contentDAO.findAll()); // Show all or just searchByKeyword("Stress")
+        // Fallback: If no high scores or no data, show general content
+        if (finalRecs.isEmpty()) {
+            finalRecs = contentDAO.findAll().stream()
+                .limit(3)
+                .collect(Collectors.toList());
         }
 
-        model.addAttribute("recommendedModules", recommendations);
+        model.addAttribute("recommendedModules", finalRecs);
+        model.addAttribute("recTitle", recTitle);
         // --- 🔒 PERSONALIZATION LOGIC END ---
         
         return "student/dashboard";

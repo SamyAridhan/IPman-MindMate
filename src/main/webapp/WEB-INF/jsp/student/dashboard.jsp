@@ -249,40 +249,55 @@
 
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
     <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center">
-            <i data-lucide="sparkles" class="w-5 h-5 mr-2 text-primary"></i>
-            <h2 class="text-xl font-semibold text-foreground">
-                Personalized Learning Modules
+        <div>
+            <h2 class="text-xl font-bold text-foreground">
+                ${not empty recTitle ? recTitle : 'Tailored for Your Well-being'}
             </h2>
+            <p class="text-sm text-muted-foreground mt-1">
+                <c:choose>
+                    <c:when test="${not empty latestAssessment}">
+                        Resources hand-picked based on your latest assessment
+                    </c:when>
+                    <c:otherwise>
+                        Explore these foundational wellness modules to get started.
+                    </c:otherwise>
+                </c:choose>
+            </p>
         </div>
         
-        <button onclick="window.location.reload();" class="icon-btn border border-input" title="Refresh">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-        </button>
+        <div class="flex items-center">
+            <span class="flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold uppercase tracking-wider border border-primary/20">
+                <i data-lucide="sparkles" class="w-3 h-3"></i> AI Personalized
+            </span>
+        </div>
     </div>
 
     <div class="space-y-4">
         
-        <c:forEach var="module" items="${recommendedModules}">
+       <c:forEach var="module" items="${recommendedModules}">
             <a href="/student/view-module?id=${module.id}" 
-               class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors border border-transparent hover:border-border">
+               class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-all border border-transparent hover:border-border group">
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center space-x-2 mb-2">
-                            <%-- Dynamic Icon based on content type --%>
-                            <i data-lucide="${module.contentType == 'Video' ? 'video' : 'file-text'}" 
-                               class="w-4 h-4 ${module.contentType == 'Video' ? 'text-blue-500' : 'text-green-500'}"></i>
-                            <h4 class="font-medium text-foreground">${module.title}</h4>
+                            <%-- Icon color matching content type --%>
+                            <div class="p-1.5 rounded-md ${module.contentType == 'Video' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}">
+                                <i data-lucide="${module.contentType == 'Video' ? 'video' : 'file-text'}" class="w-4 h-4"></i>
+                            </div>
+                            <h4 class="font-semibold text-foreground group-hover:text-primary transition-colors">${module.title}</h4>
                         </div>
-                        <p class="text-sm text-muted-foreground line-clamp-2">${module.description}</p>
+                        <p class="text-sm text-muted-foreground line-clamp-2 ml-9">${module.description}</p>
                         
-                        <div class="flex items-center mt-2">
-                             <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                        <div class="flex items-center mt-3 ml-9 gap-3">
+                             <span class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-background px-2 py-0.5 rounded border border-border">
+                                ${module.contentType}
+                             </span>
+                             <span class="text-xs font-medium text-amber-600 flex items-center">
                                 <i data-lucide="star" class="w-3 h-3 inline mr-1 fill-current"></i> ${module.pointsValue} pts
                             </span>
                         </div>
                     </div>
-                    <div class="ml-4 text-primary opacity-70">
+                    <div class="ml-4 text-muted-foreground group-hover:text-primary transform group-hover:translate-x-1 transition-all">
                         <i data-lucide="chevron-right" class="w-5 h-5"></i>
                     </div>
                 </div>
@@ -291,9 +306,17 @@
 
         <%-- EMPTY STATE --%>
         <c:if test="${empty recommendedModules}">
-            <div class="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg">
-                <i data-lucide="book-open" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-                <p class="text-sm">Complete the self-assessment to see your personalized list.</p>
+            <div class="text-center py-10 bg-secondary/10 border border-dashed border-border rounded-lg">
+                <div class="bg-background w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                    <i data-lucide="brain-circuit" class="w-6 h-6 text-muted-foreground"></i>
+                </div>
+                <h4 class="text-sm font-medium text-foreground">Awaiting Your Input</h4>
+                <p class="text-xs text-muted-foreground mt-1 max-w-[250px] mx-auto">
+                    Take the self-assessment so our AI can curate learning modules specific to your needs.
+                </p>
+                <a href="/student/assessment" class="mt-4 inline-block text-xs font-bold text-primary uppercase tracking-wider hover:underline">
+                    Start Assessment &rarr;
+                </a>
             </div>
         </c:if>
 
