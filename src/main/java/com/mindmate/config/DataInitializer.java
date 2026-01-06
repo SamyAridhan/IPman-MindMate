@@ -388,28 +388,67 @@ public class DataInitializer {
                 Student demoStudent = studentDAO.findByEmail("demo@student.mindmate.com").orElse(null);
 
                 if (demoStudent != null) {
-                    // 1. Severe (High Risk) - Last week
-                    Assessment a1 = new Assessment(demoStudent, 14);
-                    a1.setResultCategory("Severe");
-                    a1.setTakenAt(LocalDateTime.now().minusDays(7));
-                    a1.setResponseData("3,3,3,2,3");
-                    assessmentDAO.save(a1);
+                    // Pattern: High stress -> Recovery -> Relapse -> Current Recovery
+                    // Scores out of 15 (assuming max 15)
+                    // Oldest -> Newest
+                    int[] demoScores = {
+                        14, 13, 11, // High start (Severe)
+                        10, 8, 6,   // Recovery (Moderate -> Minimal)
+                        5, 9, 12,   // Relapse (Minimal -> Moderate -> Severe)
+                        10, 7, 4    // Current Recovery (Moderate -> Minimal)
+                    };
+                    
+                    int daysAgo = 60; // Start 2 months ago
+                    
+                    for (int score : demoScores) {
+                        Assessment a = new Assessment(demoStudent, score);
+                        a.setTakenAt(LocalDateTime.now().minusDays(daysAgo));
+                        
+                        // Set Category and Dummy Response Data based on score
+                        if (score >= 12) {
+                            a.setResultCategory("Severe");
+                            a.setResponseData("3,3,3,2,3"); 
+                        } else if (score >= 7) {
+                            a.setResultCategory("Moderate");
+                            a.setResponseData("2,2,1,2,1");
+                        } else {
+                            a.setResultCategory("Minimal");
+                            a.setResponseData("1,0,1,1,1");
+                        }
+                        
+                        assessmentDAO.save(a);
+                        daysAgo -= 5; // Spread roughly every 5 days
+                    }
+                    System.out.println("✅ Seeded 12 assessments for Demo Student.");
+                }
 
-                    // 2. Moderate Risk - 3 days ago
-                    Assessment a2 = new Assessment(demoStudent, 12);
-                    a2.setResultCategory("Moderate");
-                    a2.setTakenAt(LocalDateTime.now().minusDays(3));
-                    a2.setResponseData("2,1,1,2,3");
-                    assessmentDAO.save(a2);
+                // B. Another Student (3 Assessments)
+                Student otherStudent = studentDAO.findByEmail("A23CS0101@student.utm.my").orElse(null);
+                
+                if (otherStudent != null) {
+                    // Simple pattern for secondary student
+                    int[] otherScores = {5, 8, 4}; 
+                    int daysAgo = 14;
 
-                    // 3. Minimal Risk - Today
-                    Assessment a3 = new Assessment(demoStudent, 4);
-                    a3.setResultCategory("Minimal");
-                    a3.setTakenAt(LocalDateTime.now().minusHours(2));
-                    a3.setResponseData("1,0,1,1,1");
-                    assessmentDAO.save(a3);
-
-                    System.out.println("✅ Seeded 3 assessments for Demo Student.");
+                    for (int score : otherScores) {
+                        Assessment a = new Assessment(otherStudent, score);
+                        a.setTakenAt(LocalDateTime.now().minusDays(daysAgo));
+                        
+                        if (score >= 12) {
+                            a.setResultCategory("Severe");
+                            a.setResponseData("3,3,3,3,3");
+                        } else if (score >= 7) {
+                            a.setResultCategory("Moderate");
+                            a.setResponseData("2,2,2,1,1");
+                        } else {
+                            a.setResultCategory("Minimal");
+                            a.setResponseData("1,0,1,1,1");
+                        }
+                        
+                        assessmentDAO.save(a);
+                        daysAgo -= 7; // Weekly
+                    }
+                    System.out.println("✅ Seeded 3 assessments for Ahmad Zafran.");
                 }
             } else {
                 System.out.println("✓ Assessments already exist.");
