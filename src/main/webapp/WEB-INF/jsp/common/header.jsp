@@ -61,12 +61,10 @@
 </head>
 <body class="bg-background text-foreground font-sans antialiased min-h-screen flex flex-col">
     
-    <!-- RESOLVED: Modern navigation with icons (YOUR changes) + Forum link (TEAMMATE's addition) -->
     <nav class="bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50 w-full">
         <div class="container mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
                 
-                <!-- Logo Section -->
                 <div class="flex items-center space-x-2">
                     <a href="${role == 'counselor' ? '/counselor/dashboard' : (role == 'admin' ? '/admin/dashboard' : '/student/dashboard')}" 
                        class="flex items-center gap-2 group">
@@ -80,7 +78,7 @@
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-1">
                     
-                    <!-- STUDENT NAVIGATION (with Forum link from teammate) -->
+                    <!-- STUDENT NAVIGATION  -->
                     <c:if test="${role == 'student' || role == null}">
                         <a href="/student/dashboard" 
                            class="${fn:contains(currentUrl, '/student/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -100,7 +98,6 @@
                             Learning
                         </a>
                         
-                        <!-- MERGED: Forum link from teammate's branch -->
                         <a href="/student/forum" 
                            class="${fn:contains(currentUrl, '/student/forum') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'} inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                             <i data-lucide="message-circle" class="w-4 h-4"></i>
@@ -195,7 +192,7 @@
         <div id="mobile-menu" class="hidden md:hidden border-t border-border bg-card">
             <div class="container mx-auto px-4 py-3 space-y-1">
                 
-                <!-- STUDENT MOBILE NAVIGATION (with Forum link) -->
+                <!-- STUDENT MOBILE NAVIGATION -->
                 <c:if test="${role == 'student' || role == null}">
                     <a href="/student/dashboard" 
                        class="${fn:contains(currentUrl, '/student/dashboard') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -213,7 +210,6 @@
                         Learning
                     </a>
                     
-                    <!-- MERGED: Forum link in mobile menu -->
                     <a href="/student/forum" 
                        class="${fn:contains(currentUrl, '/student/forum') ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary'} flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         <i data-lucide="message-circle" class="w-4 h-4"></i>

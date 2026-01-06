@@ -67,7 +67,6 @@
             <p class="text-muted-foreground mt-2">Create your Student account</p>
         </div>
         
-        <%-- Error Message Display (Unified Red Popup) --%>
         <% if (request.getAttribute("errorMessage") != null) { %>
             <div class="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
                 <p class="text-sm text-destructive text-center"><%= request.getAttribute("errorMessage") %></p>

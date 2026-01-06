@@ -5,7 +5,6 @@
 
 <div class="container mx-auto px-4 py-8 max-w-4xl">
 <div class="space-y-6">
-<!-- Minimal Top Navigation -->
 <div>
 <a href="${pageContext.request.contextPath}/student/library" class="text-muted-foreground hover:text-primary inline-flex items-center gap-2 transition-colors text-sm font-bold group">
 Back
@@ -13,7 +12,6 @@ Back
 </div>
 
     <div class="bg-card shadow-2xl border border-border rounded-3xl overflow-hidden flex flex-col">
-        <!-- Header Section -->
         <div class="p-8 md:p-10 border-b border-border bg-gradient-to-br from-card to-secondary/30">
             <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div class="flex items-center gap-3">
@@ -105,7 +103,6 @@ Back
                 </c:otherwise>
             </c:choose>
 
-            <!-- NEW: Beautiful Back to Library Button -->
             <div class="w-full pt-4">
                 <a href="${pageContext.request.contextPath}/student/library" 
                    class="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-border bg-background text-foreground font-bold text-sm hover:bg-secondary transition-all hover:px-8">

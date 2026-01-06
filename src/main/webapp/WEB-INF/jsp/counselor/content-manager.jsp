@@ -218,7 +218,7 @@ const videoGroup = document.getElementById('videoInputGroup');
 const videoUrlInput = document.getElementById('videoUrl');
 const typeRadios = document.querySelectorAll('input[name="contentType"]');
 const mergedContent = document.getElementById('mergedContent');
-let isEditMode = false; // Track if we're in edit mode
+let isEditMode = false; 
 
 function toggleInputs(type) {
 if (type === 'Video') {
@@ -234,7 +234,6 @@ videoUrlInput.required = false;
 
 typeRadios.forEach(radio => {
 radio.addEventListener('change', (e) => {
-    // Prevent changing when in edit mode
     if (isEditMode) {
         e.preventDefault();
         return false;
@@ -258,14 +257,13 @@ document.body.style.overflow = 'auto';
 
 addBtn.addEventListener('click', () => {
 form.reset();
-isEditMode = false; // Not in edit mode
+isEditMode = false; 
 document.getElementById('editingId').value = '';
 document.getElementById('modalTitle').textContent = 'Add New Module';
 document.getElementById('submitBtn').textContent = 'Publish Module';
 if (tinymce.get('articleEditor')) tinymce.get('articleEditor').setContent('');
 document.getElementById('typeArticle').checked = true;
 toggleInputs('Article');
-// Enable content type selection for new content
 document.getElementById('typeArticle').disabled = false;
 document.getElementById('typeVideo').disabled = false;
 document.getElementById('labelArticle').style.pointerEvents = 'auto';
@@ -284,18 +282,16 @@ if (!btn) return;
 const row = btn.closest('tr');
 const type = row.getAttribute('data-type');
 const body = row.getAttribute('data-body');
-isEditMode = true; // Set edit mode to true
+isEditMode = true; 
 
 document.getElementById('editingId').value = row.getAttribute('data-id');
 document.getElementById('title').value = row.querySelector('.font-bold').textContent;
 document.getElementById('points').value = row.getAttribute('data-points');
 document.getElementById('description').value = row.getAttribute('data-desc');
 
-// Clear both inputs first
 videoUrlInput.value = '';
 if(tinymce.get('articleEditor')) tinymce.get('articleEditor').setContent('');
 
-// Set the correct radio button based on content type from DB
 if (type === 'Video') {
     document.getElementById('typeVideo').checked = true;
     videoUrlInput.value = body;
@@ -304,11 +300,8 @@ if (type === 'Video') {
     if(tinymce.get('articleEditor')) tinymce.get('articleEditor').setContent(body);
 }
 
-// Toggle inputs to show correct editor AFTER setting radio and content
 toggleInputs(type);
 
-// Lock content type when editing
-// Lock content type when editing (after setting the correct type)
 document.getElementById('typeArticle').disabled = true;
 document.getElementById('typeVideo').disabled = true;
 document.getElementById('labelArticle').style.pointerEvents = 'none';
@@ -323,7 +316,6 @@ openModal();
 form.addEventListener('submit', (e) => {
 e.preventDefault();
 
-// Re-enable radio buttons before form submission so their values are sent
 document.getElementById('typeArticle').disabled = false;
 document.getElementById('typeVideo').disabled = false;
 

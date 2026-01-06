@@ -3,7 +3,6 @@
 <jsp:include page="../common/header.jsp" />
 
 <div class="container mx-auto px-4 py-2">
-    <%-- HEADER SECTION --%>
     <div class="flex items-center justify-between mb-2 border-b pb-4">
         <div>
             <h1 class="text-3xl font-bold text-foreground mb-2">
@@ -31,7 +30,6 @@
                 </c:otherwise>
             </c:choose>
 
-            <%-- Find this button in your HEADER SECTION --%>
             <button onclick="prepareNewPostModal()" class="flex items-center bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-semibold shadow-md transition-all active:scale-95">
                 <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                 Share or Ask for Support
@@ -226,7 +224,6 @@
     function openNewPostModal() { postModal?.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
     function closeNewPostModal() { postModal?.classList.add('hidden'); document.body.style.overflow = ''; }
 
-    // Dropdown Logic
     function toggleDropdown(postId) {
         document.querySelectorAll('[id^="dropdown-"]').forEach(el => {
             if (el.id !== 'dropdown-' + postId) el.classList.add('hidden');
@@ -241,35 +238,26 @@
         }
     });
 
-    // IMPORTANT: Update your openNewPostModal logic to reset the modal for "New Post" mode
     function openNewPostModal() { 
         postModal?.classList.remove('hidden'); 
         document.body.style.overflow = 'hidden'; 
     }
 
-    // Add a reset trigger when clicking the "Share or Ask" button
-    // Update the button in your HTML: 
-    // <button onclick="prepareNewPostModal()" ...>
-
-    // 1. Reset Modal for a New Post
 function prepareNewPostModal() {
     const form = document.getElementById('post-form');
     if(!form) return;
     
-    form.reset(); // Clears all inputs
+    form.reset(); 
     
-    // Set UI to "Create" mode
     document.getElementById('modal-post-id').value = "0";
     document.getElementById('modal-title').innerText = "Share Your Experience or Ask for Support";
     document.getElementById('modal-submit-btn').innerText = "Share with Community";
     
-    // Set the action back to create
     form.action = "${pageContext.request.contextPath}/student/forum/create";
     
     openNewPostModal();
 }
 
-// 2. Populate Modal for Editing
 function editPost(postId) {
     const getUrl = "${pageContext.request.contextPath}/student/forum/get?postId=" + postId;
     
@@ -281,20 +269,16 @@ function editPost(postId) {
         .then(post => {
             const form = document.getElementById('post-form');
             
-            // Fill Form Fields by ID
             document.getElementById('modal-post-id').value = post.id;
             document.getElementById('post-title').value = post.title;
             document.getElementById('post-story').value = post.content;
             document.getElementById('support-category').value = post.category;
             
-            // Handle Checkbox
             document.getElementById('post-anonymous').checked = post.anonymous;
 
-            // Update UI to "Edit Mode"
             document.getElementById('modal-title').innerText = "Edit Your Post";
             document.getElementById('modal-submit-btn').innerText = "Save Changes";
             
-            // Change form action to update
             form.action = "${pageContext.request.contextPath}/student/forum/update";
 
             openNewPostModal();
@@ -366,13 +350,11 @@ function editPost(postId) {
                 const icon = btn.querySelector('i');
                 const card = btn.closest('.p-6');
                 
-                // Toggle Visuals
                 btn.classList.toggle('text-red-600', data.isFlagged);
                 btn.classList.toggle('bg-red-100', data.isFlagged);
                 btn.classList.toggle('text-gray-400', !data.isFlagged);
                 icon.classList.toggle('fill-current', data.isFlagged);
                 
-                // Toggle Card Background
                 card.classList.toggle('bg-red-50/50', data.isFlagged);
                 card.classList.toggle('border-red-200', data.isFlagged);
             }

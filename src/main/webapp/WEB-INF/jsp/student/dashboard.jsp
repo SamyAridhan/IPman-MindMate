@@ -397,11 +397,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     datasets: [{
                         label: 'Assessment Score',
                         data: scores,
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderColor: '#ec4899',
+                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
                         borderWidth: 3,
                         pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#2563eb',
+                        pointBorderColor: '#ec4899',
                         pointRadius: 5,
                         tension: 0.4,
                         fill: true
@@ -414,11 +414,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         y: { beginAtZero: true, max: 15, ticks: { stepSize: 5 } },
                         x: { grid: { display: false } }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: { legend: { display: false },
+                        tooltip: { 
+                            backgroundColor: '#ec4899',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffe4e6',
+                                padding: 12,
+                                cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Score: ' + context.parsed.y + ' / 15';
+                                }
+                            }
+                        }
+                    }
                 }
             });
             
-            // Re-initialize icons if any were loaded dynamically
             if (typeof lucide !== 'undefined') lucide.createIcons();
             
         } catch (error) {
@@ -427,10 +440,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (filterSelect) {
-        // Initial load using the current dropdown value
         renderHistoryChart(filterSelect.value);
 
-        // Event listener for changes
         filterSelect.addEventListener('change', function() {
             renderHistoryChart(this.value);
         });

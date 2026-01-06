@@ -72,7 +72,6 @@
                                         <span class="text-muted-foreground">•</span>
                                         <span>${counselor.experience}</span>
                                     </div>
-                                    <%-- Badges Removed --%>
                                 </div>
                             </div>
                         </div>
@@ -296,7 +295,6 @@ function renderCalendar(date) {
         dayCell.className = 'p-2 rounded cursor-pointer';
         dayCell.textContent = day;
         
-        // Consistent formatting
         const yearStr = dayDate.getFullYear();
         const monthStr = String(dayDate.getMonth() + 1).padStart(2, '0');
         const dayStr = String(dayDate.getDate()).padStart(2, '0');
@@ -363,7 +361,6 @@ function fetchAvailableSlots() {
     document.getElementById('time-slots-list').classList.add('hidden');
     document.getElementById('loading-slots').classList.remove('hidden');
     
-    // Format date for Backend "MMM dd, yyyy"
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const day = String(selectedDate.getDate()).padStart(2, '0');
     const month = months[selectedDate.getMonth()];
@@ -394,7 +391,6 @@ function displayTimeSlots(slots) {
 
     document.getElementById('time-slots-list').classList.remove('hidden');
 
-    // Grey Out Logic
     const now = new Date();
     const todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0');
     const selectedDateStr = selectedDate.getFullYear() + "-" + String(selectedDate.getMonth()+1).padStart(2,'0') + "-" + String(selectedDate.getDate()).padStart(2,'0');
