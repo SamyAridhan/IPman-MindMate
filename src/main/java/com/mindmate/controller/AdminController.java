@@ -1,22 +1,10 @@
 package com.mindmate.controller;
 
 import com.mindmate.dao.*;
-import com.mindmate.model.Appointment;
-import com.mindmate.model.Counselor;
-import com.mindmate.model.SystemAnalytics;
-import com.mindmate.util.SessionHelper; // ✅ Using Helper
-import com.mindmate.dao.StudentDAO;
-import com.mindmate.dao.AppointmentDAO;
-import com.mindmate.dao.SystemAnalyticsDAO;
-import com.mindmate.dao.ForumDAO;
-import com.mindmate.model.ForumPost;
-import com.mindmate.model.ModerationStats;
-
-import jakarta.servlet.http.HttpSession;
-
-import java.util.List;
+import com.mindmate.model.*;
 import com.mindmate.util.CounselorStats;
 import com.mindmate.util.SessionHelper;
+import com.mindmate.util.PasswordUtil; // ✅ Added Import
 
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -29,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -56,11 +45,19 @@ public class AdminController {
     @Autowired
     private ForumDAO forumDAO;
 
-    /**
-     * Checks if current user is an authorized Admin.
-     */
+    @Autowired
+    private AdminDAO adminDAO;
+
     private boolean isAdmin(HttpSession session) {
         return SessionHelper.isLoggedIn(session) && "admin".equals(SessionHelper.getRole(session));
+    }
+    
+    private Admin getLoggedInAdmin(HttpSession session) {
+        Long userId = SessionHelper.getUserId(session);
+        if (userId == null || !isAdmin(session)) {
+            return null;
+        }
+        return adminDAO.findById(userId);
     }
 
     @GetMapping("/dashboard")
@@ -210,25 +207,22 @@ public class AdminController {
                 long pending = appointments.stream()
                     .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING).count();
                 
-                // History of Success (Confirmed + Completed)
                 long confirmed = appointments.stream()
                     .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED || 
                                  a.getStatus() == Appointment.AppointmentStatus.COMPLETED).count();
                 
-                // History of Rejection (Denied + Rejected + Acknowledged)
                 long denied = appointments.stream()
                     .filter(a -> a.getStatus() == Appointment.AppointmentStatus.DENIED || 
                                  a.getStatus() == Appointment.AppointmentStatus.REJECTED || 
                                  a.getStatus() == Appointment.AppointmentStatus.ACKNOWLEDGED).count();
 
-                // ✅ NEW: Explicitly count Cancelled (by Student)
                 long cancelled = appointments.stream()
                     .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CANCELLED).count();
                 
                 stats.setPendingAppointments(pending);
                 stats.setConfirmedAppointments(confirmed);
                 stats.setDeniedAppointments(denied);
-                stats.setCancelledAppointments(cancelled); // ✅ Set it
+                stats.setCancelledAppointments(cancelled);
                 
                 stats.calculateApprovalRate();
                 
@@ -251,8 +245,18 @@ public class AdminController {
     @GetMapping("/profile")
     public String profile(HttpSession session, Model model) {
         if (!isAdmin(session)) return "redirect:/login";
+        
         model.addAttribute("role", "admin");
         model.addAttribute("user", SessionHelper.getUserName(session));
+        
+        Admin admin = getLoggedInAdmin(session);
+        if (admin != null) {
+            model.addAttribute("user", admin); // Matches ${user.name} in JSP
+        } else {
+            // Fallback just in case, though isAdmin checks login
+            return "redirect:/login";
+        }
+        
         return "admin/profile";
     }
 
@@ -260,21 +264,14 @@ public class AdminController {
     public String forumModeration(HttpSession session, Model model) {
         if (!isAdmin(session)) return "redirect:/login";
 
-
-            // ✅ FIX: Set these so the header knows we are an admin
         model.addAttribute("role", "admin");
         model.addAttribute("user", SessionHelper.getUserName(session));
 
-        // 1. Fetch current flagged posts
         List<ForumPost> flaggedPosts = forumDAO.getFlaggedPosts();
-        
-        // 2. Fetch the HISTORICAL stats from the moderation_stats table
         ModerationStats stats = forumDAO.getModerationStats();
         
         model.addAttribute("flaggedPosts", flaggedPosts);
         model.addAttribute("flaggedCount", flaggedPosts.size());
-        
-        // 3. Pass the actual database values to the JSP
         model.addAttribute("approvedCount", stats.getApprovedCount());
         model.addAttribute("deletedCount", stats.getDeletedCount());
         
@@ -283,14 +280,11 @@ public class AdminController {
     
     @PostMapping("/forum/approve")
     public String approvePost(@RequestParam("postId") int postId) {
-
         ForumPost post = forumDAO.getPostById(postId);
         if (post != null) {
             post.setFlagged(false);
             post.getFlaggedUserIds().clear();
             forumDAO.saveOrUpdate(post);
-            
-            // Persistent Increment
             forumDAO.incrementApprovedCount(); 
         }
         return "redirect:/admin/forum-moderation";
@@ -299,8 +293,6 @@ public class AdminController {
     @PostMapping("/forum/delete")
     public String deletePost(@RequestParam("postId") int postId) {
         forumDAO.deletePost(postId);
-        
-        // Persistent Increment
         forumDAO.incrementDeletedCount(); 
         return "redirect:/admin/forum-moderation";
     }
@@ -309,7 +301,6 @@ public class AdminController {
     public String viewFlaggedPost(@RequestParam("postId") int postId, HttpSession session, Model model) {
         if (!isAdmin(session)) return "redirect:/login";
 
-        // ✅ FIX: Set these so the header knows we are an admin
         model.addAttribute("role", "admin");
         model.addAttribute("user", SessionHelper.getUserName(session));
 
@@ -318,5 +309,68 @@ public class AdminController {
 
         model.addAttribute("post", post);
         return "admin/forum-moderation-detail";
+    }
+
+    @PostMapping("/profile/update")
+    @Transactional
+    public String updateProfile(
+            @RequestParam String name,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        Admin admin = getLoggedInAdmin(session);
+        if (admin == null) return "redirect:/login";
+
+        try {
+            admin.setName(name);
+            adminDAO.update(admin);
+            
+            session.setAttribute("userName", name);
+            redirectAttributes.addFlashAttribute("successMessage", "Profile updated successfully!");
+        } catch (Exception e) {
+            log.error("Error updating admin profile", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to update profile.");
+        }
+        return "redirect:/admin/profile";
+    }
+
+    @PostMapping("/profile/change-password")
+    @Transactional
+    public String changePassword(
+            @RequestParam String currentPassword,
+            @RequestParam String newPassword,
+            @RequestParam String confirmPassword,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        Admin admin = getLoggedInAdmin(session);
+        if (admin == null) return "redirect:/login";
+
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "New passwords do not match.");
+            return "redirect:/admin/profile";
+        }
+
+        try {
+            // ✅ FIX: Use PasswordUtil
+            if (PasswordUtil.checkPassword(currentPassword, admin.getPassword())) {
+                admin.setPassword(PasswordUtil.hashPassword(newPassword)); 
+                adminDAO.update(admin);
+                redirectAttributes.addFlashAttribute("successMessage", "Password changed successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Incorrect current password.");
+            }
+        } catch (Exception e) {
+            log.error("Error changing admin password", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "System error while changing password.");
+        }
+        return "redirect:/admin/profile";
+    }
+    
+    @PostMapping("/preferences")
+    public String updatePreferences(HttpSession session, RedirectAttributes redirectAttributes) {
+        if (!isAdmin(session)) return "redirect:/login";
+        redirectAttributes.addFlashAttribute("successMessage", "System preferences updated.");
+        return "redirect:/admin/profile";
     }
 }

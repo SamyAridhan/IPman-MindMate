@@ -8,6 +8,7 @@ import com.mindmate.model.Appointment;
 import com.mindmate.model.EducationalContent;
 import com.mindmate.model.Counselor;
 import com.mindmate.util.SessionHelper;
+import com.mindmate.util.PasswordUtil; // ✅ Added Import
 
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -35,7 +37,6 @@ public class CounselorController {
     @Autowired
     private CounselorDAO counselorDAO;
 
-    // ✅ MERGED: Added Team Member's DAOs
     @Autowired
     private EducationalContentDAO educationalContentDAO;
 
@@ -190,7 +191,6 @@ public class CounselorController {
         return "redirect:/counselor/schedule";
     }
 
-    // ✅ YOUR METHOD: Mark Appointment as Completed
     @PostMapping("/appointment/complete")
     @Transactional
     public String completeAppointment(@RequestParam Long appointmentId, HttpSession session) {
@@ -201,7 +201,6 @@ public class CounselorController {
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
 
-            // Validation: Exists + Belongs to counselor + Is currently CONFIRMED
             if (apt != null &&
                     apt.getCounselor() != null &&
                     apt.getCounselor().getId().equals(counselor.getId()) &&
@@ -214,14 +213,8 @@ public class CounselorController {
         } catch (Exception e) {
             log.error("Error completing appointment", e);
         }
-        // Redirecting to dashboard since that's where the "Today" list is most
-        // prominent
         return "redirect:/counselor/dashboard";
     }
-
-    // ==========================================
-    // 📚 CONTENT MANAGEMENT (Team Member's Logic)
-    // ==========================================
 
     @GetMapping("/content")
     public String manageContent(Model model, HttpSession session) {
@@ -230,7 +223,6 @@ public class CounselorController {
             return "redirect:/login";
 
         model.addAttribute("role", "counselor");
-        // Only show content created by this counselor
         List<EducationalContent> allContents = educationalContentDAO.findAll();
         List<EducationalContent> myContents = allContents.stream()
                 .filter(c -> c.getAuthor() != null && c.getAuthor().getId().equals(counselor.getId()))
@@ -245,7 +237,7 @@ public class CounselorController {
             @RequestParam String title,
             @RequestParam String contentType,
             @RequestParam String description,
-            @RequestParam String content, // Matches articleContent or videoUrl from JSP
+            @RequestParam String content, 
             @RequestParam Integer points,
             @RequestParam(required = false) Long editingId,
             HttpSession session) {
@@ -257,7 +249,6 @@ public class CounselorController {
         EducationalContent ec;
         if (editingId != null) {
             ec = educationalContentDAO.findById(editingId);
-            // Authorization check: Only allow editing own content
             if (ec == null || ec.getAuthor() == null || !ec.getAuthor().getId().equals(counselor.getId())) {
                 log.warn("Counselor {} attempted to edit content {} they don't own", counselor.getId(), editingId);
                 return "redirect:/counselor/content";
@@ -290,16 +281,13 @@ public class CounselorController {
         if (counselor == null)
             return "redirect:/login";
 
-        // Authorization check: Only allow deleting own content
         EducationalContent ec = educationalContentDAO.findById(id);
         if (ec == null || ec.getAuthor() == null || !ec.getAuthor().getId().equals(counselor.getId())) {
             log.warn("Counselor {} attempted to delete content {} they don't own", counselor.getId(), id);
             return "redirect:/counselor/content";
         }
 
-        // Delete all student progress records for this content first
         studentProgressDAO.deleteByContentId(id);
-        // Then delete the content
         educationalContentDAO.delete(id);
 
         return "redirect:/counselor/content";
@@ -313,6 +301,63 @@ public class CounselorController {
 
         model.addAttribute("role", "counselor");
         model.addAttribute("counselor", counselor);
+        model.addAttribute("user", counselor);
         return "counselor/profile";
+    }
+
+    @PostMapping("/profile/update")
+    @Transactional
+    public String updateProfile(
+            @RequestParam String name,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null) return "redirect:/login";
+
+        try {
+            counselor.setName(name);
+            counselorDAO.update(counselor);
+            
+            session.setAttribute("userName", name); 
+            redirectAttributes.addFlashAttribute("successMessage", "Profile updated successfully!");
+        } catch (Exception e) {
+            log.error("Error updating counselor profile", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to update profile.");
+        }
+        return "redirect:/counselor/profile";
+    }
+
+    @PostMapping("/profile/change-password")
+    @Transactional
+    public String changePassword(
+            @RequestParam String currentPassword,
+            @RequestParam String newPassword,
+            @RequestParam String confirmPassword,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null) return "redirect:/login";
+
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "New passwords do not match.");
+            return "redirect:/counselor/profile";
+        }
+
+        try {
+            // ✅ FIX: Use PasswordUtil
+            if (PasswordUtil.checkPassword(currentPassword, counselor.getPassword())) {
+                counselor.setPassword(PasswordUtil.hashPassword(newPassword)); 
+                counselorDAO.update(counselor);
+                redirectAttributes.addFlashAttribute("successMessage", "Password changed successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Incorrect current password.");
+            }
+        } catch (Exception e) {
+            log.error("Error changing counselor password", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "System error while changing password.");
+        }
+        return "redirect:/counselor/profile";
     }
 }
