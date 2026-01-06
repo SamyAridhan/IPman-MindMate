@@ -138,22 +138,26 @@ Add New Content
 
             <div>
                 <label class="block text-xs font-black text-muted-foreground uppercase tracking-widest mb-3">Content Type</label>
-                <div class="flex gap-4">
-                    <label class="flex-1 cursor-pointer">
+                <div class="flex gap-4" id="contentTypeContainer">
+                    <label class="flex-1 cursor-pointer" id="labelArticle">
                         <input type="radio" name="contentType" value="Article" checked class="hidden peer" id="typeArticle">
-                        <div class="p-3 border-2 border-border rounded-xl flex flex-col items-center gap-1 peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                        <div class="p-3 border-2 border-border rounded-xl flex flex-col items-center gap-1 peer-checked:border-primary peer-checked:bg-primary/5 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed transition-all">
                             <i data-lucide="file-text" class="h-5 w-5"></i>
                             <span class="font-bold text-xs uppercase">Article</span>
                         </div>
                     </label>
-                    <label class="flex-1 cursor-pointer">
+                    <label class="flex-1 cursor-pointer" id="labelVideo">
                         <input type="radio" name="contentType" value="Video" class="hidden peer" id="typeVideo">
-                        <div class="p-3 border-2 border-border rounded-xl flex flex-col items-center gap-1 peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                        <div class="p-3 border-2 border-border rounded-xl flex flex-col items-center gap-1 peer-checked:border-primary peer-checked:bg-primary/5 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed transition-all">
                             <i data-lucide="play-circle" class="h-5 w-5"></i>
                             <span class="font-bold text-xs uppercase">Video</span>
                         </div>
                     </label>
                 </div>
+                <p id="lockMessage" class="hidden text-xs text-amber-600 mt-2 flex items-center gap-1">
+                    <i data-lucide="lock" class="h-3 w-3"></i>
+                    <span>Content type is locked and cannot be changed</span>
+                </p>
             </div>
 
             <div>
@@ -214,6 +218,7 @@ const videoGroup = document.getElementById('videoInputGroup');
 const videoUrlInput = document.getElementById('videoUrl');
 const typeRadios = document.querySelectorAll('input[name="contentType"]');
 const mergedContent = document.getElementById('mergedContent');
+let isEditMode = false; // Track if we're in edit mode
 
 function toggleInputs(type) {
 if (type === 'Video') {
@@ -228,7 +233,14 @@ videoUrlInput.required = false;
 }
 
 typeRadios.forEach(radio => {
-radio.addEventListener('change', (e) => toggleInputs(e.target.value));
+radio.addEventListener('change', (e) => {
+    // Prevent changing when in edit mode
+    if (isEditMode) {
+        e.preventDefault();
+        return false;
+    }
+    toggleInputs(e.target.value);
+});
 });
 
 function openModal() {
@@ -246,12 +258,19 @@ document.body.style.overflow = 'auto';
 
 addBtn.addEventListener('click', () => {
 form.reset();
+isEditMode = false; // Not in edit mode
 document.getElementById('editingId').value = '';
 document.getElementById('modalTitle').textContent = 'Add New Module';
 document.getElementById('submitBtn').textContent = 'Publish Module';
 if (tinymce.get('articleEditor')) tinymce.get('articleEditor').setContent('');
 document.getElementById('typeArticle').checked = true;
 toggleInputs('Article');
+// Enable content type selection for new content
+document.getElementById('typeArticle').disabled = false;
+document.getElementById('typeVideo').disabled = false;
+document.getElementById('labelArticle').style.pointerEvents = 'auto';
+document.getElementById('labelVideo').style.pointerEvents = 'auto';
+document.getElementById('lockMessage').classList.add('hidden');
 openModal();
 });
 
@@ -265,25 +284,36 @@ if (!btn) return;
 const row = btn.closest('tr');
 const type = row.getAttribute('data-type');
 const body = row.getAttribute('data-body');
+isEditMode = true; // Set edit mode to true
 
 document.getElementById('editingId').value = row.getAttribute('data-id');
 document.getElementById('title').value = row.querySelector('.font-bold').textContent;
 document.getElementById('points').value = row.getAttribute('data-points');
 document.getElementById('description').value = row.getAttribute('data-desc');
 
-const targetRadio = document.querySelector(`input[name="contentType"][value="${type}"]`);
-if(targetRadio) targetRadio.checked = true;
+// Clear both inputs first
+videoUrlInput.value = '';
+if(tinymce.get('articleEditor')) tinymce.get('articleEditor').setContent('');
 
-toggleInputs(type);
+// Set the correct radio button based on content type from DB
 if (type === 'Video') {
+    document.getElementById('typeVideo').checked = true;
     videoUrlInput.value = body;
-    // Clear article editor for video
-    if(tinymce.get('articleEditor')) tinymce.get('articleEditor').setContent('');
 } else {
-    // Clear video URL for article
-    videoUrlInput.value = '';
+    document.getElementById('typeArticle').checked = true;
     if(tinymce.get('articleEditor')) tinymce.get('articleEditor').setContent(body);
 }
+
+// Toggle inputs to show correct editor AFTER setting radio and content
+toggleInputs(type);
+
+// Lock content type when editing
+// Lock content type when editing (after setting the correct type)
+document.getElementById('typeArticle').disabled = true;
+document.getElementById('typeVideo').disabled = true;
+document.getElementById('labelArticle').style.pointerEvents = 'none';
+document.getElementById('labelVideo').style.pointerEvents = 'none';
+document.getElementById('lockMessage').classList.remove('hidden');
 
 document.getElementById('modalTitle').textContent = 'Update Module';
 document.getElementById('submitBtn').textContent = 'Update Module';
@@ -292,6 +322,11 @@ openModal();
 
 form.addEventListener('submit', (e) => {
 e.preventDefault();
+
+// Re-enable radio buttons before form submission so their values are sent
+document.getElementById('typeArticle').disabled = false;
+document.getElementById('typeVideo').disabled = false;
+
 const type = document.querySelector('input[name="contentType"]:checked').value;
 if (type === 'Video') {
 mergedContent.value = videoUrlInput.value;

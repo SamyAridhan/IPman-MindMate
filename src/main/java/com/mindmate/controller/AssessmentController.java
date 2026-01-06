@@ -16,9 +16,21 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.mindmate.dao.AssessmentDAO;
+import com.mindmate.dao.StudentDAO;
+import com.mindmate.model.Assessment;
+import com.mindmate.model.Student;
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Controller
 @RequestMapping("/student/assessment")
 public class AssessmentController {
+
+    @Autowired
+    private AssessmentDAO assessmentDAO;
+
+    @Autowired
+    private StudentDAO studentDAO;
 
     // --- Assessment Data (Static Configuration) ---
     private static final List<Question> ASSESSMENT_QUESTIONS = Arrays.asList(
@@ -194,6 +206,28 @@ public class AssessmentController {
     private String showResults(int[] responses, HttpSession session, Model model) {
         int totalScore = Arrays.stream(responses).sum();
         Map<String, Object> results = calculateResults(totalScore);
+
+        // --- ✅ NEW: DATABASE SAVING LOGIC ---
+        Long userId = SessionHelper.getUserId(session); 
+        
+        if (userId != null) {
+            // 2. Find the student by ID
+            // Since your GenericDAO findById returns the object directly (not Optional), we just check for null
+            Student student = studentDAO.findById(userId);
+
+            if (student != null) {
+                // 3. Create and Save the Assessment Entity
+                Assessment assessment = new Assessment(student, totalScore);
+                assessment.setResultCategory((String) results.get("level")); // e.g., "Severe"
+                
+                assessmentDAO.save(assessment);
+                System.out.println("✅ Assessment saved for student ID: " + userId);
+            } else {
+                System.err.println("⚠️ Error: Student found in session (ID: " + userId + ") but not in Database.");
+            }
+        } else {
+            System.err.println("⚠️ Error: No User ID found in session. Assessment not saved.");
+        }
 
         session.setAttribute("showResults", true);
         session.setAttribute("assessmentResultsData", results);

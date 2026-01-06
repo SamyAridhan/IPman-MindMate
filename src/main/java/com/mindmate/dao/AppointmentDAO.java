@@ -1,43 +1,31 @@
-// src/main/java/com/mindmate/dao/AppointmentDAO.java
-
 package com.mindmate.dao;
 
 import com.mindmate.model.Appointment;
+import com.mindmate.model.Counselor;
 import com.mindmate.model.Student;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
-/**
- * DAO interface for Appointment entity operations.
- * 
- * @author Samy (A23CS0246)
- * @module Telehealth Assistance
- */
 public interface AppointmentDAO extends GenericDAO<Appointment> {
     
-    /**
-     * Finds all appointments for a specific student.
-     * @param student The student entity
-     * @return List of appointments
-     */
+    // ✅ EXISTING METHODS
     List<Appointment> findByStudent(Student student);
+    List<Appointment> findByStudentOrderByDateDesc(Student student); // Kept for legacy/history view
     
-    /**
-     * Finds all appointments for a student, ordered by date descending.
-     * @param student The student entity
-     * @return List of appointments (newest first)
-     */
-    List<Appointment> findByStudentOrderByDateDesc(Student student);
-    
-    /**
-     * Checks if an appointment exists by ID.
-     * @param id Appointment ID
-     * @return true if exists, false otherwise
-     */
+    // ✅ NEW: Sort by Date ASC (Earliest first) then Time ASC
+    List<Appointment> findByStudentOrderByDateAscTimeAsc(Student student);
+
     boolean existsById(Long id);
-    
-    /**
-     * Counts total number of appointments.
-     * @return Total appointment count
-     */
     long count();
+    
+    // ✅ COUNSELOR METHODS
+    List<Appointment> findByCounselor(Counselor counselor);
+    List<Appointment> findByCounselorAndStatus(Counselor counselor, Appointment.AppointmentStatus status);
+    List<Appointment> findByCounselorAndDate(Counselor counselor, LocalDate date);
+    boolean existsByCounselorAndDateAndTime(Counselor counselor, LocalDate date, LocalTime time);
+    
+    // ✅ STATS METHODS
+    long countByStatus(Appointment.AppointmentStatus status);
+    List<Appointment> findByStatus(Appointment.AppointmentStatus status);
 }

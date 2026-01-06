@@ -10,4 +10,5 @@ public interface EducationalContentDAO {
     EducationalContent findById(Long id);
     List<EducationalContent> findAll();
     List<EducationalContent> findByType(String type); // To filter Articles or Videos
+    List<EducationalContent> searchByKeyword(String keyword);
 }

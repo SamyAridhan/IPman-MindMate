@@ -2,15 +2,45 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <jsp:include page="../common/header.jsp" />
 
-<div class="container mx-auto px-4 py-2">
+<div class="container mx-auto px-4 py-8">
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-foreground mb-2">Book Counseling Session</h1>
         <p class="text-muted-foreground">Schedule your appointment with a counselor</p>
     </div>
 
+    <%-- Error Messages --%>
+    <c:if test="${param.error == 'unavailable'}">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <i data-lucide="alert-circle" class="h-5 w-5 text-red-600 mt-0.5"></i>
+            <div>
+                <h3 class="text-sm font-medium text-red-800">Slot Unavailable</h3>
+                <p class="text-sm text-red-700 mt-1">This time slot has been booked by another student. Please choose a different time.</p>
+            </div>
+        </div>
+    </c:if>
+
+    <c:if test="${param.error == 'invaliddate'}">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <i data-lucide="alert-circle" class="h-5 w-5 text-red-600 mt-0.5"></i>
+            <div>
+                <h3 class="text-sm font-medium text-red-800">Invalid Date</h3>
+                <p class="text-sm text-red-700 mt-1">You cannot book appointments in the past.</p>
+            </div>
+        </div>
+    </c:if>
+
+    <c:if test="${param.error == 'bookingfailed'}">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <i data-lucide="alert-circle" class="h-5 w-5 text-red-600 mt-0.5"></i>
+            <div>
+                <h3 class="text-sm font-medium text-red-800">Booking Failed</h3>
+                <p class="text-sm text-red-700 mt-1">An error occurred while booking your appointment. Please try again.</p>
+            </div>
+        </div>
+    </c:if>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- Left Column - Counselor Selection -->
         <div class="lg:col-span-1">
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                 <div class="flex items-center mb-4">
@@ -42,23 +72,7 @@
                                         <span class="text-muted-foreground">•</span>
                                         <span>${counselor.experience}</span>
                                     </div>
-                                    <c:choose>
-                                        <c:when test="${counselor.availability == 'High'}">
-                                            <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800">
-                                                High Availability
-                                            </span>
-                                        </c:when>
-                                        <c:when test="${counselor.availability == 'Medium'}">
-                                            <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                                                Medium Availability
-                                            </span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">
-                                                Low Availability
-                                            </span>
-                                        </c:otherwise>
-                                    </c:choose>
+                                    <%-- Badges Removed --%>
                                 </div>
                             </div>
                         </div>
@@ -67,31 +81,25 @@
             </div>
         </div>
 
-        <!-- Middle Column - Date & Session Type -->
         <div class="lg:col-span-1">
             <div class="space-y-6">
-                
-                <!-- Simple Calendar -->
                 <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                     <div class="flex items-center mb-4">
                         <i data-lucide="calendar" class="w-5 h-5 mr-2 text-success"></i>
                         <h2 class="text-xl font-semibold text-foreground">Select Date</h2>
                     </div>
                     
-                    <!-- Month Header -->
                     <div class="flex items-center justify-between mb-4">
-                        <button type="button" class="p-1 hover:bg-secondary rounded">
+                        <button type="button" id="prev-month" class="p-1 hover:bg-secondary rounded">
                             <i data-lucide="chevron-left" class="w-5 h-5"></i>
                         </button>
                         <span class="font-semibold" id="current-month">December 2025</span>
-                        <button type="button" class="p-1 hover:bg-secondary rounded">
+                        <button type="button" id="next-month" class="p-1 hover:bg-secondary rounded">
                             <i data-lucide="chevron-right" class="w-5 h-5"></i>
                         </button>
                     </div>
 
-                    <!-- Calendar Grid -->
-                    <div class="grid grid-cols-7 gap-1 text-center text-sm">
-                        <!-- Week Headers -->
+                    <div class="grid grid-cols-7 gap-1 text-center text-sm mb-2">
                         <div class="text-muted-foreground font-medium p-2">Su</div>
                         <div class="text-muted-foreground font-medium p-2">Mo</div>
                         <div class="text-muted-foreground font-medium p-2">Tu</div>
@@ -99,79 +107,53 @@
                         <div class="text-muted-foreground font-medium p-2">Th</div>
                         <div class="text-muted-foreground font-medium p-2">Fr</div>
                         <div class="text-muted-foreground font-medium p-2">Sa</div>
-
-                        <!-- Calendar dates (simplified for demo) -->
-                        <div class="p-2 text-muted-foreground/50">30</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-01">1</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-02">2</div>
-                        <div class="p-2 bg-primary text-primary-foreground rounded cursor-pointer calendar-date" data-date="2025-12-03">3</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-04">4</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-05">5</div>
-                        <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-06">6</div>
-                        
-                        <!-- Additional weeks would go here -->
-                        <c:forEach begin="7" end="31" var="day">
-                            <div class="p-2 hover:bg-secondary rounded cursor-pointer calendar-date" data-date="2025-12-${day}">${day}</div>
-                        </c:forEach>
                     </div>
+                    
+                    <div id="calendar-days" class="grid grid-cols-7 gap-1 text-center text-sm">
+                        </div>
                 </div>
 
-                <!-- Session Type -->
                 <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                     <h2 class="text-xl font-semibold text-foreground mb-4">Session Type</h2>
                     <select id="session-type" class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background">
                         <option value="">Choose session type</option>
-                        <option value="Individual Session (50 min)">Individual Session (50 min) - Free</option>
-                        <option value="Group Session (90 min)">Group Session (90 min) - Free</option>
-                        <option value="Crisis Support (30 min)">Crisis Support (30 min) - Free</option>
+                        <option value="Video Call">Video Call (50 min) - Free</option>
+                        <option value="Chat Session">Chat Session (50 min) - Free</option>
+                        <option value="Phone Call">Phone Call (30 min) - Free</option>
                     </select>
                 </div>
-
             </div>
         </div>
 
-        <!-- Right Column - Time Slots & Booking -->
         <div class="lg:col-span-1">
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
                 <div class="flex items-center mb-2">
                     <i data-lucide="clock" class="w-5 h-5 mr-2 text-primary"></i>
                     <h2 class="text-xl font-semibold text-foreground">Available Times</h2>
                 </div>
-                <p class="text-sm text-muted-foreground mb-4" id="selected-date-display">Wednesday, December 03, 2025</p>
+                <p class="text-sm text-muted-foreground mb-4" id="selected-date-display">Please select a date</p>
 
                 <div id="time-slots-container">
-                    <!-- Default: No counselor selected -->
                     <div class="text-center py-8 text-muted-foreground" id="no-counselor-message">
                         <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto mb-2 text-muted-foreground/50"></i>
                         <p>Please select a counselor first</p>
                     </div>
 
-                    <!-- Time Slots (Hidden by default) -->
-                    <div class="space-y-3 hidden" id="time-slots-list">
-                        <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="09:00">
-                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            09:00 AM
-                        </button>
-                        <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="10:00">
-                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            10:00 AM
-                        </button>
-                        <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="14:00">
-                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            02:00 PM
-                        </button>
-                        <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="15:00">
-                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            03:00 PM
-                        </button>
-                        <button type="button" class="time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors" data-time="16:00">
-                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            04:00 PM
-                        </button>
+                    <div class="hidden text-center py-8" id="loading-slots">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                        <p class="text-sm text-muted-foreground">Loading available times...</p>
                     </div>
+
+                    <div class="hidden text-center py-8 text-muted-foreground" id="no-slots-message">
+                        <i data-lucide="calendar-x" class="w-8 h-8 mx-auto mb-2 text-muted-foreground/50"></i>
+                        <p>No available time slots for this date</p>
+                        <p class="text-xs mt-1">Please try another date</p>
+                    </div>
+
+                    <div class="space-y-3 hidden" id="time-slots-list">
+                        </div>
                 </div>
 
-                <!-- Booking Summary (Hidden by default) -->
                 <div class="mt-6 pt-6 border-t hidden" id="booking-summary">
                     <div class="bg-muted p-4 rounded-lg mb-4">
                         <h4 class="font-semibold mb-2">Booking Summary</h4>
@@ -183,7 +165,7 @@
                         </div>
                         <div class="mt-3 p-3 bg-info/10 rounded-md">
                             <p class="text-xs text-foreground">
-                                <strong>Note:</strong> Join Telehealth button will be enabled 10 minutes before your session.
+                                <strong>Note:</strong> Your appointment will be pending until the counselor confirms it.
                             </p>
                         </div>
                     </div>
@@ -198,13 +180,11 @@
     </div>
 </div>
 
-<!-- Confirmation Modal -->
 <div id="confirmation-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-card rounded-lg shadow-xl w-full max-w-md transform transition-all">
         <div class="p-6 border-b border-border">
             <h2 class="text-xl font-semibold text-foreground">Confirm Your Appointment</h2>
         </div>
-        
         <div class="p-6">
             <p class="mb-4 text-foreground">Please confirm the details of your counseling session:</p>
             <div class="bg-info/10 p-4 rounded-lg space-y-2 border border-info/20">
@@ -214,19 +194,17 @@
                 <p class="text-foreground"><strong>Session Type:</strong> <span id="confirm-type">-</span></p>
             </div>
             <div class="mt-4 text-sm text-muted-foreground space-y-1">
-                <p>• You will receive a confirmation email shortly</p>
-                <p>• You can reschedule or cancel up to 24 hours before your appointment</p>
+                <p>• You will receive a notification once the counselor confirms</p>
+                <p>• You can cancel up to 24 hours before your appointment</p>
                 <p>• Please arrive 5 minutes early for your session</p>
             </div>
         </div>
-
         <div class="p-6 border-t border-border flex justify-end gap-3">
             <button type="button" id="cancel-button" class="px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors">
                 Cancel
             </button>
             <form method="POST" action="/student/telehealth/book" id="booking-form">
                 <input type="hidden" name="counselorId" id="form-counselor-id">
-                <input type="hidden" name="counselorName" id="form-counselor-name">
                 <input type="hidden" name="date" id="form-date">
                 <input type="hidden" name="time" id="form-time">
                 <input type="hidden" name="sessionType" id="form-session-type">
@@ -239,122 +217,250 @@
 </div>
 
 <script>
-// Booking state
+// ============================================
+// BOOKING STATE MANAGEMENT
+// ============================================
 let selectedCounselor = null;
-let selectedDate = '2025-12-03';
+let selectedDate = null;
 let selectedTime = null;
 let selectedSessionType = null;
+let currentMonth = new Date();
 
-// Initialize
+// ============================================
+// INITIALIZATION
+// ============================================
 document.addEventListener('DOMContentLoaded', function() {
     lucide.createIcons();
-    
-    // Counselor selection
+    renderCalendar(currentMonth);
+    setupCounselorSelection();
+    setupCalendarNavigation();
+    setupSessionTypeSelection();
+    setupBookingButton();
+    setupModalHandlers();
+});
+
+// ============================================
+// COUNSELOR SELECTION
+// ============================================
+function setupCounselorSelection() {
     document.querySelectorAll('.counselor-card').forEach(card => {
         card.addEventListener('click', function() {
-            // Remove previous selection
             document.querySelectorAll('.counselor-card').forEach(c => {
                 c.classList.remove('border-primary', 'bg-primary/10');
                 c.classList.add('border-border');
             });
-            
-            // Mark as selected
             this.classList.add('border-primary', 'bg-primary/10');
             this.classList.remove('border-border');
-            
-            // Store selection
             selectedCounselor = {
                 id: this.dataset.id,
                 name: this.dataset.name,
-                specialization: this.dataset.specialization,
-                rating: this.dataset.rating,
-                experience: this.dataset.experience,
-                availability: this.dataset.availability
+                specialization: this.dataset.specialization
             };
-            
-            // Show time slots
-            document.getElementById('no-counselor-message').classList.add('hidden');
-            document.getElementById('time-slots-list').classList.remove('hidden');
-            
+            if (selectedDate) fetchAvailableSlots();
             updateSummary();
         });
     });
+}
+
+// ============================================
+// CALENDAR RENDERING
+// ============================================
+function renderCalendar(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"];
+    document.getElementById('current-month').textContent = monthNames[month] + ' ' + year;
     
-    // Calendar date selection
-    document.querySelectorAll('.calendar-date').forEach(date => {
-        date.addEventListener('click', function() {
-            document.querySelectorAll('.calendar-date').forEach(d => {
-                d.classList.remove('bg-primary', 'text-primary-foreground');
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const calendarDays = document.getElementById('calendar-days');
+    calendarDays.innerHTML = '';
+    
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'p-2 text-muted-foreground/50';
+        calendarDays.appendChild(emptyCell);
+    }
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayDate = new Date(year, month, day);
+        dayDate.setHours(0, 0, 0, 0);
+        const isPast = dayDate < today;
+        const isToday = dayDate.getTime() === today.getTime();
+        
+        const dayCell = document.createElement('div');
+        dayCell.className = 'p-2 rounded cursor-pointer';
+        dayCell.textContent = day;
+        
+        // Consistent formatting
+        const yearStr = dayDate.getFullYear();
+        const monthStr = String(dayDate.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(dayDate.getDate()).padStart(2, '0');
+        dayCell.dataset.date = yearStr + "-" + monthStr + "-" + dayStr;
+        
+        if (isPast) {
+            dayCell.className += ' text-muted-foreground/30 cursor-not-allowed';
+        } else {
+            dayCell.className += ' hover:bg-secondary';
+            dayCell.addEventListener('click', function() {
+                if (!isPast) selectDate(this);
             });
-            this.classList.add('bg-primary', 'text-primary-foreground');
-            
-            selectedDate = this.dataset.date;
-            updateDateDisplay();
-            updateSummary();
-        });
+        }
+        
+        if (isToday && !isPast) {
+            dayCell.classList.add('font-bold', 'text-primary', 'is-today'); 
+        }
+        
+        calendarDays.appendChild(dayCell);
+    }
+}
+
+function setupCalendarNavigation() {
+    document.getElementById('prev-month').addEventListener('click', function() {
+        currentMonth.setMonth(currentMonth.getMonth() - 1);
+        renderCalendar(currentMonth);
+    });
+    document.getElementById('next-month').addEventListener('click', function() {
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+        renderCalendar(currentMonth);
+    });
+}
+
+function selectDate(element) {
+    document.querySelectorAll('#calendar-days > div').forEach(d => {
+        d.classList.remove('bg-primary', 'text-primary-foreground');
+        if (d.classList.contains('is-today')) {
+            d.classList.add('text-primary');
+        }
     });
     
-    // Time slot selection
-    document.querySelectorAll('.time-slot').forEach(slot => {
-        slot.addEventListener('click', function() {
-            // Remove previous selection
-            document.querySelectorAll('.time-slot').forEach(s => {
-                s.classList.remove('bg-primary', 'text-primary-foreground');
-                s.classList.add('border-border');
-            });
-            
-            // Mark as selected
-            this.classList.add('bg-primary', 'text-primary-foreground');
-            this.classList.remove('border-border');
-            
-            selectedTime = this.dataset.time;
-            updateSummary();
-        });
-    });
+    element.classList.add('bg-primary', 'text-primary-foreground');
+    element.classList.remove('text-primary'); 
     
-    // Session type selection
-    document.getElementById('session-type').addEventListener('change', function() {
+    const dateStr = element.dataset.date;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    selectedDate = new Date(y, m - 1, d); 
+    
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('selected-date-display').textContent = selectedDate.toLocaleDateString('en-US', options);
+    
+    if (selectedCounselor) fetchAvailableSlots();
+    updateSummary();
+}
+
+// ============================================
+// AJAX & TIME SLOTS
+// ============================================
+function fetchAvailableSlots() {
+    if (!selectedCounselor || !selectedDate) return;
+    
+    document.getElementById('no-counselor-message').classList.add('hidden');
+    document.getElementById('no-slots-message').classList.add('hidden');
+    document.getElementById('time-slots-list').classList.add('hidden');
+    document.getElementById('loading-slots').classList.remove('hidden');
+    
+    // Format date for Backend "MMM dd, yyyy"
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const month = months[selectedDate.getMonth()];
+    const year = selectedDate.getFullYear();
+    const dateStr = month + " " + day + ", " + year;
+    
+    const url = '/student/telehealth/available-slots?counselorId=' + selectedCounselor.id + '&date=' + encodeURIComponent(dateStr);    
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(slots => displayTimeSlots(slots))
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('loading-slots').classList.add('hidden');
+            document.getElementById('no-slots-message').classList.remove('hidden');
+        });
+}
+
+function displayTimeSlots(slots) {
+    const container = document.getElementById('time-slots-list');
+    container.innerHTML = '';
+    document.getElementById('loading-slots').classList.add('hidden');
+
+    if (!slots || slots.length === 0) {
+        document.getElementById('no-slots-message').classList.remove('hidden');
+        return;
+    }
+
+    document.getElementById('time-slots-list').classList.remove('hidden');
+
+    // Grey Out Logic
+    const now = new Date();
+    const todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0');
+    const selectedDateStr = selectedDate.getFullYear() + "-" + String(selectedDate.getMonth()+1).padStart(2,'0') + "-" + String(selectedDate.getDate()).padStart(2,'0');
+    
+    const isToday = (selectedDateStr === todayStr);
+    const currentHour = now.getHours();
+
+    slots.forEach(timeStr => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'time-slot w-full flex items-center justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors';
+        button.dataset.time = timeStr;
+        button.innerHTML = '<i data-lucide="clock" class="w-4 h-4 mr-2"></i><span>' + formatTime(timeStr) + '</span>';
+        
+        const slotHour = parseInt(timeStr.split(':')[0]);
+
+        if (isToday && slotHour <= currentHour) {
+            button.disabled = true;
+            button.classList.add('opacity-50', 'cursor-not-allowed', 'bg-muted');
+            button.classList.remove('hover:bg-secondary');
+            button.title = "This time has passed";
+        } else {
+            button.addEventListener('click', function() { selectTimeSlot(this); });
+        }
+        
+        container.appendChild(button);
+    });
+    lucide.createIcons();
+}
+
+function formatTime(timeStr) {
+    const parts = timeStr.split(':');
+    const hour = parseInt(parts[0]);
+    const minutes = parts[1] || '00';
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return hour12 + ":" + minutes + " " + ampm;
+}
+
+function selectTimeSlot(element) {
+    document.querySelectorAll('.time-slot').forEach(s => {
+        if (!s.disabled) {
+            s.classList.remove('bg-primary', 'text-primary-foreground');
+            s.classList.add('border-border');
+        }
+    });
+    element.classList.add('bg-primary', 'text-primary-foreground');
+    element.classList.remove('border-border');
+    selectedTime = element.dataset.time;
+    updateSummary();
+}
+
+function setupSessionTypeSelection() {
+    const sessionSelect = document.getElementById('session-type');
+    if (sessionSelect.value) selectedSessionType = sessionSelect.value;
+    sessionSelect.addEventListener('change', function() {
         selectedSessionType = this.value;
         updateSummary();
     });
-    
-    // Book button
-    document.getElementById('book-button').addEventListener('click', function() {
-        openConfirmationModal();
-    });
-    
-    // Modal actions
-    document.getElementById('cancel-button').addEventListener('click', closeConfirmationModal);
-    document.getElementById('confirmation-modal').addEventListener('click', function(e) {
-        if (e.target === this) closeConfirmationModal();
-    });
-});
-
-function updateDateDisplay() {
-    const dateObj = new Date(selectedDate);
-    const formatted = dateObj.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-    document.getElementById('selected-date-display').textContent = formatted;
 }
 
 function updateSummary() {
-    const allSelected = selectedCounselor && selectedTime && selectedSessionType;
-    
-    if (allSelected) {
-        const dateObj = new Date(selectedDate);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-        });
-        
+    if (selectedCounselor && selectedDate && selectedTime && selectedSessionType) {
         document.getElementById('summary-counselor').textContent = selectedCounselor.name;
-        document.getElementById('summary-date').textContent = formattedDate;
-        document.getElementById('summary-time').textContent = selectedTime;
+        document.getElementById('summary-date').textContent = document.getElementById('selected-date-display').textContent;
+        document.getElementById('summary-time').textContent = formatTime(selectedTime);
         document.getElementById('summary-type').textContent = selectedSessionType;
         document.getElementById('booking-summary').classList.remove('hidden');
     } else {
@@ -362,35 +468,35 @@ function updateSummary() {
     }
 }
 
-function openConfirmationModal() {
-    const dateObj = new Date(selectedDate);
-    const formattedDateTime = dateObj.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
-    }) + ' at ' + selectedTime;
-    
-    const formattedDate = dateObj.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+function setupBookingButton() {
+    document.getElementById('book-button').addEventListener('click', function() {
+        const dateTimeStr = document.getElementById('summary-date').textContent + ' at ' + formatTime(selectedTime);
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        const month = months[selectedDate.getMonth()];
+        const year = selectedDate.getFullYear();
+        const dateForBackend = month + " " + day + ", " + year;
+
+        document.getElementById('confirm-counselor').textContent = selectedCounselor.name;
+        document.getElementById('confirm-specialization').textContent = selectedCounselor.specialization;
+        document.getElementById('confirm-datetime').textContent = dateTimeStr;
+        document.getElementById('confirm-type').textContent = selectedSessionType;
+        
+        document.getElementById('form-counselor-id').value = selectedCounselor.id;
+        document.getElementById('form-date').value = dateForBackend;
+        document.getElementById('form-time').value = selectedTime;
+        document.getElementById('form-session-type').value = selectedSessionType;
+        
+        document.getElementById('confirmation-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     });
-    
-    document.getElementById('confirm-counselor').textContent = selectedCounselor.name;
-    document.getElementById('confirm-specialization').textContent = selectedCounselor.specialization;
-    document.getElementById('confirm-datetime').textContent = formattedDateTime;
-    document.getElementById('confirm-type').textContent = selectedSessionType;
-    
-    // Set form values
-    document.getElementById('form-counselor-id').value = selectedCounselor.id;
-    document.getElementById('form-counselor-name').value = selectedCounselor.name;
-    document.getElementById('form-date').value = formattedDate;
-    document.getElementById('form-time').value = selectedTime;
-    document.getElementById('form-session-type').value = selectedSessionType;
-    
-    document.getElementById('confirmation-modal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+}
+
+function setupModalHandlers() {
+    document.getElementById('cancel-button').addEventListener('click', closeConfirmationModal);
+    document.getElementById('confirmation-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeConfirmationModal();
+    });
 }
 
 function closeConfirmationModal() {
@@ -399,5 +505,4 @@ function closeConfirmationModal() {
 }
 </script>
 
-<jsp:include page="chatbot-widget.jsp" /> 
 <jsp:include page="../common/footer.jsp" />

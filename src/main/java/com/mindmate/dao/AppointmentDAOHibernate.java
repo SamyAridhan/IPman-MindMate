@@ -1,8 +1,7 @@
-// src/main/java/com/mindmate/dao/AppointmentDAOHibernate.java
-
 package com.mindmate.dao;
 
 import com.mindmate.model.Appointment;
+import com.mindmate.model.Counselor;
 import com.mindmate.model.Student;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -10,15 +9,10 @@ import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
-/**
- * Hibernate implementation of AppointmentDAO.
- * Handles all database operations for appointments.
- * 
- * @author Samy (A23CS0246)
- * @module Telehealth Assistance
- */
 @Repository
 @Transactional
 public class AppointmentDAOHibernate implements AppointmentDAO {
@@ -74,6 +68,16 @@ public class AppointmentDAOHibernate implements AppointmentDAO {
         return query.getResultList();
     }
 
+    // ✅ NEW IMPLEMENTATION: Ascending Order for Dashboard
+    @Override
+    public List<Appointment> findByStudentOrderByDateAscTimeAsc(Student student) {
+        TypedQuery<Appointment> query = entityManager.createQuery(
+            "SELECT a FROM Appointment a WHERE a.student = :student ORDER BY a.date ASC, a.time ASC", 
+            Appointment.class);
+        query.setParameter("student", student);
+        return query.getResultList();
+    }
+
     @Override
     public boolean existsById(Long id) {
         TypedQuery<Long> query = entityManager.createQuery(
@@ -87,5 +91,68 @@ public class AppointmentDAOHibernate implements AppointmentDAO {
         TypedQuery<Long> query = entityManager.createQuery(
             "SELECT COUNT(a) FROM Appointment a", Long.class);
         return query.getSingleResult();
+    }
+
+    // ✅ COUNSELOR IMPLEMENTATIONS
+
+    @Override
+    public List<Appointment> findByCounselor(Counselor counselor) {
+        TypedQuery<Appointment> query = entityManager.createQuery(
+            "SELECT a FROM Appointment a WHERE a.counselor = :counselor ORDER BY a.date DESC", 
+            Appointment.class);
+        query.setParameter("counselor", counselor);
+        return query.getResultList();
+    }
+
+    @Override
+    public List<Appointment> findByCounselorAndStatus(Counselor counselor, Appointment.AppointmentStatus status) {
+        TypedQuery<Appointment> query = entityManager.createQuery(
+            "SELECT a FROM Appointment a WHERE a.counselor = :counselor AND a.status = :status ORDER BY a.date DESC", 
+            Appointment.class);
+        query.setParameter("counselor", counselor);
+        query.setParameter("status", status);
+        return query.getResultList();
+    }
+
+    @Override
+    public List<Appointment> findByCounselorAndDate(Counselor counselor, LocalDate date) {
+        TypedQuery<Appointment> query = entityManager.createQuery(
+            "SELECT a FROM Appointment a WHERE a.counselor = :counselor AND a.date = :date ORDER BY a.time ASC", 
+            Appointment.class);
+        query.setParameter("counselor", counselor);
+        query.setParameter("date", date);
+        return query.getResultList();
+    }
+
+    @Override
+    public boolean existsByCounselorAndDateAndTime(Counselor counselor, LocalDate date, LocalTime time) {
+        TypedQuery<Long> query = entityManager.createQuery(
+            "SELECT COUNT(a) FROM Appointment a WHERE a.counselor = :counselor " +
+            "AND a.date = :date AND a.time = :time AND a.status != :cancelledStatus", 
+            Long.class);
+        
+        query.setParameter("counselor", counselor);
+        query.setParameter("date", date);
+        query.setParameter("time", time);
+        query.setParameter("cancelledStatus", Appointment.AppointmentStatus.CANCELLED);
+        
+        return query.getSingleResult() > 0;
+    }
+
+    @Override
+    public long countByStatus(Appointment.AppointmentStatus status) {
+        TypedQuery<Long> query = entityManager.createQuery(
+            "SELECT COUNT(a) FROM Appointment a WHERE a.status = :status", Long.class);
+        query.setParameter("status", status);
+        return query.getSingleResult();
+    }
+
+    @Override
+    public List<Appointment> findByStatus(Appointment.AppointmentStatus status) {
+        TypedQuery<Appointment> query = entityManager.createQuery(
+            "SELECT a FROM Appointment a WHERE a.status = :status ORDER BY a.date DESC", 
+            Appointment.class);
+        query.setParameter("status", status);
+        return query.getResultList();
     }
 }

@@ -54,9 +54,9 @@
         }
     </script>
 </head>
-<body class="bg-background min-h-screen flex items-center justify-center font-sans antialiased">
+<body class="bg-background min-h-screen flex items-center justify-center font-sans antialiased py-8">
     
-    <div class="bg-card p-8 rounded-lg shadow-lg border border-border w-full max-w-md">
+    <div class="bg-card p-8 rounded-lg shadow-lg border border-border w-full max-w-md my-4">
         
         <div class="flex flex-col items-center mb-6">
             <img src="${pageContext.request.contextPath}/images/MindMate.png" 
@@ -111,18 +111,34 @@
         <%-- Demo Access Section --%>
         <div class="mt-8 pt-6 border-t border-border">
             <p class="text-xs uppercase tracking-wide text-muted-foreground text-center mb-4">Test Credentials</p>
-            <div class="space-y-2 text-xs">
-                <div class="p-2 bg-secondary/30 rounded">
-                    <strong>Student:</strong> demo@student.mindmate.com / student123
+            <div class="space-y-3 text-xs">
+                
+                <div class="p-2 bg-secondary/30 rounded border border-border/50">
+                    <strong class="text-primary block mb-1">Admin</strong>
+                    <div class="font-mono text-muted-foreground">admin@mindmate.com / admin123</div>
                 </div>
-                <div class="p-2 bg-secondary/30 rounded">
-                    <strong>Counselor:</strong> sarah.johnson@mindmate.com / counselor123 <br>
-                    <strong>Counselor:</strong> michael.chen@mindmate.com / counselor123 <br>
-                    <strong>Counselor:</strong> emily.rodriguez@mindmate.com / counselor123 <br>
+
+                <div class="p-2 bg-secondary/30 rounded border border-border/50">
+                    <strong class="text-primary block mb-1">Counselors</strong>
+                    <div class="font-mono text-muted-foreground space-y-1">
+                        <div>sarah.johnson@mindmate.com / counselor123</div>
+                        <div>ahmad.faiz@mindmate.com / counselor123</div>
+                        <div>michael.chen@mindmate.com / counselor123</div>
+                        <div>emily.rodriguez@mindmate.com / counselor123</div>
+                        <div>lisa.tan@mindmate.com / counselor123</div>
+                    </div>
                 </div>
-                <div class="p-2 bg-secondary/30 rounded">
-                    <strong>Admin:</strong> admin@mindmate.com / admin123
+
+                <div class="p-2 bg-secondary/30 rounded border border-border/50">
+                    <strong class="text-primary block mb-1">Students</strong>
+                    <div class="font-mono text-muted-foreground space-y-1">
+                        <div>demo@student.mindmate.com / student123</div>
+                        <div>A23CS0101@student.utm.my / student123</div>
+                        <div>A23CS0102@student.utm.my / student123</div>
+                        <div>AnyStudentUpto12 / student123</div>
+                    </div>
                 </div>
+
             </div>
         </div>
     </div>
