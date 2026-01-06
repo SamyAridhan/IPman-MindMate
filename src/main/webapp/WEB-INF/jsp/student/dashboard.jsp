@@ -67,30 +67,26 @@
             <h2 class="text-xl font-semibold text-foreground">New in the Learning Hub</h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
-                <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">article</span>
-                <h4 class="font-semibold text-foreground mt-2 mb-1">Stress Management 101</h4>
-                <p class="text-sm text-muted-foreground line-clamp-2">Learn effective stress coping strategies for students</p>
-                <a href="/student/library" class="text-primary text-sm font-medium mt-2 inline-block hover:underline">
-                    Learn more →
-                </a>
-            </div>
-            <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
-                <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">video</span>
-                <h4 class="font-semibold text-foreground mt-2 mb-1">Mindfulness Meditation Guide</h4>
-                <p class="text-sm text-muted-foreground line-clamp-2">15-minute guided meditation for anxiety relief</p>
-                <a href="/student/library" class="text-primary text-sm font-medium mt-2 inline-block hover:underline">
-                    Learn more →
-                </a>
-            </div>
-            <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
-                <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">article</span>
-                <h4 class="font-semibold text-foreground mt-2 mb-1">Sleep Hygiene</h4>
-                <p class="text-sm text-muted-foreground line-clamp-2">Interactive module on building better sleep habits</p>
-                <a href="/student/library" class="text-primary text-sm font-medium mt-2 inline-block hover:underline">
-                    Learn more →
-                </a>
-            </div>
+            <c:forEach var="module" items="${newestModules}">
+                <div class="learning-card p-4 rounded-lg border border-border cursor-pointer hover:shadow-md transition-shadow">
+                    <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border uppercase">
+                        ${module.contentType}
+                    </span>
+                    
+                    <h4 class="font-semibold text-foreground mt-2 mb-1">${module.title}</h4>
+                    <p class="text-sm text-muted-foreground line-clamp-2">${module.description}</p>
+                    
+                    <a href="/student/view-module?id=${module.id}" class="text-primary text-sm font-medium mt-2 inline-block hover:underline">
+                        Learn more →
+                    </a>
+                </div>
+            </c:forEach>
+
+            <c:if test="${empty newestModules}">
+                <p class="text-muted-foreground text-sm col-span-3 text-center py-4">
+                    No new modules available at this time.
+                </p>
+            </c:if>
         </div>
     </div>
 
@@ -115,12 +111,10 @@
                 <div class="relative w-full h-64 flex items-center justify-center">
                     <c:choose>
                         
-                        <%-- CASE 1: User HAS Data -> Show Graph --%>
                         <c:when test="${not empty assessmentHistory}">
                             <canvas id="historyGraph"></canvas>
                         </c:when>
-                        
-                        <%-- CASE 2: User has NO Data -> Show Empty State --%>
+
                         <c:otherwise>
                             <div class="text-center text-muted-foreground">
                                 <div class="bg-secondary/50 rounded-full p-3 inline-block mb-3">
@@ -140,112 +134,7 @@
 
             
         </div>
-            
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center">
-                        <i data-lucide="trending-up" class="w-5 h-5 mr-2 text-info-foreground"></i>
-                        <h2 class="text-xl font-semibold text-foreground">Progress Dashboard</h2>
-                    </div>
-                    <select class="px-3 py-1.5 border border-input rounded-md bg-background text-sm">
-                        <option>This Week</option>
-                        <option>This Month</option>
-                        <option>This Quarter</option>
-                    </select>
-                </div>
-
-                <div class="mb-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-medium text-foreground">Weekly Mood Tracker</h4>
-                        <span class="badge-success">7.4/10</span>
-                    </div>
-                    <div class="grid grid-cols-7 gap-2">
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Mon</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">7</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Tue</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">6</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Wed</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">8</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Thu</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">7</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Fri</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">9</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Sat</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">8</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Sun</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">7</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h4 class="font-medium text-foreground mb-4">Activity Progress</h4>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="flex items-center">
-                                    <i data-lucide="book-open" class="w-4 h-4 mr-1"></i>
-                                    Stress Management
-                                </span>
-                                <span>75%</span>
-                            </div>
-                            <div class="progress-bar-container h-2">
-                                <div class="progress-bar-fill h-2" style="width: 75%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="flex items-center">
-                                    <i data-lucide="book-open" class="w-4 h-4 mr-1"></i>
-                                    Sleep Hygiene
-                                </span>
-                                <span>50%</span>
-                            </div>
-                            <div class="progress-bar-container h-2">
-                                <div class="progress-bar-fill blue-accent h-2" style="width: 50%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="flex items-center">
-                                    <i data-lucide="book-open" class="w-4 h-4 mr-1"></i>
-                                    Social Skills
-                                </span>
-                                <span>90%</span>
-                            </div>
-                            <div class="progress-bar-container h-2">
-                                <div class="progress-bar-fill h-2" style="width: 90%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="flex items-center">
-                                    <i data-lucide="heart" class="w-4 h-4 mr-1"></i>
-                                    Self-Assessment
-                                </span>
-                                <span>100%</span>
-                            </div>
-                            <div class="progress-bar-container h-2">
-                                <div class="progress-bar-fill blue-accent h-2" style="width: 100%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+  
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
     <div class="flex items-center justify-between mb-4">
         <div>
@@ -282,7 +171,6 @@
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center space-x-2 mb-2">
-                            <%-- Icon color matching content type --%>
                             <div class="p-1.5 rounded-md ${module.contentType == 'Video' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}">
                                 <i data-lucide="${module.contentType == 'Video' ? 'video' : 'file-text'}" class="w-4 h-4"></i>
                             </div>
@@ -306,7 +194,6 @@
             </a>
         </c:forEach>
 
-        <%-- EMPTY STATE --%>
         <c:if test="${empty recommendedModules}">
             <div class="text-center py-10 bg-secondary/10 border border-dashed border-border rounded-lg">
                 <div class="bg-background w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
@@ -339,7 +226,6 @@
                         <c:when test="${not empty bookedAppointments}">
                             <c:forEach var="appointment" items="${bookedAppointments}">
                                 
-                                <%-- ✅ LOGIC: Only show Confirmed, Pending, or Denied/Rejected. Exclude Completed/Cancelled/Acknowledged. --%>
                                 <c:if test="${appointment.status == 'CONFIRMED' || appointment.status == 'PENDING' || appointment.status == 'DENIED' || appointment.status == 'REJECTED'}">
                                 
                                     <div class="session-card p-4 rounded-lg border border-border mb-3 hover:shadow-md transition-shadow">
@@ -397,7 +283,7 @@
                                                 </a>
                                             </c:if>
                                             
-                                            <%-- 2. CANCEL (Pending or Confirmed only) - ✅ UPDATED UI (Filled Style) --%>
+                                            <%-- 2. CANCEL (Pending or Confirmed only) --%>
                                             <c:if test="${appointment.status == 'PENDING' || appointment.status == 'CONFIRMED'}">
                                                 <form action="/student/telehealth/cancel" method="post" class="flex-1">
                                                     <input type="hidden" name="appointmentId" value="${appointment.id}" />
@@ -467,10 +353,6 @@
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <h2 class="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
                 <div class="space-y-2">
-                    <a href="/student/assessment" class="flex items-center w-full justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors">
-                        <i data-lucide="heart" class="w-4 h-4 mr-2"></i>
-                        Daily Mood Check-in
-                    </a>
                     <a href="/student/telehealth" class="flex items-center w-full justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors">
                         <i data-lucide="calendar" class="w-4 h-4 mr-2"></i>
                         Schedule Session

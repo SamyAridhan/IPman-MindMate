@@ -168,6 +168,14 @@ public class StudentController {
         model.addAttribute("recommendedModules", finalRecs);
         model.addAttribute("recTitle", recTitle);
         // --- 🔒 PERSONALIZATION LOGIC END ---
+
+        List<EducationalContent> allContent = contentDAO.findAll();
+        List<EducationalContent> newestModules = allContent.stream()
+                .sorted((a, b) -> b.getId().compareTo(a.getId())) // Sort by ID descending (newest first)
+                .limit(3)
+                .collect(Collectors.toList());
+        
+        model.addAttribute("newestModules", newestModules);
         
         return "student/dashboard";
     }
