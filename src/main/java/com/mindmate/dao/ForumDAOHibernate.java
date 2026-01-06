@@ -162,6 +162,20 @@ public class ForumDAOHibernate implements ForumDAO {
         Transaction tx = null;
         try (Session session = sessionFactory.openSession()) {
             tx = session.beginTransaction();
+            
+            // If the reply has a post, merge the post into this session first
+            // This fixes the "unsaved transient instance" error
+            if (reply.getPost() != null) {
+                ForumPost attachedPost = (ForumPost) session.merge(reply.getPost());
+                reply.setPost(attachedPost);
+            }
+            
+            // Also merge parent reply if it exists (for nested replies)
+            if (reply.getParentReply() != null) {
+                ForumReply attachedParent = (ForumReply) session.merge(reply.getParentReply());
+                reply.setParentReply(attachedParent);
+            }
+
             session.persist(reply); 
             tx.commit();
         } catch (Exception e) {

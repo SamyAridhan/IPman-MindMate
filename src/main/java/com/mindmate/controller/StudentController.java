@@ -4,14 +4,15 @@ import com.mindmate.dao.AssessmentDAO;
 import com.mindmate.dao.AppointmentDAO;
 import com.mindmate.dao.CounselorDAO;
 import com.mindmate.dao.StudentDAO;
-import com.mindmate.dao.EducationalContentDAO; // From Team Member
-import com.mindmate.dao.StudentProgressDAO;   // From Team Member
+import com.mindmate.dao.EducationalContentDAO;
+import com.mindmate.dao.StudentProgressDAO;
 import com.mindmate.model.Assessment;
 import com.mindmate.model.Appointment;
 import com.mindmate.model.Counselor;
 import com.mindmate.model.Student;
-import com.mindmate.model.EducationalContent; // From Team Member
+import com.mindmate.model.EducationalContent;
 import com.mindmate.util.SessionHelper;
+import com.mindmate.util.PasswordUtil; // ✅ Added Import
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
@@ -38,7 +40,6 @@ import java.util.stream.Collectors;
 public class StudentController {
 
     private static final Logger log = LoggerFactory.getLogger(StudentController.class);
-    // Explicit Locale ensures consistent parsing regardless of server settings
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH);
 
     @Autowired
@@ -53,7 +54,6 @@ public class StudentController {
     @Autowired
     private StudentDAO studentDAO;
 
-    // ✅ MERGED: Added Team Member's DAOs
     @Autowired
     private EducationalContentDAO contentDAO;
 
@@ -76,18 +76,14 @@ public class StudentController {
         model.addAttribute("role", "student");
         model.addAttribute("user", SessionHelper.getUserName(session));
         
-        // ✅ KEPT YOUR LOGIC: Using Ascending order for upcoming appointments
         List<Appointment> appointments = appointmentDAO.findByStudentOrderByDateAscTimeAsc(student);
         model.addAttribute("bookedAppointments", appointments);
 
-        // --- ✅ NEW ADDITION: Assessment History ---
-        // Fetch the list of past assessments for this student
         List<Assessment> history = assessmentDAO.findByStudent(student);
         model.addAttribute("assessmentHistory", history);
         
         Assessment latest = null;
         if (history != null && !history.isEmpty()) {
-            // Since the list is sorted ASC (Oldest -> Newest), the last one is the latest
             latest = history.get(history.size() - 1);
         }
         model.addAttribute("latestAssessment", latest);
@@ -180,10 +176,6 @@ public class StudentController {
         return "student/dashboard";
     }
 
-    // ==========================================
-    // 📚 EDUCATIONAL CONTENT (Team Member's Logic)
-    // ==========================================
-
     @GetMapping("/library")
     public String contentLibrary(Model model, HttpSession session) {
         Student student = getLoggedInStudent(session);
@@ -192,7 +184,6 @@ public class StudentController {
         model.addAttribute("role", "student");
         model.addAttribute("student", student);
         
-        // ✅ MERGED: Loading modules and progress from Team Member's code
         model.addAttribute("modules", contentDAO.findAll());
         model.addAttribute("progressList", progressDAO.getProgressByStudent(student.getId()));
 
@@ -220,14 +211,9 @@ public class StudentController {
         Student student = getLoggedInStudent(session);
         if (student == null) return "redirect:/login";
 
-        // Check if already completed to prevent double point awarding
         if (!progressDAO.isModuleCompleted(student.getId(), contentId)) {
             EducationalContent content = contentDAO.findById(contentId);
-
-            // Mark progress
             progressDAO.markAsComplete(student.getId(), contentId);
-
-            // Update points and streak
             studentDAO.updatePointsAndStreak(student.getId(), content.getPointsValue());
         }
 
@@ -246,17 +232,12 @@ public class StudentController {
         return "student/my-progress";
     }
 
-    // ==========================================
-    // 🏥 TELEHEALTH (Your Robust Logic)
-    // ==========================================
-
     @GetMapping("/telehealth")
     public String showBookingPage(Model model, HttpSession session) {
         if (getLoggedInStudent(session) == null) return "redirect:/login";
         model.addAttribute("role", "student");
         List<Counselor> counselors = counselorDAO.findAll();
         model.addAttribute("counselors", counselors);
-        // ✅ KEPT YOUR LOGIC: Passing currentDate for JS validation
         model.addAttribute("currentDate", LocalDate.now());
         return "student/telehealth-book";
     }
@@ -276,25 +257,21 @@ public class StudentController {
             Counselor counselor = counselorDAO.findById(counselorId);
             LocalDate targetDate = LocalDate.parse(date, DATE_FORMATTER);
 
-            // ✅ KEPT YOUR LOGIC: Realistic Slots with Lunch Gap & Variations
             List<LocalTime> potentialSlots = new ArrayList<>();
 
             if (counselorId % 2 != 0) { 
-                // Pattern A (Odd IDs): "Early Bird"
                 potentialSlots.add(LocalTime.of(8, 30));
                 potentialSlots.add(LocalTime.of(10, 0));
                 potentialSlots.add(LocalTime.of(11, 30));
                 potentialSlots.add(LocalTime.of(14, 0));
                 potentialSlots.add(LocalTime.of(15, 30));
             } else {
-                // Pattern B (Even IDs): "Standard"
                 potentialSlots.add(LocalTime.of(9, 0));
                 potentialSlots.add(LocalTime.of(10, 30));
                 potentialSlots.add(LocalTime.of(14, 30));
                 potentialSlots.add(LocalTime.of(16, 0));
             }
 
-            // Get existing bookings to filter them out
             List<Appointment> booked = appointmentDAO.findByCounselorAndDate(counselor, targetDate);
             List<LocalTime> bookedTimes = booked.stream()
                 .filter(a -> a.getStatus() != Appointment.AppointmentStatus.CANCELLED && 
@@ -302,7 +279,6 @@ public class StudentController {
                 .map(Appointment::getTime)
                 .collect(Collectors.toList());
 
-            // Process Slots
             for (LocalTime slot : potentialSlots) {
                 if (!bookedTimes.contains(slot)) {
                     if (!targetDate.equals(LocalDate.now()) || slot.isAfter(LocalTime.now())) {
@@ -338,11 +314,9 @@ public class StudentController {
             LocalTime time = LocalTime.parse(timeStr);
 
             if (date.isBefore(LocalDate.now())) {
-                log.warn("Student {} tried booking in past", student.getId());
                 return "redirect:/student/telehealth?error=invaliddate";
             }
 
-            // ✅ KEPT YOUR LOGIC: Robust Clash Check
             List<Appointment> dayAppointments = appointmentDAO.findByCounselorAndDate(counselor, date);
             
             boolean slotTaken = dayAppointments.stream()
@@ -351,7 +325,6 @@ public class StudentController {
                                a.getStatus() != Appointment.AppointmentStatus.DENIED);
 
             if (slotTaken) {
-                log.warn("Slot {} at {} for Counselor {} is already taken", date, time, counselorId);
                 return "redirect:/student/telehealth?error=unavailable";
             }
 
@@ -366,14 +339,11 @@ public class StudentController {
             appointment.setStatus(Appointment.AppointmentStatus.PENDING);
             
             appointmentDAO.save(appointment);
-            log.info("Appointment booked: ID {}", appointment.getId());
             return "redirect:/student/dashboard?success=true";
             
         } catch (DateTimeParseException e) {
-            log.error("Date format error: {}", e.getMessage());
             return "redirect:/student/telehealth?error=invaliddate";
         } catch (Exception e) {
-            log.error("Booking system error", e);
             return "redirect:/student/telehealth?error=bookingfailed";
         }
     }
@@ -432,6 +402,63 @@ public class StudentController {
 
         model.addAttribute("role", "student");
         model.addAttribute("student", student);
+        model.addAttribute("user", student); 
         return "student/profile";
+    }
+
+    @PostMapping("/profile/update")
+    @Transactional
+    public String updateProfile(
+            @RequestParam String name,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
+
+        try {
+            student.setName(name);
+            studentDAO.update(student);
+            
+            session.setAttribute("userName", name);
+            redirectAttributes.addFlashAttribute("successMessage", "Profile updated successfully!");
+        } catch (Exception e) {
+            log.error("Error updating student profile", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to update profile.");
+        }
+        return "redirect:/student/profile";
+    }
+
+    @PostMapping("/profile/change-password")
+    @Transactional
+    public String changePassword(
+            @RequestParam String currentPassword,
+            @RequestParam String newPassword,
+            @RequestParam String confirmPassword,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        Student student = getLoggedInStudent(session);
+        if (student == null) return "redirect:/login";
+
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "New passwords do not match.");
+            return "redirect:/student/profile";
+        }
+
+        try {
+            // ✅ FIX: Use PasswordUtil to check hash and encrypt new password
+            if (PasswordUtil.checkPassword(currentPassword, student.getPassword())) {
+                student.setPassword(PasswordUtil.hashPassword(newPassword)); 
+                studentDAO.update(student);
+                redirectAttributes.addFlashAttribute("successMessage", "Password changed successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Incorrect current password.");
+            }
+        } catch (Exception e) {
+            log.error("Error changing student password", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "System error while changing password.");
+        }
+        return "redirect:/student/profile";
     }
 }

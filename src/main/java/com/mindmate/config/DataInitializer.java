@@ -12,6 +12,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -39,6 +40,7 @@ public class DataInitializer {
             SystemAnalyticsDAO analyticsDAO,
             EducationalContentDAO educationalContentDAO,
             ChatDAO chatDAO,
+            ForumDAO forumDAO,
             AssessmentDAO assessmentDAO) { // ✅ Merged: Added EducationalContentDAO
 
         return args -> {
@@ -414,40 +416,91 @@ public class DataInitializer {
             }
 
             // ==========================================
-// 8. SEED CHAT HISTORY (For Demo Student)
+            // 8. SEED CHAT HISTORY (For Demo Student)
+            // ==========================================
+            if (chatDAO.getAllMessages().isEmpty()) {
+                System.out.println("💬 Seeding Chat History...");
+
+                Student demoStudent = studentDAO.findByEmail("demo@student.mindmate.com").orElse(null);
+
+                if (demoStudent != null) {
+                    // Session 1: Academic Stress (Last Week)
+                    String session1 = "chat_stress_001";
+                    LocalDateTime time1 = LocalDateTime.now().minusDays(7);
+                    
+                    seedChatMessage(chatDAO, demoStudent, session1, "Academic Support", "user", "I'm feeling very overwhelmed with my FYP deadlines.", time1);
+                    seedChatMessage(chatDAO, demoStudent, session1, null, "assistant", "I understand. Final Year Projects are a major undertaking. Would you like to break down your tasks together?", time1.plusMinutes(1));
+
+                    // Session 2: General Wellness (3 Days Ago)
+                    String session2 = "chat_wellness_002";
+                    LocalDateTime time2 = LocalDateTime.now().minusDays(3);
+                    
+                    seedChatMessage(chatDAO, demoStudent, session2, "Sleep & Routine", "user", "I haven't been sleeping well lately.", time2);
+                    seedChatMessage(chatDAO, demoStudent, session2, null, "assistant", "Sleep is vital for your mental health. Have you tried the 10-3-2-1-0 rule we have in our resources?", time2.plusMinutes(2));
+                    seedChatMessage(chatDAO, demoStudent, session2, null, "user", "No, what is that?", time2.plusMinutes(5));
+                    seedChatMessage(chatDAO, demoStudent, session2, null, "assistant", "It's a routine to help you wind down. 10 hours before bed: no caffeine...", time2.plusMinutes(6));
+
+                    // Session 3: Recent Check-in (Today)
+                    String session3 = "chat_checkin_003";
+                    LocalDateTime time3 = LocalDateTime.now().minusHours(1);
+                    
+                    seedChatMessage(chatDAO, demoStudent, session3, "Daily Check-in", "user", "I feel much better today after talking to Dr. Sarah.", time3);
+                    seedChatMessage(chatDAO, demoStudent, session3, null, "assistant", "That's wonderful to hear! Consistency is key to progress.", time3.plusMinutes(1));
+
+                    System.out.println("✅ Seeded chat sessions for Demo Student.");
+                }
+            }
+
+            // ==========================================
+            // ==========================================
+            // ==========================================
 // ==========================================
-if (chatDAO.getAllMessages().isEmpty()) {
-    System.out.println("💬 Seeding Chat History...");
+// 9. SEED FORUM POSTS (Step 1: Commit Posts)
+// ==========================================
+if (forumDAO.getTotalPostCount() == 0) {
+    System.out.println("💬 Step 1: Seeding Forum Posts...");
 
-    Student demoStudent = studentDAO.findByEmail("demo@student.mindmate.com").orElse(null);
+    // Store them in a way we can reference later
+    saveSimplePost(forumDAO, "General Support", "How to start a conversation with seniors?", "I'm quite shy. Any tips on how to approach seniors for notes?", "Lim Xiao Hui", false);
+    saveSimplePost(forumDAO, "Anxiety Support", "Anxiety before presentations", "My hands shake every time I stand in front of the class. Help!", "Anonymous Student", true);
+    saveSimplePost(forumDAO, "Depression Support", "Feeling very low lately", "I find it hard to even get out of bed for morning lectures.", "Anonymous Student", true);
+    saveSimplePost(forumDAO, "Stress Management", "Methods to handle back-to-back assignments?", "I have 3 projects due this Friday.", "Muhammad Hafiz", false);
+    saveSimplePost(forumDAO, "Sleep Issues", "Can't sleep because of roommates", "My roommates stay up gaming until 3 AM.", "Kavitha Devi", false);
+    saveSimplePost(forumDAO, "Relationships", "Long distance relationship in Uni", "It's hard being away from my partner.", "Ahmad Zafran Hakim", false);
+    saveSimplePost(forumDAO, "Academic Pressure", "Is it okay to drop a subject?", "I'm failing my Calculus 2.", "Raj Kumar Singh", false);
 
-    if (demoStudent != null) {
-        // Session 1: Academic Stress (Last Week)
-        String session1 = "chat_stress_001";
-        LocalDateTime time1 = LocalDateTime.now().minusDays(7);
-        
-        seedChatMessage(chatDAO, demoStudent, session1, "Academic Support", "user", "I'm feeling very overwhelmed with my FYP deadlines.", time1);
-        seedChatMessage(chatDAO, demoStudent, session1, null, "assistant", "I understand. Final Year Projects are a major undertaking. Would you like to break down your tasks together?", time1.plusMinutes(1));
+    System.out.println("✅ Step 1 Complete.");
 
-        // Session 2: General Wellness (3 Days Ago)
-        String session2 = "chat_wellness_002";
-        LocalDateTime time2 = LocalDateTime.now().minusDays(3);
-        
-        seedChatMessage(chatDAO, demoStudent, session2, "Sleep & Routine", "user", "I haven't been sleeping well lately.", time2);
-        seedChatMessage(chatDAO, demoStudent, session2, null, "assistant", "Sleep is vital for your mental health. Have you tried the 10-3-2-1-0 rule we have in our resources?", time2.plusMinutes(2));
-        seedChatMessage(chatDAO, demoStudent, session2, null, "user", "No, what is that?", time2.plusMinutes(5));
-        seedChatMessage(chatDAO, demoStudent, session2, null, "assistant", "It's a routine to help you wind down. 10 hours before bed: no caffeine...", time2.plusMinutes(6));
+    // ==========================================
+    // 10. SEED FORUM REPLIES (Step 2: Link to existing Posts)
+    // ==========================================
+    System.out.println("💬 Step 2: Seeding Forum Replies...");
+    
+    // Fetch all posts we just saved
+    List<ForumPost> allPosts = forumDAO.getAllPosts(null, null, null);
 
-        // Session 3: Recent Check-in (Today)
-        String session3 = "chat_checkin_003";
-        LocalDateTime time3 = LocalDateTime.now().minusHours(1);
-        
-        seedChatMessage(chatDAO, demoStudent, session3, "Daily Check-in", "user", "I feel much better today after talking to Dr. Sarah.", time3);
-        seedChatMessage(chatDAO, demoStudent, session3, null, "assistant", "That's wonderful to hear! Consistency is key to progress.", time3.plusMinutes(1));
-
-        System.out.println("✅ Seeded chat sessions for Demo Student.");
+    for (ForumPost post : allPosts) {
+        if (post.getTitle().contains("seniors")) {
+            forumDAO.saveReply(new ForumReply("Just be polite! Most UTM seniors are very helpful.", "Tan Wei Xuan", post, null, false));
+        } else if (post.getTitle().contains("presentations")) {
+            forumDAO.saveReply(new ForumReply("Try the 4-7-8 breathing technique.", "Dr. Michael Chen", post, null, false));
+        } else if (post.getTitle().contains("low lately")) {
+            forumDAO.saveReply(new ForumReply("Please consider booking a session with us.", "Dr. Sarah Johnson", post, null, false));
+        }
+        // Add more 'else if' for other replies as needed...
     }
+    System.out.println("✅ Step 2 Complete.");
 }
+
+            // ==========================================
+            // 10. SEED MODERATION STATS
+            // ==========================================
+            if (forumDAO.getModerationStats().getId() == null) {
+                System.out.println("📈 Initializing Moderation Stats...");
+                // The increment methods in your DAO already handle creation, 
+                // but let's set a baseline for the demo.
+                forumDAO.incrementApprovedCount(); // Start with 1 to show the bar chart works
+            }
 
             System.out.println("=== DATA INITIALIZATION COMPLETE ===");
             System.out.println("");
@@ -586,5 +639,11 @@ if (chatDAO.getAllMessages().isEmpty()) {
         message.setContent(content);
         message.setTimestamp(timestamp);
         dao.saveMessage(message);
+    }
+
+    private void saveSimplePost(ForumDAO dao, String category, String title, String content, String author, boolean anon) {
+        ForumPost post = new ForumPost(title, content, category, author, anon);
+        post.setTimestamp(java.time.LocalDateTime.now());
+        dao.saveOrUpdate(post);
     }
 }
