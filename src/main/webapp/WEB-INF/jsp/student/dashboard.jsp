@@ -96,8 +96,7 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 space-y-6">
-
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
+            <div id="history-section" class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in scroll-mt-24">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
                         <i data-lucide="line-chart" class="w-5 h-5 mr-2 text-primary"></i>
