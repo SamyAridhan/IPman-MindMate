@@ -114,7 +114,7 @@
                         <%-- Navigation --%>
                         <div class="flex justify-between pt-4">
                             <%-- Previous Button --%>
-                            <button type="submit" name="direction" value="previous"
+                            <button type="submit" name="direction" value="previous" formnovalidate
                                 class="text-foreground px-4 py-2 hover:bg-muted rounded-md transition-colors"
                                 <c:if test="${current == 0}">disabled</c:if>>
                                 Previous
