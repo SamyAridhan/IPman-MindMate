@@ -7,7 +7,7 @@ import com.mindmate.dao.StudentProgressDAO;
 import com.mindmate.model.Appointment;
 import com.mindmate.model.EducationalContent;
 import com.mindmate.model.Counselor;
-import com.mindmate.util.SessionHelper; 
+import com.mindmate.util.SessionHelper;
 
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -68,20 +68,22 @@ public class CounselorController {
 
         // 3. FILTER: Only show Upcoming/Actionable (Confirmed or Pending)
         List<Appointment> actionableToday = allToday.stream()
-                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED || 
-                             a.getStatus() == Appointment.AppointmentStatus.PENDING)
+                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED ||
+                        a.getStatus() == Appointment.AppointmentStatus.PENDING)
                 .collect(Collectors.toList());
 
         // Force initialize Student data
         for (Appointment apt : actionableToday) {
-            if (apt.getStudent() != null) apt.getStudent().getName();
+            if (apt.getStudent() != null)
+                apt.getStudent().getName();
         }
 
         // 4. Update Metrics
         model.addAttribute("todayCount", actionableToday.size());
-        
+
         // "Pending Requests" (Global count)
-        List<Appointment> allPending = appointmentDAO.findByCounselorAndStatus(counselor, Appointment.AppointmentStatus.PENDING);
+        List<Appointment> allPending = appointmentDAO.findByCounselorAndStatus(counselor,
+                Appointment.AppointmentStatus.PENDING);
         model.addAttribute("pendingCount", allPending.size());
 
         model.addAttribute("todayAppointments", actionableToday);
@@ -91,9 +93,9 @@ public class CounselorController {
 
     @GetMapping("/schedule")
     @Transactional
-    public String showSchedule(Model model, HttpSession session, 
-                               @RequestParam(required = false) String date) {
-        
+    public String showSchedule(Model model, HttpSession session,
+            @RequestParam(required = false) String date) {
+
         Counselor counselor = getLoggedInCounselor(session);
         if (counselor == null)
             return "redirect:/login";
@@ -118,10 +120,12 @@ public class CounselorController {
 
         // Force initialize
         for (Appointment apt : pendingAppointments) {
-            if (apt.getStudent() != null) apt.getStudent().getName();
+            if (apt.getStudent() != null)
+                apt.getStudent().getName();
         }
         for (Appointment apt : dailyAppointments) {
-            if (apt.getStudent() != null) apt.getStudent().getName();
+            if (apt.getStudent() != null)
+                apt.getStudent().getName();
         }
 
         model.addAttribute("pendingAppointments", pendingAppointments);
@@ -140,12 +144,12 @@ public class CounselorController {
 
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
-            
-            if (apt != null && 
-                apt.getCounselor() != null && 
-                apt.getCounselor().getId().equals(counselor.getId()) &&
-                apt.getStatus() == Appointment.AppointmentStatus.PENDING) {
-                
+
+            if (apt != null &&
+                    apt.getCounselor() != null &&
+                    apt.getCounselor().getId().equals(counselor.getId()) &&
+                    apt.getStatus() == Appointment.AppointmentStatus.PENDING) {
+
                 apt.setStatus(Appointment.AppointmentStatus.CONFIRMED);
                 appointmentDAO.update(apt);
                 log.info("Counselor {} approved Appointment {}", counselor.getId(), appointmentId);
@@ -153,28 +157,28 @@ public class CounselorController {
         } catch (Exception e) {
             log.error("Error approving appointment", e);
         }
-        return "redirect:/counselor/schedule"; 
+        return "redirect:/counselor/schedule";
     }
 
     @PostMapping("/appointment/deny")
     @Transactional
     public String denyAppointment(
-            @RequestParam Long appointmentId, 
-            @RequestParam(required = false) String reason, 
+            @RequestParam Long appointmentId,
+            @RequestParam(required = false) String reason,
             HttpSession session) {
-        
+
         Counselor counselor = getLoggedInCounselor(session);
         if (counselor == null)
             return "redirect:/login";
 
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
-            
-            if (apt != null && 
-                apt.getCounselor() != null && 
-                apt.getCounselor().getId().equals(counselor.getId()) &&
-                apt.getStatus() == Appointment.AppointmentStatus.PENDING) {
-                
+
+            if (apt != null &&
+                    apt.getCounselor() != null &&
+                    apt.getCounselor().getId().equals(counselor.getId()) &&
+                    apt.getStatus() == Appointment.AppointmentStatus.PENDING) {
+
                 apt.setStatus(Appointment.AppointmentStatus.DENIED);
                 apt.setDenialReason(reason != null ? reason : "No reason provided");
                 appointmentDAO.update(apt);
@@ -191,17 +195,18 @@ public class CounselorController {
     @Transactional
     public String completeAppointment(@RequestParam Long appointmentId, HttpSession session) {
         Counselor counselor = getLoggedInCounselor(session);
-        if (counselor == null) return "redirect:/login";
+        if (counselor == null)
+            return "redirect:/login";
 
         try {
             Appointment apt = appointmentDAO.findById(appointmentId);
-            
+
             // Validation: Exists + Belongs to counselor + Is currently CONFIRMED
-            if (apt != null && 
-                apt.getCounselor() != null && 
-                apt.getCounselor().getId().equals(counselor.getId()) &&
-                apt.getStatus() == Appointment.AppointmentStatus.CONFIRMED) {
-                
+            if (apt != null &&
+                    apt.getCounselor() != null &&
+                    apt.getCounselor().getId().equals(counselor.getId()) &&
+                    apt.getStatus() == Appointment.AppointmentStatus.CONFIRMED) {
+
                 apt.setStatus(Appointment.AppointmentStatus.COMPLETED);
                 appointmentDAO.update(apt);
                 log.info("Counselor {} marked Appointment {} as COMPLETED", counselor.getId(), appointmentId);
@@ -209,8 +214,9 @@ public class CounselorController {
         } catch (Exception e) {
             log.error("Error completing appointment", e);
         }
-        // Redirecting to dashboard since that's where the "Today" list is most prominent
-        return "redirect:/counselor/dashboard"; 
+        // Redirecting to dashboard since that's where the "Today" list is most
+        // prominent
+        return "redirect:/counselor/dashboard";
     }
 
     // ==========================================
@@ -224,7 +230,12 @@ public class CounselorController {
             return "redirect:/login";
 
         model.addAttribute("role", "counselor");
-        model.addAttribute("contents", educationalContentDAO.findAll());
+        // Only show content created by this counselor
+        List<EducationalContent> allContents = educationalContentDAO.findAll();
+        List<EducationalContent> myContents = allContents.stream()
+                .filter(c -> c.getAuthor() != null && c.getAuthor().getId().equals(counselor.getId()))
+                .collect(Collectors.toList());
+        model.addAttribute("contents", myContents);
         return "counselor/content-manager";
     }
 
@@ -246,6 +257,11 @@ public class CounselorController {
         EducationalContent ec;
         if (editingId != null) {
             ec = educationalContentDAO.findById(editingId);
+            // Authorization check: Only allow editing own content
+            if (ec == null || ec.getAuthor() == null || !ec.getAuthor().getId().equals(counselor.getId())) {
+                log.warn("Counselor {} attempted to edit content {} they don't own", counselor.getId(), editingId);
+                return "redirect:/counselor/content";
+            }
         } else {
             ec = new EducationalContent();
             ec.setAuthor(counselor);
@@ -270,8 +286,16 @@ public class CounselorController {
     @PostMapping("/content/delete")
     @Transactional
     public String deleteContent(@RequestParam Long id, HttpSession session) {
-        if (getLoggedInCounselor(session) == null)
+        Counselor counselor = getLoggedInCounselor(session);
+        if (counselor == null)
             return "redirect:/login";
+
+        // Authorization check: Only allow deleting own content
+        EducationalContent ec = educationalContentDAO.findById(id);
+        if (ec == null || ec.getAuthor() == null || !ec.getAuthor().getId().equals(counselor.getId())) {
+            log.warn("Counselor {} attempted to delete content {} they don't own", counselor.getId(), id);
+            return "redirect:/counselor/content";
+        }
 
         // Delete all student progress records for this content first
         studentProgressDAO.deleteByContentId(id);
