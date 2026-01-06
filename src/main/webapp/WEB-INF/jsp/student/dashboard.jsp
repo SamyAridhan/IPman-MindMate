@@ -92,6 +92,28 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 space-y-6">
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="bell" class="w-5 h-5 mr-2 text-primary"></i>
+                    <h2 class="text-xl font-semibold text-foreground">Notifications</h2>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="notification-card">
+                        <p class="text-sm text-foreground">New session scheduled for tomorrow at 2 PM</p>
+                        <span class="badge-outline-blue inline-block mt-1">appointment</span>
+                    </div>
+                    <div class="notification-card">
+                        <p class="text-sm text-foreground">Complete your weekly mood check-in</p>
+                        <span class="badge-outline-blue inline-block mt-1">reminder</span>
+                    </div>
+                    <div class="notification-card">
+                        <p class="text-sm text-foreground">New peer discussion in Anxiety Support group</p>
+                        <span class="badge-outline-blue inline-block mt-1">forum</span>
+                    </div>
+                </div>
+            </div>
+            
             <div id="history-section" class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in scroll-mt-24">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
@@ -325,28 +347,6 @@
                             Book New Session
                         </span>
                     </a>
-                </div>
-            </div>
-
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
-                <div class="flex items-center mb-4">
-                    <i data-lucide="bell" class="w-5 h-5 mr-2 text-primary"></i>
-                    <h2 class="text-xl font-semibold text-foreground">Notifications</h2>
-                </div>
-
-                <div class="space-y-3">
-                    <div class="notification-card">
-                        <p class="text-sm text-foreground">New session scheduled for tomorrow at 2 PM</p>
-                        <span class="badge-outline-blue inline-block mt-1">appointment</span>
-                    </div>
-                    <div class="notification-card">
-                        <p class="text-sm text-foreground">Complete your weekly mood check-in</p>
-                        <span class="badge-outline-blue inline-block mt-1">reminder</span>
-                    </div>
-                    <div class="notification-card">
-                        <p class="text-sm text-foreground">New peer discussion in Anxiety Support group</p>
-                        <span class="badge-outline-blue inline-block mt-1">forum</span>
-                    </div>
                 </div>
             </div>
 
