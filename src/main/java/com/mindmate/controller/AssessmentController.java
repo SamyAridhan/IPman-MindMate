@@ -220,13 +220,20 @@ public class AssessmentController {
                 Assessment assessment = new Assessment(student, totalScore);
                 assessment.setResultCategory((String) results.get("level")); // e.g., "Severe"
                 
+                // 2. ✅ NEW: Convert the int[] array to a CSV string (e.g., "3,2,0,1,3")
+                // This is the part that was missing!
+                String responseDataCsv = java.util.stream.IntStream.of(responses)
+                                               .mapToObj(String::valueOf)
+                                               .collect(java.util.stream.Collectors.joining(","));
+                
+                // 3. ✅ NEW: Set the response data into the entity
+                assessment.setResponseData(responseDataCsv);
+
                 assessmentDAO.save(assessment);
-                System.out.println("✅ Assessment saved for student ID: " + userId);
+                System.out.println("✅ Assessment saved with data [" + responseDataCsv + "] for student ID: " + userId);
             } else {
-                System.err.println("⚠️ Error: Student found in session (ID: " + userId + ") but not in Database.");
+                System.err.println("⚠️ Error: Student found in session but not in Database.");
             }
-        } else {
-            System.err.println("⚠️ Error: No User ID found in session. Assessment not saved.");
         }
 
         session.setAttribute("showResults", true);

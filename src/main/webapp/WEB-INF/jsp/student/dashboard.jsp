@@ -67,37 +67,32 @@
             <h2 class="text-xl font-semibold text-foreground">New in the Learning Hub</h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
-                <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">article</span>
-                <h4 class="font-semibold text-foreground mt-2 mb-1">Stress Management 101</h4>
-                <p class="text-sm text-muted-foreground line-clamp-2">Learn effective stress coping strategies for students</p>
-                <a href="/student/library" class="text-primary text-sm font-medium mt-2 inline-block hover:underline">
-                    Learn more →
-                </a>
-            </div>
-            <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
-                <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">video</span>
-                <h4 class="font-semibold text-foreground mt-2 mb-1">Mindfulness Meditation Guide</h4>
-                <p class="text-sm text-muted-foreground line-clamp-2">15-minute guided meditation for anxiety relief</p>
-                <a href="/student/library" class="text-primary text-sm font-medium mt-2 inline-block hover:underline">
-                    Learn more →
-                </a>
-            </div>
-            <div class="learning-card p-4 rounded-lg border border-border cursor-pointer">
-                <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border">article</span>
-                <h4 class="font-semibold text-foreground mt-2 mb-1">Sleep Hygiene</h4>
-                <p class="text-sm text-muted-foreground line-clamp-2">Interactive module on building better sleep habits</p>
-                <a href="/student/library" class="text-primary text-sm font-medium mt-2 inline-block hover:underline">
-                    Learn more →
-                </a>
-            </div>
+            <c:forEach var="module" items="${newestModules}">
+                <div class="learning-card p-4 rounded-lg border border-border cursor-pointer hover:shadow-md transition-shadow">
+                    <span class="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full border border-border uppercase">
+                        ${module.contentType}
+                    </span>
+                    
+                    <h4 class="font-semibold text-foreground mt-2 mb-1">${module.title}</h4>
+                    <p class="text-sm text-muted-foreground line-clamp-2">${module.description}</p>
+                    
+                    <a href="/student/view-module?id=${module.id}" class="text-primary text-sm font-medium mt-2 inline-block hover:underline">
+                        Learn more →
+                    </a>
+                </div>
+            </c:forEach>
+
+            <c:if test="${empty newestModules}">
+                <p class="text-muted-foreground text-sm col-span-3 text-center py-4">
+                    No new modules available at this time.
+                </p>
+            </c:if>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 space-y-6">
-
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
+            <div id="history-section" class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in scroll-mt-24">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
                         <i data-lucide="line-chart" class="w-5 h-5 mr-2 text-primary"></i>
@@ -106,8 +101,8 @@
                     
                     <c:if test="${not empty assessmentHistory}">
                         <select id="historyFilter" class="px-3 py-1.5 border border-input rounded-md bg-background text-sm">
-                            <option value="7">Last 5 Results</option>
-                            <option value="30">Last 3 Results</option>
+                            <option value="5" selected>Last 5 Results</option>
+                            <option value="10">Last 10 Results</option>
                             <option value="all">All Results</option>
                         </select>
                     </c:if>
@@ -116,12 +111,10 @@
                 <div class="relative w-full h-64 flex items-center justify-center">
                     <c:choose>
                         
-                        <%-- CASE 1: User HAS Data -> Show Graph --%>
                         <c:when test="${not empty assessmentHistory}">
                             <canvas id="historyGraph"></canvas>
                         </c:when>
-                        
-                        <%-- CASE 2: User has NO Data -> Show Empty State --%>
+
                         <c:otherwise>
                             <div class="text-center text-muted-foreground">
                                 <div class="bg-secondary/50 rounded-full p-3 inline-block mb-3">
@@ -141,159 +134,78 @@
 
             
         </div>
-            
-            <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center">
-                        <i data-lucide="trending-up" class="w-5 h-5 mr-2 text-info-foreground"></i>
-                        <h2 class="text-xl font-semibold text-foreground">Progress Dashboard</h2>
-                    </div>
-                    <select class="px-3 py-1.5 border border-input rounded-md bg-background text-sm">
-                        <option>This Week</option>
-                        <option>This Month</option>
-                        <option>This Quarter</option>
-                    </select>
-                </div>
-
-                <div class="mb-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-medium text-foreground">Weekly Mood Tracker</h4>
-                        <span class="badge-success">7.4/10</span>
-                    </div>
-                    <div class="grid grid-cols-7 gap-2">
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Mon</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">7</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Tue</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">6</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Wed</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">8</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Thu</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">7</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Fri</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">9</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Sat</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">8</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-muted-foreground mb-1">Sun</div>
-                            <div class="mood-circle h-8 flex items-center justify-center text-sm font-medium">7</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h4 class="font-medium text-foreground mb-4">Activity Progress</h4>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="flex items-center">
-                                    <i data-lucide="book-open" class="w-4 h-4 mr-1"></i>
-                                    Stress Management
-                                </span>
-                                <span>75%</span>
-                            </div>
-                            <div class="progress-bar-container h-2">
-                                <div class="progress-bar-fill h-2" style="width: 75%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="flex items-center">
-                                    <i data-lucide="book-open" class="w-4 h-4 mr-1"></i>
-                                    Sleep Hygiene
-                                </span>
-                                <span>50%</span>
-                            </div>
-                            <div class="progress-bar-container h-2">
-                                <div class="progress-bar-fill blue-accent h-2" style="width: 50%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="flex items-center">
-                                    <i data-lucide="book-open" class="w-4 h-4 mr-1"></i>
-                                    Social Skills
-                                </span>
-                                <span>90%</span>
-                            </div>
-                            <div class="progress-bar-container h-2">
-                                <div class="progress-bar-fill h-2" style="width: 90%"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="flex items-center">
-                                    <i data-lucide="heart" class="w-4 h-4 mr-1"></i>
-                                    Self-Assessment
-                                </span>
-                                <span>100%</span>
-                            </div>
-                            <div class="progress-bar-container h-2">
-                                <div class="progress-bar-fill blue-accent h-2" style="width: 100%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+  
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
     <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center">
-            <i data-lucide="sparkles" class="w-5 h-5 mr-2 text-primary"></i>
-            <h2 class="text-xl font-semibold text-foreground">
-                Personalized Learning Modules
-            </h2>
+        <div>
+            <div class="flex items-center">
+                <i data-lucide="sparkles" class="w-5 h-5 mr-2 text-primary"></i>
+                <h2 class="text-xl font-bold text-foreground">
+                    ${not empty recTitle ? recTitle : 'Tailored for Your Well-being'}
+                </h2>
+            </div>
+            <p class="text-sm text-muted-foreground mt-1">
+                <c:choose>
+                    <c:when test="${not empty latestAssessment}">
+                        Resources hand-picked based on your latest assessment
+                    </c:when>
+                    <c:otherwise>
+                        Explore these foundational wellness modules to get started.
+                    </c:otherwise>
+                </c:choose>
+            </p>
         </div>
         
-        <button onclick="window.location.reload();" class="icon-btn border border-input" title="Refresh">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-        </button>
+        <div class="flex items-center">
+            <span class="flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold uppercase tracking-wider border border-primary/20">
+                <i data-lucide="sparkles" class="w-3 h-3"></i> AI Personalized
+            </span>
+        </div>
     </div>
 
     <div class="space-y-4">
         
-        <c:forEach var="module" items="${recommendedModules}">
+       <c:forEach var="module" items="${recommendedModules}">
             <a href="/student/view-module?id=${module.id}" 
-               class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors border border-transparent hover:border-border">
+               class="block p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-all border border-transparent hover:border-border group">
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center space-x-2 mb-2">
-                            <%-- Dynamic Icon based on content type --%>
-                            <i data-lucide="${module.contentType == 'Video' ? 'video' : 'file-text'}" 
-                               class="w-4 h-4 ${module.contentType == 'Video' ? 'text-blue-500' : 'text-green-500'}"></i>
-                            <h4 class="font-medium text-foreground">${module.title}</h4>
+                            <div class="p-1.5 rounded-md ${module.contentType == 'Video' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}">
+                                <i data-lucide="${module.contentType == 'Video' ? 'video' : 'file-text'}" class="w-4 h-4"></i>
+                            </div>
+                            <h4 class="font-semibold text-foreground group-hover:text-primary transition-colors">${module.title}</h4>
                         </div>
-                        <p class="text-sm text-muted-foreground line-clamp-2">${module.description}</p>
+                        <p class="text-sm text-muted-foreground line-clamp-2 ml-9">${module.description}</p>
                         
-                        <div class="flex items-center mt-2">
-                             <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                        <div class="flex items-center mt-3 ml-9 gap-3">
+                             <span class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-background px-2 py-0.5 rounded border border-border">
+                                ${module.contentType}
+                             </span>
+                             <span class="text-xs font-medium text-amber-600 flex items-center">
                                 <i data-lucide="star" class="w-3 h-3 inline mr-1 fill-current"></i> ${module.pointsValue} pts
                             </span>
                         </div>
                     </div>
-                    <div class="ml-4 text-primary opacity-70">
+                    <div class="ml-4 text-muted-foreground group-hover:text-primary transform group-hover:translate-x-1 transition-all">
                         <i data-lucide="chevron-right" class="w-5 h-5"></i>
                     </div>
                 </div>
             </a>
         </c:forEach>
 
-        <%-- EMPTY STATE --%>
         <c:if test="${empty recommendedModules}">
-            <div class="text-center py-6 text-muted-foreground border border-dashed border-border rounded-lg">
-                <i data-lucide="book-open" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-                <p class="text-sm">Complete the self-assessment to see your personalized list.</p>
+            <div class="text-center py-10 bg-secondary/10 border border-dashed border-border rounded-lg">
+                <div class="bg-background w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                    <i data-lucide="brain-circuit" class="w-6 h-6 text-muted-foreground"></i>
+                </div>
+                <h4 class="text-sm font-medium text-foreground">Awaiting Your Input</h4>
+                <p class="text-xs text-muted-foreground mt-1 max-w-[250px] mx-auto">
+                    Take the self-assessment so our AI can curate learning modules specific to your needs.
+                </p>
+                <a href="/student/assessment" class="mt-4 inline-block text-xs font-bold text-primary uppercase tracking-wider hover:underline">
+                    Start Assessment &rarr;
+                </a>
             </div>
         </c:if>
 
@@ -314,7 +226,6 @@
                         <c:when test="${not empty bookedAppointments}">
                             <c:forEach var="appointment" items="${bookedAppointments}">
                                 
-                                <%-- ✅ LOGIC: Only show Confirmed, Pending, or Denied/Rejected. Exclude Completed/Cancelled/Acknowledged. --%>
                                 <c:if test="${appointment.status == 'CONFIRMED' || appointment.status == 'PENDING' || appointment.status == 'DENIED' || appointment.status == 'REJECTED'}">
                                 
                                     <div class="session-card p-4 rounded-lg border border-border mb-3 hover:shadow-md transition-shadow">
@@ -372,7 +283,7 @@
                                                 </a>
                                             </c:if>
                                             
-                                            <%-- 2. CANCEL (Pending or Confirmed only) - ✅ UPDATED UI (Filled Style) --%>
+                                            <%-- 2. CANCEL (Pending or Confirmed only) --%>
                                             <c:if test="${appointment.status == 'PENDING' || appointment.status == 'CONFIRMED'}">
                                                 <form action="/student/telehealth/cancel" method="post" class="flex-1">
                                                     <input type="hidden" name="appointmentId" value="${appointment.id}" />
@@ -442,10 +353,6 @@
             <div class="bg-card p-6 rounded-lg shadow-sm border border-border fade-in">
                 <h2 class="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
                 <div class="space-y-2">
-                    <a href="/student/assessment" class="flex items-center w-full justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors">
-                        <i data-lucide="heart" class="w-4 h-4 mr-2"></i>
-                        Daily Mood Check-in
-                    </a>
                     <a href="/student/telehealth" class="flex items-center w-full justify-start px-4 py-2 border border-border rounded-md hover:bg-secondary transition-colors">
                         <i data-lucide="calendar" class="w-4 h-4 mr-2"></i>
                         Schedule Session
@@ -462,97 +369,71 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('historyGraph');
-    if (!ctx) return; // Stop if element isn't found
+    const filterSelect = document.getElementById('historyFilter');
+    
+    if (!ctx) return;
 
-    try {
-        // --- 1. Fetch Data from your Spring Boot Backend ---
-        // Ensure your controller returns JSON like: [{"date": "Oct 1", "score": 65}, ...]
-        const response = await fetch('/api/history'); 
-        
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const apiData = await response.json();
+    let historyChart = null;
 
-        // --- 2. Process Data for Chart.js ---
-        const labels = apiData.map(item => item.date);
-        const scores = apiData.map(item => item.score);
+    async function renderHistoryChart(limitValue) {
+        try {
+            const response = await fetch('/api/history?limit=' + limitValue);
+            if (!response.ok) throw new Error('API Error');
+            
+            const apiData = await response.json();
+            const labels = apiData.map(item => item.date);
+            const scores = apiData.map(item => item.score);
 
-        // --- 3. Render the Line Graph ---
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Assessment Score',
-                    data: scores,
-                    // Styling to match your "MindMate" blue theme
-                    borderColor: '#2563eb',       // Blue-600
-                    backgroundColor: (context) => {
-                        const ctx = context.chart.ctx;
-                        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                        gradient.addColorStop(0, 'rgba(37, 99, 235, 0.2)'); // Top (Blue)
-                        gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)'); // Bottom (Transparent)
-                        return gradient;
-                    },
-                    borderWidth: 3,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#2563eb',
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    tension: 0.4, // 0.4 makes the line curvy (0 is straight)
-                    fill: true    // Fills the area under the line
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }, // Hide the legend for a cleaner look
-                    tooltip: {
-                        backgroundColor: '#1e293b', // Dark tooltip
-                        padding: 12,
-                        cornerRadius: 8,
-                        displayColors: false,
-                        callbacks: {
-                            label: function(context) {
-                                return 'Score: ' + context.parsed.y + '/15';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 15, // Adjust this if your score is out of 10 or 50
-                        ticks: {
-                            stepSize: 5, // ✅ This forces even spacing: 0, 5, 10, 15
-                            precision: 0 // Ensures no decimals like 2.5 appear
-                        },
-                        grid: {
-                            color: '#e2e8f0', // Light gray grid lines
-                            borderDash: [5, 5]
-                        }
-                    },
-                    x: {
-                        grid: { display: false } // Clean X-axis
-                    }
-                }
+            if (historyChart) {
+                historyChart.destroy();
             }
-        });
 
-    } catch (error) {
-        console.error("Chart Error:", error);
-        // Fallback UI if data fails to load
-        ctx.parentElement.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <i data-lucide="alert-circle" class="w-8 h-8 mb-2 opacity-50"></i>
-                <p>No history data available yet.</p>
-            </div>
-        `;
-        // Re-initialize icons just in case
-        if(typeof lucide !== 'undefined') lucide.createIcons();
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Assessment Score',
+                        data: scores,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#2563eb',
+                        pointRadius: 5,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 15, ticks: { stepSize: 5 } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            
+            // Re-initialize icons if any were loaded dynamically
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+        } catch (error) {
+            console.error("Chart Update Error:", error);
+        }
+    }
+
+    if (filterSelect) {
+        // Initial load using the current dropdown value
+        renderHistoryChart(filterSelect.value);
+
+        // Event listener for changes
+        filterSelect.addEventListener('change', function() {
+            renderHistoryChart(this.value);
+        });
     }
 });
 </script>
