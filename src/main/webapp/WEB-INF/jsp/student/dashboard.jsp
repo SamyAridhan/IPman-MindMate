@@ -106,8 +106,8 @@
                     
                     <c:if test="${not empty assessmentHistory}">
                         <select id="historyFilter" class="px-3 py-1.5 border border-input rounded-md bg-background text-sm">
-                            <option value="7">Last 5 Results</option>
-                            <option value="30">Last 3 Results</option>
+                            <option value="5" selected>Last 5 Results</option>
+                            <option value="10">Last 10 Results</option>
                             <option value="all">All Results</option>
                         </select>
                     </c:if>
@@ -488,97 +488,71 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('historyGraph');
-    if (!ctx) return; // Stop if element isn't found
+    const filterSelect = document.getElementById('historyFilter');
+    
+    if (!ctx) return;
 
-    try {
-        // --- 1. Fetch Data from your Spring Boot Backend ---
-        // Ensure your controller returns JSON like: [{"date": "Oct 1", "score": 65}, ...]
-        const response = await fetch('/api/history'); 
-        
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const apiData = await response.json();
+    let historyChart = null;
 
-        // --- 2. Process Data for Chart.js ---
-        const labels = apiData.map(item => item.date);
-        const scores = apiData.map(item => item.score);
+    async function renderHistoryChart(limitValue) {
+        try {
+            const response = await fetch('/api/history?limit=' + limitValue);
+            if (!response.ok) throw new Error('API Error');
+            
+            const apiData = await response.json();
+            const labels = apiData.map(item => item.date);
+            const scores = apiData.map(item => item.score);
 
-        // --- 3. Render the Line Graph ---
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Assessment Score',
-                    data: scores,
-                    // Styling to match your "MindMate" blue theme
-                    borderColor: '#2563eb',       // Blue-600
-                    backgroundColor: (context) => {
-                        const ctx = context.chart.ctx;
-                        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                        gradient.addColorStop(0, 'rgba(37, 99, 235, 0.2)'); // Top (Blue)
-                        gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)'); // Bottom (Transparent)
-                        return gradient;
-                    },
-                    borderWidth: 3,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#2563eb',
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    tension: 0.4, // 0.4 makes the line curvy (0 is straight)
-                    fill: true    // Fills the area under the line
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }, // Hide the legend for a cleaner look
-                    tooltip: {
-                        backgroundColor: '#1e293b', // Dark tooltip
-                        padding: 12,
-                        cornerRadius: 8,
-                        displayColors: false,
-                        callbacks: {
-                            label: function(context) {
-                                return 'Score: ' + context.parsed.y + '/15';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 15, // Adjust this if your score is out of 10 or 50
-                        ticks: {
-                            stepSize: 5, // ✅ This forces even spacing: 0, 5, 10, 15
-                            precision: 0 // Ensures no decimals like 2.5 appear
-                        },
-                        grid: {
-                            color: '#e2e8f0', // Light gray grid lines
-                            borderDash: [5, 5]
-                        }
-                    },
-                    x: {
-                        grid: { display: false } // Clean X-axis
-                    }
-                }
+            if (historyChart) {
+                historyChart.destroy();
             }
-        });
 
-    } catch (error) {
-        console.error("Chart Error:", error);
-        // Fallback UI if data fails to load
-        ctx.parentElement.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <i data-lucide="alert-circle" class="w-8 h-8 mb-2 opacity-50"></i>
-                <p>No history data available yet.</p>
-            </div>
-        `;
-        // Re-initialize icons just in case
-        if(typeof lucide !== 'undefined') lucide.createIcons();
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Assessment Score',
+                        data: scores,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#2563eb',
+                        pointRadius: 5,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 15, ticks: { stepSize: 5 } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            
+            // Re-initialize icons if any were loaded dynamically
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+        } catch (error) {
+            console.error("Chart Update Error:", error);
+        }
+    }
+
+    if (filterSelect) {
+        // Initial load using the current dropdown value
+        renderHistoryChart(filterSelect.value);
+
+        // Event listener for changes
+        filterSelect.addEventListener('change', function() {
+            renderHistoryChart(this.value);
+        });
     }
 });
 </script>
