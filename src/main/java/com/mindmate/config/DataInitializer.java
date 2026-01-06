@@ -38,6 +38,7 @@ public class DataInitializer {
             AppointmentDAO appointmentDAO,
             SystemAnalyticsDAO analyticsDAO,
             EducationalContentDAO educationalContentDAO,
+            ChatDAO chatDAO,
             AssessmentDAO assessmentDAO) { // ✅ Merged: Added EducationalContentDAO
 
         return args -> {
@@ -412,6 +413,42 @@ public class DataInitializer {
                 System.out.println("✓ Assessments already exist.");
             }
 
+            // ==========================================
+// 8. SEED CHAT HISTORY (For Demo Student)
+// ==========================================
+if (chatDAO.getAllMessages().isEmpty()) {
+    System.out.println("💬 Seeding Chat History...");
+
+    Student demoStudent = studentDAO.findByEmail("demo@student.mindmate.com").orElse(null);
+
+    if (demoStudent != null) {
+        // Session 1: Academic Stress (Last Week)
+        String session1 = "chat_stress_001";
+        LocalDateTime time1 = LocalDateTime.now().minusDays(7);
+        
+        seedChatMessage(chatDAO, demoStudent, session1, "Academic Support", "user", "I'm feeling very overwhelmed with my FYP deadlines.", time1);
+        seedChatMessage(chatDAO, demoStudent, session1, null, "assistant", "I understand. Final Year Projects are a major undertaking. Would you like to break down your tasks together?", time1.plusMinutes(1));
+
+        // Session 2: General Wellness (3 Days Ago)
+        String session2 = "chat_wellness_002";
+        LocalDateTime time2 = LocalDateTime.now().minusDays(3);
+        
+        seedChatMessage(chatDAO, demoStudent, session2, "Sleep & Routine", "user", "I haven't been sleeping well lately.", time2);
+        seedChatMessage(chatDAO, demoStudent, session2, null, "assistant", "Sleep is vital for your mental health. Have you tried the 10-3-2-1-0 rule we have in our resources?", time2.plusMinutes(2));
+        seedChatMessage(chatDAO, demoStudent, session2, null, "user", "No, what is that?", time2.plusMinutes(5));
+        seedChatMessage(chatDAO, demoStudent, session2, null, "assistant", "It's a routine to help you wind down. 10 hours before bed: no caffeine...", time2.plusMinutes(6));
+
+        // Session 3: Recent Check-in (Today)
+        String session3 = "chat_checkin_003";
+        LocalDateTime time3 = LocalDateTime.now().minusHours(1);
+        
+        seedChatMessage(chatDAO, demoStudent, session3, "Daily Check-in", "user", "I feel much better today after talking to Dr. Sarah.", time3);
+        seedChatMessage(chatDAO, demoStudent, session3, null, "assistant", "That's wonderful to hear! Consistency is key to progress.", time3.plusMinutes(1));
+
+        System.out.println("✅ Seeded chat sessions for Demo Student.");
+    }
+}
+
             System.out.println("=== DATA INITIALIZATION COMPLETE ===");
             System.out.println("");
             System.out.println("📌 TEST ACCOUNTS:");
@@ -538,5 +575,16 @@ public class DataInitializer {
         content.setPointsValue(points);
         content.setAuthor(author);
         return content;
+    }
+
+    private void seedChatMessage(ChatDAO dao, Student student, String sessionId, String title, String role, String content, LocalDateTime timestamp) {
+        ChatMessage message = new ChatMessage();
+        message.setStudent(student);
+        message.setSessionId(sessionId);
+        message.setTitle(title); // Only set this for the first message of a session
+        message.setRole(role);
+        message.setContent(content);
+        message.setTimestamp(timestamp);
+        dao.saveMessage(message);
     }
 }
