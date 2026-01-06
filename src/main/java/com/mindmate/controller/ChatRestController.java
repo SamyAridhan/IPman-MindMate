@@ -100,52 +100,52 @@ private String generateTitle(String message) {
      * Gets all unique session IDs for this specific student to show in the sidebar.
      */
     @GetMapping("/sessions")
-public ResponseEntity<?> getSessions(HttpSession session) {
-    Long userId = SessionHelper.getUserId(session);
-    String role = SessionHelper.getRole(session);
-    
-    if (userId == null || !"student".equals(role)) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<?> getSessions(HttpSession session) {
+        Long userId = SessionHelper.getUserId(session);
+        String role = SessionHelper.getRole(session);
+        
+        if (userId == null || !"student".equals(role)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        Student student = studentDAO.findById(userId);
+        
+        // Get session titles from database
+        List<ChatMessage> sessionTitles = chatDAO.getSessionTitlesByStudent(student);
+        
+        // Return as a list of objects with sessionId and title
+        List<Map<String, String>> sessions = sessionTitles.stream()
+            .map(msg -> {
+                Map<String, String> sessionData = new HashMap<>();
+                sessionData.put("sessionId", msg.getSessionId());
+                sessionData.put("title", msg.getTitle() != null ? msg.getTitle() : "Chat");
+                return sessionData;
+            })
+            .toList();
+        
+        return ResponseEntity.ok(sessions);
     }
-    
-    Student student = studentDAO.findById(userId);
-    
-    // Get session titles from database
-    List<ChatMessage> sessionTitles = chatDAO.getSessionTitlesByStudent(student);
-    
-    // Return as a list of objects with sessionId and title
-    List<Map<String, String>> sessions = sessionTitles.stream()
-        .map(msg -> {
-            Map<String, String> sessionData = new HashMap<>();
-            sessionData.put("sessionId", msg.getSessionId());
-            sessionData.put("title", msg.getTitle() != null ? msg.getTitle() : "Chat");
-            return sessionData;
-        })
-        .toList();
-    
-    return ResponseEntity.ok(sessions);
-}
 
     /**
      * Fetches messages for a specific conversation when clicked in the sidebar.
      */
     @GetMapping("/history/load")
-public ResponseEntity<List<ChatMessage>> loadHistory(
-        @RequestParam String sessionId, 
-        HttpSession session) {
-    
-    Long userId = SessionHelper.getUserId(session);
-    if (userId == null) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<List<ChatMessage>> loadHistory(
+            @RequestParam String sessionId, 
+            HttpSession session) {
+        
+        Long userId = SessionHelper.getUserId(session);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        Student student = studentDAO.findById(userId);
+        
+        // Load messages for this specific session
+        List<ChatMessage> messages = chatDAO.getMessagesByStudentAndSession(student, sessionId);
+        
+        return ResponseEntity.ok(messages);
     }
-    
-    Student student = studentDAO.findById(userId);
-    
-    // Load messages for this specific session
-    List<ChatMessage> messages = chatDAO.getMessagesByStudentAndSession(student, sessionId);
-    
-    return ResponseEntity.ok(messages);
-}
 
     /**
      * Retrieves messages for the conversation currently active in the widget.
