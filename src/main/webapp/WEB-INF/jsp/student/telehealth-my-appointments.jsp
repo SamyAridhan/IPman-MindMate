@@ -6,7 +6,6 @@
 <div class="space-y-6">
     <h1 class="text-3xl font-bold text-foreground">My Appointments</h1>
 
-    <!-- Success Message (only show if coming from booking) -->
     <c:if test="${param.success eq 'true'}">
         <div class="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
             <i data-lucide="check-circle-2" class="h-5 w-5 text-green-600 mt-0.5"></i>

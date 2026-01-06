@@ -6,7 +6,6 @@
 <jsp:include page="../common/header.jsp" />
 
 <style>
-    /* Prevent text from overflowing the container */
     .prose-content {
         max-width: 100%;
         overflow-wrap: anywhere; 
@@ -16,7 +15,6 @@
 
 <div class="container mx-auto px-4 py-6">
     <div class="space-y-6">
-        <%-- TOP BAR: BACK BUTTON AND ACTIONS --%>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-muted/30 p-4 rounded-lg border border-border">
             <a href="${pageContext.request.contextPath}/admin/forum-moderation" 
                class="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 transition-colors text-sm font-medium">
@@ -47,7 +45,7 @@
             </div>
         </div>
 
-        <%-- MAIN POST CARD (Styles matched to student view: p-6 and text-3xl) --%>
+        <%-- MAIN POST CARD --%>
         <div class="bg-card p-6 rounded-lg shadow-sm border border-border overflow-hidden">
             <div class="mb-8 border-b border-border pb-6">
                 <div class="flex items-start justify-between mb-4">
@@ -71,7 +69,6 @@
                     </span>
                 </div>
                 
-                <%-- CONTENT DIV: No extra spaces and matched font size --%>
                 <div class="prose prose-slate prose-content max-w-full text-foreground leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">${fn:trim(post.content)}</div>
             </div>
 

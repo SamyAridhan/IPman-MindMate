@@ -5,23 +5,20 @@
 <jsp:include page="../common/header.jsp" />
 
 <style>
-    /* Prevent horizontal page scroll */
     .table-responsive {
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
-    /* Force title to wrap if it's exceptionally long */
     .title-link {
         word-break: break-word;
         display: block;
         line-height: 1.4;
     }
-    /* Ensure all cards have the exact same height and internal alignment */
     .stat-card {
         display: flex;
         flex-direction: column;
-        justify-content: flex-start; /* Aligns content to the top */
+        justify-content: flex-start;
         min-height: 120px;
     }
 </style>
@@ -33,7 +30,7 @@
             <p class="text-muted-foreground">Review and moderate flagged forum posts</p>
         </div>
 
-        <%-- STATS CARDS: Fixed with items-start to ensure top alignment across all 3 --%>
+        <%-- STATS CARDS--%>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             
             <%-- Flagged Posts Card --%>
@@ -94,7 +91,6 @@
                         </div>
                     </c:when>
                     <c:otherwise>
-                        <%-- Removed table-fixed to allow natural spacing, ensured all text-left --%>
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-secondary/30 border-b border-border">
                                 <tr>
@@ -107,7 +103,6 @@
                             <tbody class="divide-y divide-border">
                                 <c:forEach var="post" items="${flaggedPosts}">
                                     <tr class="hover:bg-muted/40 transition-colors">
-                                        <%-- 1. ONLY TITLE (Clickable) --%>
                                         <td class="px-6 py-5">
                                             <a href="${pageContext.request.contextPath}/admin/forum/view?postId=${post.id}" 
                                                class="text-base font-semibold text-primary hover:text-primary/80 transition-colors title-link">
@@ -124,7 +119,6 @@
                                             <fmt:formatDate value="${parsedDateTime}" pattern="MMM dd, yyyy" />
                                         </td>
                                         
-                                        <%-- 2. ACTIONS: Left aligned with the rest of the column data --%>
                                         <td class="px-6 py-5">
                                             <div class="flex items-center gap-3">
                                                 <form method="POST" action="${pageContext.request.contextPath}/admin/forum/approve" class="m-0">

@@ -418,7 +418,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // Re-initialize icons if any were loaded dynamically
             if (typeof lucide !== 'undefined') lucide.createIcons();
             
         } catch (error) {
@@ -427,10 +426,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (filterSelect) {
-        // Initial load using the current dropdown value
         renderHistoryChart(filterSelect.value);
 
-        // Event listener for changes
         filterSelect.addEventListener('change', function() {
             renderHistoryChart(this.value);
         });

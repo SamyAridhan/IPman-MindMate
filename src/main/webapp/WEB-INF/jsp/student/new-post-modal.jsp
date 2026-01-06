@@ -1,14 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%--
-    Modal Fragment for creating or editing a Forum Post.
---%>
 <div id="new-post-modal" class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center hidden">
     
     <div class="bg-card w-full max-w-lg p-6 rounded-xl shadow-2xl border border-primary/20">
         
-        <%-- Header --%>
         <div class="flex justify-between items-center pb-4 border-b border-border">
-            <%-- Added id="modal-title" to change text dynamically --%>
             <h3 id="modal-title" class="text-xl font-bold text-foreground">Share Your Experience or Ask for Support</h3>
             <button onclick="closeNewPostModal()" class="p-1 rounded-full text-muted-foreground hover:bg-gray-100 transition-colors" aria-label="Close">
                 <i data-lucide="x" class="h-5 w-5"></i>
@@ -16,10 +11,8 @@
         </div>
         
         <%-- Form Content --%>
-        <%-- Added id="post-form" to target the action URL via JS --%>
         <form id="post-form" action="${pageContext.request.contextPath}/student/forum/create" method="POST" class="mt-6 space-y-4">
             
-            <%-- Hidden Post ID: Essential for Update operations --%>
             <input type="hidden" name="postId" id="modal-post-id" value="0">
             
             <%-- Support Category --%>
@@ -65,9 +58,7 @@
                 </div>
             </div>
             
-            <%-- Submit Button --%>
             <div class="pt-2">
-                <%-- Added id="modal-submit-btn" to change text dynamically --%>
                 <button type="submit" id="modal-submit-btn" class="w-full bg-primary text-primary-foreground py-2.5 rounded-xl font-semibold text-lg shadow-lg hover:bg-primary/90 transition-all active:scale-[0.98]">
                     Share with Community
                 </button>

@@ -94,7 +94,6 @@
 </div>
 
 <script>
-    // Ensure Lucide icons are initialized
     lucide.createIcons();
 
     let isChatOpen = false;
@@ -107,7 +106,6 @@
     const inputField = document.getElementById('chat-input');
     const typingIndicator = document.getElementById('typing-indicator');
 
-    // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
         loadCurrentHistory();
     });
@@ -140,7 +138,6 @@
             
             console.log('Total sessions:', sessions.length);
             
-            // Clear and rebuild
             list.innerHTML = '';
             
             sessions.forEach((session, index) => {
@@ -148,12 +145,10 @@
                 
                 const sessionId = session.sessionId;
                 const rawTitle = session.title;
-                // Clean up the title - remove "message" prefix if it exists
                 let cleanTitle = rawTitle;
                 if (cleanTitle && cleanTitle.startsWith('message')) {
-                    cleanTitle = cleanTitle.substring(7).trim(); // Remove "message" (7 chars)
+                    cleanTitle = cleanTitle.substring(7).trim(); 
                 }
-                // Further cleanup - capitalize first letter
                 cleanTitle = cleanTitle && cleanTitle.trim().length > 0 ? cleanTitle : 'Chat ' + (index + 1);
                 if (cleanTitle.length > 0) {
                     cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
@@ -171,12 +166,10 @@
                 btn.style.backgroundColor = 'transparent';
                 btn.style.cursor = 'pointer';
                 
-                // Create the icon
                 const icon = document.createElement('i');
                 icon.setAttribute('data-lucide', 'message-square');
                 icon.className = 'h-4 w-4 text-muted-foreground group-hover:text-primary';
                 
-                // Create the title span
                 const span = document.createElement('span');
                 span.className = 'truncate font-medium';
                 span.style.color = '#666666';
@@ -188,7 +181,6 @@
                 
                 console.log('Button created with title:', cleanTitle, 'HTML:', btn.innerHTML);
                 
-                // Attach listener directly to button
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
                     console.log('🔍 Button clicked for sessionId:', sessionId, 'title:', cleanTitle);
@@ -215,12 +207,10 @@
             const data = await response.json();
             console.log('Session data received:', data);
             
-            // Transform the backend data format to our chat format
             let messages = [];
             
             if (Array.isArray(data)) {
                 console.log('Data is array, processing', data.length, 'items');
-                // Data is array of message objects from backend
                 messages = data.map(msg => {
                     let content = '';
                     
@@ -232,7 +222,6 @@
                         content = msg.title;
                     }
                     
-                    // If content looks like JSON, try to parse it
                     if (content && content.startsWith('{')) {
                         try {
                             const parsed = JSON.parse(content);
@@ -240,7 +229,6 @@
                                 content = parsed.message;
                             }
                         } catch (e) {
-                            // Not valid JSON, use as-is
                         }
                     }
                     
@@ -302,7 +290,6 @@
         const message = inputField.value.trim();
         if (!message || isLoading) return;
 
-        // 1. Add User Message locally
         const userMsg = { 
             role: 'user', 
             content: message,
@@ -330,7 +317,6 @@
             const data = await response.json();
             console.log('Backend response:', data);
             
-            // Extract the message content - handle different response formats
             let messageContent = '';
             
             if (typeof data === 'string') {
@@ -340,7 +326,6 @@
             } else if (data && data.message) {
                 messageContent = data.message;
             } else if (typeof data === 'object') {
-                // Try to find any non-empty string field
                 for (let key in data) {
                     if (typeof data[key] === 'string' && data[key].length > 0 && key !== 'role' && key !== 'timestamp' && key !== 'sessionId') {
                         messageContent = data[key];
@@ -349,11 +334,9 @@
                 }
             }
             
-            // If content looks like JSON, try to parse it recursively
             if (messageContent && messageContent.trim().startsWith('{')) {
                 try {
                     const parsed = JSON.parse(messageContent);
-                    // Check if parsed object has a message field
                     if (parsed.message && typeof parsed.message === 'string') {
                         messageContent = parsed.message;
                     } else if (parsed.content && typeof parsed.content === 'string') {
@@ -361,7 +344,6 @@
                     } else if (typeof parsed === 'string') {
                         messageContent = parsed;
                     }
-                    // If still looks like JSON after first parse, try again
                     if (messageContent.trim().startsWith('{')) {
                         const parsed2 = JSON.parse(messageContent);
                         if (parsed2.message) messageContent = parsed2.message;
@@ -371,7 +353,6 @@
                 }
             }
 
-            // Don't add empty messages
             if (messageContent && messageContent.trim().length > 0 && !messageContent.trim().startsWith('{')) {
                 const aiMsg = {
                     role: data.role || 'assistant',
@@ -405,11 +386,9 @@
             console.log('Current history loaded:', history);
             
             if (history && history.length > 0) {
-                // Transform messages to ensure content is properly extracted
                 currentMessages = history.map(msg => {
                     let content = msg.content || '';
                     
-                    // If content is a JSON string, parse it
                     if (typeof content === 'string' && content.startsWith('{')) {
                         try {
                             const parsed = JSON.parse(content);
@@ -417,7 +396,6 @@
                                 content = parsed.message;
                             }
                         } catch (e) {
-                            // Not valid JSON, use as-is
                         }
                     }
                     
@@ -448,7 +426,6 @@
             const isUser = msg.role === 'user';
             const textToDisplay = msg.content || "";
             
-            // Format time from timestamp
             let timeString = '';
             if (msg.timestamp) {
                 try {
@@ -481,7 +458,6 @@
                         }
                     }
                     
-                    // Fallback if still empty
                     if (!timeString && typeof msg.timestamp === 'string' && msg.timestamp.includes('T')) {
                         const timePart = msg.timestamp.split('T')[1];
                         timeString = timePart.substring(0, 5);
@@ -492,20 +468,17 @@
                 }
             }
 
-            // Container for the entire message (with alignment)
             const div = document.createElement('div');
             div.style.display = 'flex';
             div.style.marginBottom = '12px';
             div.style.justifyContent = isUser ? 'flex-end' : 'flex-start';
 
-            // Wrapper for avatar + bubble
             const wrapper = document.createElement('div');
             wrapper.style.display = 'flex';
             wrapper.style.alignItems = 'flex-end';
             wrapper.style.gap = '8px';
             if (isUser) wrapper.style.flexDirection = 'row-reverse';
 
-            // Avatar
             const avatar = document.createElement('div');
             avatar.style.width = '32px';
             avatar.style.height = '32px';
@@ -524,7 +497,6 @@
                 avatar.innerHTML = '<i data-lucide="bot" style="color: rgb(219, 112, 147); width: 16px; height: 16px;"></i>';
             }
 
-            // Message bubble with time
             const bubbleContainer = document.createElement('div');
             bubbleContainer.style.display = 'flex';
             bubbleContainer.style.flexDirection = 'column';
@@ -556,7 +528,6 @@
             bubble.appendChild(p);
             bubbleContainer.appendChild(bubble);
             
-            // Time text - always add if we have timeString
             if (timeString) {
                 const timeSpan = document.createElement('span');
                 timeSpan.style.fontSize = '11px';

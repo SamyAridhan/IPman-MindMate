@@ -15,9 +15,7 @@
             <c:choose>
                 <c:when test="${requestScope.showResults == true}">
                     
-                    <%-- ------------------------------------------------ --%>
-                    <%-- ✅ ASSESSMENT RESULTS UI (Uses Custom CSS Vars) --%>
-                    <%-- ------------------------------------------------ --%>
+                    <%--ASSESSMENT RESULTS UI (Uses Custom CSS Vars)--%>
                     <div class="text-center space-y-6">
                         <div class="p-6 rounded-lg" style="background-color: hsl(var(--secondary));">
                             <h3 class="text-xl font-semibold mb-4 text-card-foreground">Assessment Results</h3>
@@ -27,7 +25,6 @@
                                     <div class="text-4xl font-bold" style="color: hsl(var(--primary));">
                                         ${requestScope.score}%
                                     </div>
-                                    <%-- The bg and color vars must be calculated in the Java Controller based on the score --%>
                                     <div class="px-3 py-1 rounded-full ${requestScope.bg}">
                                         <span class="font-medium ${requestScope.color}">
                                             ${requestScope.level} Symptoms
@@ -42,12 +39,10 @@
                         </div>
 
                         <div class="flex space-x-4 justify-center">
-                            <%-- Retake/Reset button (Style: variant="outline" using secondary/primary-foreground) --%>
                             <a href="/student/assessment/reset" 
                                 class="border border-input text-foreground px-6 py-2.5 rounded-md hover:bg-secondary transition-colors font-medium focus:ring-2 focus:ring-ring focus:ring-offset-2">
                                 Retake Assessment
                             </a>
-                            <%-- Explore Resources button (Style: variant="default" using primary) --%>
                             <a href="/student/library" 
                                 class="bg-primary text-primary-foreground px-6 py-2.5 rounded-md hover:opacity-90 transition-opacity font-medium shadow-sm">
                                 Explore Resources
@@ -59,9 +54,7 @@
                 
                 <c:otherwise>
                     
-                    <%-- ------------------------------------------------ --%>
-                    <%-- ❓ QUESTION DISPLAY UI (Uses Custom CSS Vars) --%>
-                    <%-- ------------------------------------------------ --%>
+                    <%-- QUESTION DISPLAY UI (Uses Custom CSS Vars) --%>
                     
                     <div class="card-header text-center">
                         <h2 class="flex items-center justify-center text-2xl font-semibold mb-2 text-card-foreground">
@@ -74,10 +67,8 @@
                     </div>
                     
                     <form method="POST" action="/student/assessment/submit" class="space-y-6 mt-6">
-                        <%-- Hidden field to submit the current question index or ID for backend tracking --%>
                         <input type="hidden" name="currentQuestionIndex" value="${requestScope.currentQuestionIndex}">
                         
-                        <%-- Progress indicator --%>
                         <c:set var="total" value="${requestScope.totalQuestions}" />
                         <c:set var="current" value="${requestScope.currentQuestionIndex}" />
                         <c:set var="progress" value="${(current / total) * 100}" />
@@ -102,7 +93,6 @@
                                 <c:forEach var="option" items="${requestScope.responseOptions}" varStatus="loop">
                                     <c:set var="uniqueId" value="option_${option.value}"/>
                                     
-                                    <%-- Radio buttons styled as buttons --%>
                                     
                                     <label for="${uniqueId}" 
                                         class="h-auto p-4 text-center cursor-pointer border rounded-lg transition-all 
@@ -123,14 +113,14 @@
 
                         <%-- Navigation --%>
                         <div class="flex justify-between pt-4">
-                            <%-- Previous Button (Style: variant="ghost") --%>
+                            <%-- Previous Button --%>
                             <button type="submit" name="direction" value="previous"
                                 class="text-foreground px-4 py-2 hover:bg-muted rounded-md transition-colors"
                                 <c:if test="${current == 0}">disabled</c:if>>
                                 Previous
                             </button>
                             
-                            <%-- Next/Complete Button (Style: variant="default") --%>
+                            <%-- Next/Complete Button --%>
                             <button type="submit" name="direction" value="next"
                                 class="bg-primary text-primary-foreground px-6 py-2.5 rounded-md hover:opacity-90 transition-opacity font-medium shadow-sm">
                                 <c:choose>
@@ -153,16 +143,13 @@
     </div>
 </div>
 
-<%-- ------------------------------------------------ --%>
-<%-- ⚠️ HIGH-RISK CONSENT DIALOG (Separate Element) --%>
-<%-- ------------------------------------------------ --%>
+<%-- HIGH-RISK CONSENT DIALOG--%>
 
 <c:if test="${requestScope.showConsentDialog == true}">
-    <%-- Backdrop: fixed, opaque, covers entire screen --%>
     <div class="fixed inset-0 z-50 bg-background/80 flex items-center justify-center backdrop-blur-sm" 
          style="background-color: hsla(var(--background), 0.8);">
         
-        <%-- Dialog Content (Modal) --%>
+        <%-- Dialog Content --%>
         <div class="w-full max-w-md bg-card p-6 rounded-lg shadow-2xl animate-in fade-in zoom-in-95" 
              style="border: 1px solid hsl(var(--border)); background-color: hsl(var(--card));">
             

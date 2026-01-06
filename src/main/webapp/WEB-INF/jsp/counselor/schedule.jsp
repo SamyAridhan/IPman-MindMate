@@ -333,7 +333,6 @@ function selectDate(dateString) {
     window.location.href = '/counselor/schedule?date=' + dateString;
 }
 
-// Accepts the button element instead of raw params
 function openDenyModal(button) {
     const appointmentId = button.getAttribute('data-id');
     const studentName = button.getAttribute('data-student');
@@ -354,16 +353,13 @@ function closeDenyModal() {
     document.body.style.overflow = 'auto';
 }
 
-// Close modal when clicking outside
 document.getElementById('deny-modal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeDenyModal();
     }
 });
 
-// Auto-dismiss success/error messages
 document.addEventListener('DOMContentLoaded', function() {
-    // ✅ FIX: Only target elements with the 'flash-message' class
     const alerts = document.querySelectorAll('.flash-message'); 
     
     alerts.forEach(alert => {

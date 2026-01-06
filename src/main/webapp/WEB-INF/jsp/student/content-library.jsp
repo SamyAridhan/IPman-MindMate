@@ -25,7 +25,6 @@
     <!-- Learning Modules Section -->
     <div id="learningModulesSection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <c:forEach var="item" items="${modules}">
-            <%-- Logic to check if this specific module is completed --%>
             <c:set var="isDone" value="false" />
             <c:forEach var="p" items="${progressList}">
                 <c:if test="${p.content.id == item.id && p.completed}">
@@ -69,7 +68,6 @@
                     <p class="text-muted-foreground text-sm line-clamp-2 leading-relaxed">${item.description}</p>
                 </div>
 
-                <!-- Beautiful Link Button -->
                 <div class="mt-auto pt-4">
                     <a href="${pageContext.request.contextPath}/student/view-module?id=${item.id}" 
                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 
@@ -193,7 +191,6 @@
 <jsp:include page="chatbot-widget.jsp" />
 
 <script>
-// Initialize Lucide icons
 function initIcons() {
 if (typeof lucide !== 'undefined') {
 lucide.createIcons();
@@ -202,7 +199,6 @@ lucide.createIcons();
 
 document.addEventListener('DOMContentLoaded', initIcons);
 
-// Tab Switching Logic
 const learningModulesTab = document.getElementById('learningModulesTab');
 const myProgressTab = document.getElementById('myProgressTab');
 const learningModulesSection = document.getElementById('learningModulesSection');

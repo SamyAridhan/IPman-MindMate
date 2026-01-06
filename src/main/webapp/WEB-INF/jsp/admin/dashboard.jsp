@@ -241,9 +241,7 @@
 </div>
 
 <script>
-// ============================================
 // DATA EXTRACTION
-// ============================================
 const rawDataPoints = document.querySelectorAll('#analytics-data-source .data-point');
 const trendData = Array.from(rawDataPoints).map(point => ({
     date: point.getAttribute('data-date'),
@@ -264,10 +262,7 @@ const labels = trendData.map(d => formatChartDate(d.date)).reverse();
 const appointmentData = trendData.map(d => d.appointments).reverse();
 const userData = trendData.map(d => d.users).reverse();
 
-// ============================================
 // CHART.JS CONFIGURATION
-// ============================================
-
 // APPOINTMENT TREND CHART
 const appointmentCtx = document.getElementById('appointmentChart').getContext('2d');
 const appointmentChart = new Chart(appointmentCtx, {

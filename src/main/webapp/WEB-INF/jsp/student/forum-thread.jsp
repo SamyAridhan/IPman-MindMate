@@ -15,7 +15,6 @@
 
 <div class="container mx-auto px-4 py-6">
     <div class="space-y-6">
-        <%-- BACK BUTTON --%>
         <div>
             <a href="${pageContext.request.contextPath}/student/forum" 
                class="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 transition-colors text-sm font-medium mb-4">
@@ -28,7 +27,6 @@
         <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
             <div class="mb-8 border-b border-border pb-6">
                 <div class="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4">
-                    <%-- min-w-0 is vital here to let the flex-child shrink for text wrapping --%>
                     <div class="min-w-0 flex-1">
                         <h1 class="text-3xl font-bold text-foreground mb-1 content-break">
                             ${post.title}
@@ -51,8 +49,6 @@
                     </span>
                 </div>
                 
-                <%-- Wrapped the content in the content-break class --%>
-                <%-- Corrected: No spaces between tag and variable to prevent whitespace-pre-wrap from rendering them --%>
                 <div class="text-foreground leading-relaxed text-lg whitespace-pre-wrap content-break">${fn:trim(post.content)}</div>
             </div>
 
