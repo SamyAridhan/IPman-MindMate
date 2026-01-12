@@ -93,7 +93,6 @@ public class Counselor {
         this.email = email;
     }
 
-    // ✅ NEW: Password getter/setter
     public String getPassword() {
         return password;
     }

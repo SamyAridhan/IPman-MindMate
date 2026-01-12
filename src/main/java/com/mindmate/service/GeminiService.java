@@ -12,10 +12,7 @@ public class GeminiService {
     @Value("${gemini.api.key}")
     private String apiKey;
 
-    /**
-     * STABLE MODEL FOR MALAYSIA (JAN 2026):
-     * Using 'v1' stable endpoint and 'gemini-2.5-flash' model.
-     */
+    //gemini-2.5-flash model.
     private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=";
 
     public String generateResponse(String userPrompt) {

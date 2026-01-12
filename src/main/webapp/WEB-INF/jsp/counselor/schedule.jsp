@@ -89,14 +89,7 @@
                         </div>
                     </div>
                     
-                    <div class="mt-6 p-4 bg-muted rounded-lg">
-                        <h4 class="font-semibold mb-2 text-sm text-foreground">Availability Settings</h4>
-                        <p class="text-xs text-muted-foreground mb-3">Current: Mon-Fri, 9 AM - 5 PM</p>
-                        <button class="w-full border border-border bg-background text-foreground px-4 py-2 rounded-md text-sm hover:bg-secondary transition-colors flex items-center justify-center">
-                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
-                            Configure Availability
-                        </button>
-                    </div>
+                    
                 </div>
             </div>
         </div>
