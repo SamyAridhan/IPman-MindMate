@@ -1,6 +1,74 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ page import="java.time.LocalDate, java.time.YearMonth, java.time.format.TextStyle, java.util.Locale" %>
 <jsp:include page="../common/header.jsp" />
+
+<%-- 1. FIX: Make sure YearMonth is in the imports --%>
+<%@ page import="java.time.LocalDate, java.time.YearMonth, java.time.format.TextStyle, java.util.Locale" %>
+
+<%
+    LocalDate today = LocalDate.now();
+    
+    // 1. Get the 'date' parameter from the URL if it exists (e.g., ?date=2026-06-10)
+    String selectedDateParam = request.getParameter("date");
+    LocalDate initialDate = today;
+    
+    if (selectedDateParam != null && !selectedDateParam.isEmpty()) {
+        try {
+            initialDate = LocalDate.parse(selectedDateParam);
+            // Sync the attribute so the UI knows which day to highlight
+            pageContext.setAttribute("selectedDate", initialDate);
+        } catch (Exception e) {
+            initialDate = today;
+        }
+    }
+
+    if (pageContext.getAttribute("selectedDate") == null) {
+        pageContext.setAttribute("selectedDate", today);
+    }
+
+    // 2. Determine which month to VIEW
+    String paramMonth = request.getParameter("viewMonth");
+    String paramYear = request.getParameter("viewYear");
+    
+    int month;
+    int year;
+
+    if (paramMonth != null && paramYear != null) {
+        // Use the month the user navigated to via chevrons
+        month = Integer.parseInt(paramMonth);
+        year = Integer.parseInt(paramYear);
+    } else if (selectedDateParam != null) {
+        // If they just clicked a date, stay on that date's month
+        month = initialDate.getMonthValue();
+        year = initialDate.getYear();
+    } else {
+        // Default to today
+        month = today.getMonthValue();
+        year = today.getYear();
+    }
+
+    // 3. Setup date objects for the grid
+    YearMonth yearMonth = YearMonth.of(year, month);
+    LocalDate firstOfMonth = yearMonth.atDay(1);
+    int daysInMonth = yearMonth.lengthOfMonth();
+    int dayOfWeekOffset = firstOfMonth.getDayOfWeek().getValue() % 7; 
+
+    // Navigation logic for chevrons
+    LocalDate prevMonthDate = firstOfMonth.minusMonths(1);
+    LocalDate nextMonthDate = firstOfMonth.plusMonths(1);
+
+    // Set attributes for JSTL
+    pageContext.setAttribute("viewMonth", month);
+    pageContext.setAttribute("viewYear", year);
+    pageContext.setAttribute("monthName", firstOfMonth.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH));
+    pageContext.setAttribute("daysInMonth", daysInMonth);
+    pageContext.setAttribute("offset", dayOfWeekOffset);
+    pageContext.setAttribute("prevMonth", prevMonthDate.getMonthValue());
+    pageContext.setAttribute("prevYear", prevMonthDate.getYear());
+    pageContext.setAttribute("nextMonth", nextMonthDate.getMonthValue());
+    pageContext.setAttribute("nextYear", nextMonthDate.getYear());
+%>
 
 <div class="container mx-auto px-4 py-8">
     
@@ -51,13 +119,13 @@
                 <div class="p-6">
                     <div class="mb-4">
                         <div class="flex items-center justify-between mb-4">
-                            <button type="button" class="p-1 hover:bg-secondary rounded">
+                            <a href="?viewMonth=${prevMonth}&viewYear=${prevYear}" class="p-1 hover:bg-secondary rounded">
                                 <i data-lucide="chevron-left" class="w-5 h-5"></i>
-                            </button>
-                            <span class="font-semibold">January 2026</span>
-                            <button type="button" class="p-1 hover:bg-secondary rounded">
+                            </a>
+                            <span class="font-semibold">${monthName} ${viewYear}</span>
+                            <a href="?viewMonth=${nextMonth}&viewYear=${nextYear}" class="p-1 hover:bg-secondary rounded">
                                 <i data-lucide="chevron-right" class="w-5 h-5"></i>
-                            </button>
+                            </a>
                         </div>
                         
                         <div class="grid grid-cols-7 gap-1 text-center text-sm mb-2">
@@ -71,18 +139,20 @@
                         </div>
                         
                         <div class="grid grid-cols-7 gap-1 text-center text-sm">
-                            <div class="p-2 text-muted-foreground/50">28</div>
-                            <div class="p-2 text-muted-foreground/50">29</div>
-                            <div class="p-2 text-muted-foreground/50">30</div>
-                            <div class="p-2 text-muted-foreground/50">31</div>
+                            <%-- Add empty cells for the offset (days from previous month) --%>
+                            <c:forEach begin="1" end="${offset}">
+                                <div class="p-2 text-muted-foreground/30"></div>
+                            </c:forEach>
 
-                            <c:forEach begin="1" end="31" var="day">
+                            <%-- The actual days of the month --%>
+                            <c:forEach begin="1" end="${daysInMonth}" var="day">
                                 <c:set var="dayStr" value="${day < 10 ? '0' : ''}${day}" />
-                                <c:set var="fullDate" value="2026-01-${dayStr}" />
+                                <c:set var="monthStr" value="${viewMonth < 10 ? '0' : ''}${viewMonth}" />
+                                <c:set var="fullDate" value="${viewYear}-${monthStr}-${dayStr}" />
                                 
                                 <div onclick="selectDate('${fullDate}')" 
-                                     class="p-2 rounded cursor-pointer transition-colors
-                                     ${selectedDate.toString() == fullDate ? 'bg-primary text-primary-foreground font-bold' : 'hover:bg-secondary'}">
+                                    class="p-2 rounded cursor-pointer transition-colors
+                                    ${selectedDate.toString() == fullDate ? 'bg-primary text-primary-foreground font-bold' : 'hover:bg-secondary'}">
                                     ${day}
                                 </div>
                             </c:forEach>
